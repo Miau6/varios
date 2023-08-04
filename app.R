@@ -496,15 +496,16 @@ aborto <- aborto %>%
     T ~ hospital
   ), 
   rango_edad=case_when(
-    edad<13 ~ "Menor a 13 años", 
-    edad>=13 & edad<18~ "13 a 17", 
-    edad>=18 & edad<30 ~ "18 a 29",
-    edad>=30 & edad<45 ~ "30 a 44", 
+    edad<15 ~ "Menor a 15 años", 
+    edad>=15 & edad<18~ "15 a 17", 
+    edad>=18 & edad<30 ~ "+18",
+    # edad>=30 & edad<45 ~ "30 a 44", 
     edad>=45 ~ "+45", T ~ "Desconocido"), 
     rango_edad=factor(rango_edad, 
-                      levels=c("Menor a 13 años", 
-                               "13 a 17", "18 a 29", 
-                               "30 a 44", "+45", "Desconocido"))
+                      levels=c("Menor a 15 años", 
+                               "15 a 17", "+18", 
+                               # "30 a 44", "+45", 
+                               "Desconocido"))
     
     
   ) %>% 
@@ -512,6 +513,16 @@ aborto <- aborto %>%
                   metodo_planificacion_familiar="Sin información", 
                   hospital="Sin información")) %>% 
   mutate(fecha=as_date(fecha))
+
+
+aborto_historico <- tibble(ao=c(
+  2016:2021
+), Total=c(4,12,9,10, 13,10))
+aborto_historico2 <- aborto %>% 
+  group_by(ao=year(fecha)) %>% 
+  summarise(Total=n())
+
+total_aborto <- bind_rows(aborto_historico, aborto_historico2)
 
 coord_hospital <- tibble(
   hospital=c("Cd Guzmán", "Colotlán",
@@ -1635,6 +1646,99 @@ ui <- shinyUI(
                                              
                                                                 
                                              ), icon=icon("equals"), color="maroon", width = 4))), 
+                                     # tabsetPanel(
+                                     #   tabPanel(title = "Anual", 
+                                     #            # sidebarLayout(
+                                     #            #   sidebarPanel("Seleccione algunas características",
+                                     #            #                dateRangeInput(
+                                     #            #                  inputId = "date_aborto",
+                                     #            #                  label = "Rango de fechas",
+                                     #            #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #            #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #            #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                     #            #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
+                                     #            #                  separator = "-"
+                                     #            #                ),
+                                     #            #                selectInput(
+                                     #            #                  inputId = "causal_aborto",
+                                     #            #                  label = "Causales",
+                                     #            #                  choices = sort(unique(aborto$causal)),
+                                     #            #                  multiple = T
+                                     #            #                ),
+                                     #            #                selectInput(
+                                     #            #                  inputId = "hospital_aborto",
+                                     #            #                  label = "Hospital",
+                                     #            #                  choices = sort(unique(aborto$hospital)),
+                                     #            #                  multiple = T
+                                     #            #                ),
+                                     #            #                selectInput(
+                                     #            #                  inputId = "redad_aborto",
+                                     #            #                  label = "Rango de edad",
+                                     #            #                  choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                     #            #                              "Desconocido"),
+                                     #            #                  multiple = T,
+                                     #            #                ),
+                                     #            #                
+                                     #            #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                     #            #   ),
+                                     #              mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                                     #                        plotlyOutput("aborto_ts_anual"),
+                                     #                        h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                     #                        # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                     #                        #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                     #                        # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                     #                        #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                     #              )
+                                     #            )
+                                     #     
+                                     #   ), 
+                                     #   tabPanel(title = "Mensual", 
+                                     #            sidebarLayout(
+                                     #              sidebarPanel("Seleccione algunas características",
+                                     #                           dateRangeInput(
+                                     #                             inputId = "date_aborto",
+                                     #                             label = "Rango de fechas",
+                                     #                             start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #                             min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #                             max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                     #                             end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
+                                     #                             separator = "-"
+                                     #                           ),
+                                     #                           selectInput(
+                                     #                             inputId = "causal_aborto",
+                                     #                             label = "Causales",
+                                     #                             choices = sort(unique(aborto$causal)),
+                                     #                             multiple = T
+                                     #                           ),
+                                     #                           selectInput(
+                                     #                             inputId = "hospital_aborto",
+                                     #                             label = "Hospital",
+                                     #                             choices = sort(unique(aborto$hospital)),
+                                     #                             multiple = T
+                                     #                           ),
+                                     #                           selectInput(
+                                     #                             inputId = "redad_aborto",
+                                     #                             label = "Rango de edad",
+                                     #                             choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                     #                                         "Desconocido"),
+                                     #                             multiple = T,
+                                     #                           ),
+                                     #                           
+                                     #                           downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                     #              ),
+                                     #              mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                                     #                        plotlyOutput("aborto_ts"),
+                                     #                        h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                     #                        # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                     #                        #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                     #                        # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                     #                        #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                     #              )
+                                     #            )
+                                     #            )
+                                     #   
+                                     #   
+                                     # )
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
                                                     dateRangeInput(
@@ -1661,7 +1765,8 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto",
                                                       label = "Rango de edad",
-                                                      choices = sort(unique(aborto$rango_edad)),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                                                  "Desconocido"),
                                                       multiple = T,
                                                     ),
                                                     
@@ -1676,6 +1781,7 @@ ui <- shinyUI(
                                                  #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
                                        )
                                      )
+                                     
                             ),
                             tabPanel("Procedimiento", class="p-2", 
                                      box(
@@ -1730,7 +1836,8 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto2",
                                                       label = "Rango de edad",
-                                                      choices = sort(unique(aborto$rango_edad)),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                                                  "Desconocido"),
                                                       multiple = T,
                                                     ),
                                                     
@@ -1798,7 +1905,8 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto3",
                                                       label = "Rango de edad",
-                                                      choices = sort(unique(aborto$rango_edad)),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                                                  "Desconocido"),
                                                       multiple = T,
                                                     ),
                                                     
@@ -4167,8 +4275,8 @@ datatable_1
     plot <- data_aborto1() %>%
       group_by(fecha=floor_date(fecha, "month")) %>%
       summarise(Total=n()) %>% ungroup() %>%
-      complete(fecha=seq.Date(as_date(floor_date(min(input$date_aborto)), "month"),
-                              as_date(floor_date(max(input$date_aborto)), "month"), "1 month"),
+      complete(fecha=seq.Date(as_date(floor_date(min(input$date_aborto), "month")),
+                              as_date(floor_date(max(input$date_aborto), "month")), "1 month"),
                fill=list(Total=0)
                ) %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
