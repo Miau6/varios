@@ -4351,7 +4351,7 @@ datatable_1
       filter(fecha>=min(input$date_aborto4), fecha<=max(input$date_aborto4),
              if(is.null(input$causal_aborto4)) causal!="" else causal %in% input$causal_aborto4,
              if(is.null(input$hospital_aborto4)) hospital!="" else hospital %in% input$hospital_aborto4,
-             if(is.null(input$redad_aborto4)) rango_edad!="" else rango_edad %in% input$redad_aborto
+             if(is.null(input$redad_aborto4)) rango_edad!="" else rango_edad %in% input$redad_aborto4
 
       )
 
@@ -4369,7 +4369,7 @@ datatable_1
                fill=list(Total=0)
                ) %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
-      ggplot(aes(x=fecha, y=Total#, text=text
+      ggplot(aes(x=fecha, y=Total,
                  )) +
       geom_point(size=2, color="#6737ab", alpha=.7) +
       geom_line(size=1.2, color="#6737ab") + theme_minimal() +
@@ -4384,7 +4384,7 @@ datatable_1
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
 
-    ggplotly(plot#, tooltip = "text"
+    ggplotly(plot
              ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
@@ -4404,7 +4404,9 @@ datatable_1
       group_by(procedimiento) %>%
       summarise(Total=n()) %>% ungroup() %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
-      ggplot(aes(x=reorder(procedimiento, -Total), y=Total#, text=text
+      ggplot(aes(x=reorder(procedimiento, -Total), y=Total,
+                 text=paste0("Procemiento: ", procedimiento, 
+                                  "<br>Total: ", Total)
       )) +
       geom_col(size=2, fill="#6737ab") + theme_minimal() +
       labs(x="Procedimiento") +
@@ -4419,7 +4421,7 @@ datatable_1
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
     
-    ggplotly(plot#, tooltip = "text"
+    ggplotly(plot, tooltip = "text"
     ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
@@ -4440,7 +4442,9 @@ datatable_1
       group_by(hospital) %>%
       summarise(Total=n()) %>% ungroup() %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
-      ggplot(aes(x=reorder(hospital, Total), y=Total#, text=text
+      ggplot(aes(x=reorder(hospital, Total), y=Total, 
+                 text=paste0("Hospital: ", hospital, 
+                             "<br>Total: ", Total)
       )) +
       geom_col(size=2, fill="#D581B9") + theme_minimal() +
       labs(x="Hospital") +
@@ -4456,7 +4460,7 @@ datatable_1
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction())) +
       coord_flip()
     
-    ggplotly(plot#, tooltip = "text"
+    ggplotly(plot, tooltip = "text"
     ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
@@ -4499,7 +4503,8 @@ datatable_1
     
     plot <- total_aborto %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
-      ggplot(aes(x=ao, y=Total#, text=text
+      ggplot(aes(x=ao, y=Total, text=paste0("Año: ", ao, 
+                                            "<br>Total : ", Total)
       )) +
       geom_col(size=2, fill="purple") + theme_minimal() +
       # geom_line(size=1.2, color="purple") +
@@ -4515,7 +4520,7 @@ datatable_1
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction())) 
     
-    ggplotly(plot#, tooltip = "text"
+    ggplotly(plot, tooltip = "text"
     ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
@@ -4534,7 +4539,9 @@ datatable_1
     plot <- data_aborto4() %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
       group_by(rango_sgd) %>% summarise(Total=n()) %>% 
-      ggplot(aes(x=reorder(rango_sgd, -Total), y=Total#, text=text
+      ggplot(aes(x=reorder(rango_sgd, -Total), y=Total,
+                 text=paste0("Semanas de gestación: ", rango_sgd, 
+                             "<br>Total: ", Total)
       )) +
       geom_col(size=2, fill="#D581B9") + theme_minimal() +
       labs(x="Semanas de gestación") +
@@ -4549,7 +4556,7 @@ datatable_1
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
 
-    ggplotly(plot#, tooltip = "text"
+    ggplotly(plot, tooltip = "text"
     ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
