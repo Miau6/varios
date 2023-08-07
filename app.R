@@ -511,7 +511,8 @@ aborto <- aborto %>%
   ) %>% 
   replace_na(list(procedimiento="Sin información", 
                   metodo_planificacion_familiar="Sin información", 
-                  hospital="Sin información")) %>% 
+                  hospital="Sin información", 
+                  rango_sgd="Sin información")) %>% 
   mutate(fecha=as_date(fecha))
 
 
@@ -523,6 +524,8 @@ aborto_historico2 <- aborto %>%
   summarise(Total=n())
 
 total_aborto <- bind_rows(aborto_historico, aborto_historico2)
+
+aborto_causal <- aborto %>% tabyl(causal) %>% arrange(desc(n))
 
 coord_hospital <- tibble(
   hospital=c("Cd Guzmán", "Colotlán",
@@ -1624,192 +1627,191 @@ ui <- shinyUI(
                                        width=12,
                                        div(class="row d-flex", #Replicar
                                            valueBox(
-                                             value = comma(nrow(aborto)),
-                                             subtitle = paste0("Total de interrupciones legales del embarazo en Jalisco con corte a ",
-                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), " ",
-                                                               year(max(aborto$fecha))
+                                             value = "En el histórico",
+                                             subtitle = paste0("De ", min(total_aborto$ao), " a ", max(total_aborto$ao), " (",
+                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), ") se han atendido ",
+                                                               comma(sum(total_aborto$Total)), " interrupciones del embarazo"
                                              ),
                                              icon=icon("wave-square"), color="fuchsia", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal=="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal=="Violación"))), 
-                                               " interrupciones legales de embarazo por violación de ", 
-                                               comma(nrow(aborto))
+                                             value = paste0("En el año ", max(total_aborto$ao)),
+                                             subtitle =  paste0("Se registran ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)])), 
+                                                                " iles mientras que en ",  max(total_aborto$ao)-1,
+                                             " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
                                                                 
                                              ),icon=icon("chart-area"),color="purple", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal!="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal!="Violación"))), 
-                                                                " interrupciones legales de embarazo por grave riesgo a la salud de ", 
-                                                                comma(nrow(aborto))
-                                                                
-                                             
-                                                                
-                                             ), icon=icon("equals"), color="maroon", width = 4))), 
-                                     # tabsetPanel(
-                                     #   tabPanel(title = "Anual", 
-                                     #            # sidebarLayout(
-                                     #            #   sidebarPanel("Seleccione algunas características",
-                                     #            #                dateRangeInput(
-                                     #            #                  inputId = "date_aborto",
-                                     #            #                  label = "Rango de fechas",
-                                     #            #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #            #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #            #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
-                                     #            #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
-                                     #            #                  separator = "-"
-                                     #            #                ),
-                                     #            #                selectInput(
-                                     #            #                  inputId = "causal_aborto",
-                                     #            #                  label = "Causales",
-                                     #            #                  choices = sort(unique(aborto$causal)),
-                                     #            #                  multiple = T
-                                     #            #                ),
-                                     #            #                selectInput(
-                                     #            #                  inputId = "hospital_aborto",
-                                     #            #                  label = "Hospital",
-                                     #            #                  choices = sort(unique(aborto$hospital)),
-                                     #            #                  multiple = T
-                                     #            #                ),
-                                     #            #                selectInput(
-                                     #            #                  inputId = "redad_aborto",
-                                     #            #                  label = "Rango de edad",
-                                     #            #                  choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                     #            #                              "Desconocido"),
-                                     #            #                  multiple = T,
-                                     #            #                ),
-                                     #            #                
-                                     #            #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
-                                     #            #   ),
-                                     #              mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
-                                     #                        plotlyOutput("aborto_ts_anual"),
-                                     #                        h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
-                                     #                        # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
-                                     #                        #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
-                                     #                        # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
-                                     #                        #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
-                                     #              )
-                                     #            )
-                                     #     
-                                     #   ), 
-                                     #   tabPanel(title = "Mensual", 
-                                     #            sidebarLayout(
-                                     #              sidebarPanel("Seleccione algunas características",
-                                     #                           dateRangeInput(
-                                     #                             inputId = "date_aborto",
-                                     #                             label = "Rango de fechas",
-                                     #                             start = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #                             min = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #                             max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
-                                     #                             end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
-                                     #                             separator = "-"
-                                     #                           ),
-                                     #                           selectInput(
-                                     #                             inputId = "causal_aborto",
-                                     #                             label = "Causales",
-                                     #                             choices = sort(unique(aborto$causal)),
-                                     #                             multiple = T
-                                     #                           ),
-                                     #                           selectInput(
-                                     #                             inputId = "hospital_aborto",
-                                     #                             label = "Hospital",
-                                     #                             choices = sort(unique(aborto$hospital)),
-                                     #                             multiple = T
-                                     #                           ),
-                                     #                           selectInput(
-                                     #                             inputId = "redad_aborto",
-                                     #                             label = "Rango de edad",
-                                     #                             choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                     #                                         "Desconocido"),
-                                     #                             multiple = T,
-                                     #                           ),
-                                     #                           
-                                     #                           downloadButton("downloadData_aborto", "\nDescarga (.csv)")
-                                     #              ),
-                                     #              mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
-                                     #                        plotlyOutput("aborto_ts"),
-                                     #                        h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
-                                     #                        # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
-                                     #                        #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
-                                     #                        # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
-                                     #                        #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
-                                     #              )
-                                     #            )
-                                     #            )
-                                     #   
-                                     #   
-                                     # )
-                                     sidebarLayout(
-                                       sidebarPanel("Seleccione algunas características",
-                                                    dateRangeInput(
-                                                      inputId = "date_aborto",
-                                                      label = "Rango de fechas",
-                                                      start = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                                      min = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                                      max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
-                                                      end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
-                                                      separator = "-"
-                                                    ),
-                                                    selectInput(
-                                                      inputId = "causal_aborto",
-                                                      label = "Causales",
-                                                      choices = sort(unique(aborto$causal)),
-                                                      multiple = T
-                                                    ),
-                                                    selectInput(
-                                                      inputId = "hospital_aborto",
-                                                      label = "Hospital",
-                                                      choices = sort(unique(aborto$hospital)),
-                                                      multiple = T
-                                                    ),
-                                                    selectInput(
-                                                      inputId = "redad_aborto",
-                                                      label = "Rango de edad",
-                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                                                  "Desconocido"),
-                                                      multiple = T,
-                                                    ),
-                                                    
-                                                    downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                             value = "La causal principal es",
+                                             subtitle =  paste0(aborto_causal$causal[1], " con ", percent(aborto_causal$percent[1], .1), 
+                                             " (año ",  max(total_aborto$ao), ")", " mientras que ", 
+                                             aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
+                                             ), icon=icon("equals"), color="maroon", width = 4))
+                                       ), 
+                                     tabsetPanel(
+                                       tabPanel(title = "Mensual",
+                                                sidebarLayout(
+                                                  sidebarPanel("Seleccione algunas características",
+                                                               dateRangeInput(
+                                                                 inputId = "date_aborto",
+                                                                 label = "Rango de fechas",
+                                                                 start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                                 min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                                 max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                                                 end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es",
+                                                                 separator = "-"
+                                                               ),
+                                                               selectInput(
+                                                                 inputId = "causal_aborto",
+                                                                 label = "Causales",
+                                                                 choices = sort(unique(aborto$causal)),
+                                                                 multiple = T
+                                                               ),
+                                                               selectInput(
+                                                                 inputId = "hospital_aborto",
+                                                                 label = "Hospital",
+                                                                 choices = sort(unique(aborto$hospital)),
+                                                                 multiple = T
+                                                               ),
+                                                               selectInput(
+                                                                 inputId = "redad_aborto",
+                                                                 label = "Rango de edad",
+                                                                 choices = c("Menor a 15 años", "15 a 17", "+18",
+                                                                             "Desconocido"),
+                                                                 multiple = T,
+                                                               ),
+                                                               
+                                                               downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                                  ),
+                                                  mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                                                            plotlyOutput("aborto_ts"),
+                                                            h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                                            # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                                            #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                                            # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                                            #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                                  )
+                                                )
                                        ),
-                                       mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
-                                                 plotlyOutput("aborto_ts"),
-                                                 h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
-                                                 # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
-                                                 #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
-                                                 # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
-                                                 #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                       
+                                       tabPanel(title = "Anual",
+                                                # sidebarLayout(
+                                                #   sidebarPanel("Seleccione algunas características",
+                                                #                dateRangeInput(
+                                                #                  inputId = "date_aborto",
+                                                #                  label = "Rango de fechas",
+                                                #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                                #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es",
+                                                #                  separator = "-"
+                                                #                ),
+                                                #                selectInput(
+                                                #                  inputId = "causal_aborto",
+                                                #                  label = "Causales",
+                                                #                  choices = sort(unique(aborto$causal)),
+                                                #                  multiple = T
+                                                #                ),
+                                                #                selectInput(
+                                                #                  inputId = "hospital_aborto",
+                                                #                  label = "Hospital",
+                                                #                  choices = sort(unique(aborto$hospital)),
+                                                #                  multiple = T
+                                                #                ),
+                                                #                selectInput(
+                                                #                  inputId = "redad_aborto",
+                                                #                  label = "Rango de edad",
+                                                #                  choices = c("Menor a 15 años", "15 a 17", "+18",
+                                                #                              "Desconocido"),
+                                                #                  multiple = T,
+                                                #                ),
+                                                #
+                                                #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                                #   ),
+                                                  mainPanel(h3(align="center","Total de interrupciones legales del embarazo"), width = 12,
+                                                            plotlyOutput("aborto_ts_anual"),
+                                                            h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                                            # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                                            #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                                            # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                                            #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                                  )
+                                                )
+                                       
+
                                        )
-                                     )
+                                       
+
+
+                                     ),
+                                     # sidebarLayout(
+                                     #   sidebarPanel("Seleccione algunas características",
+                                     #                dateRangeInput(
+                                     #                  inputId = "date_aborto",
+                                     #                  label = "Rango de fechas",
+                                     #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                     #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                     #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
+                                     #                  separator = "-"
+                                     #                ),
+                                     #                selectInput(
+                                     #                  inputId = "causal_aborto",
+                                     #                  label = "Causales",
+                                     #                  choices = sort(unique(aborto$causal)),
+                                     #                  multiple = T
+                                     #                ),
+                                     #                selectInput(
+                                     #                  inputId = "hospital_aborto",
+                                     #                  label = "Hospital",
+                                     #                  choices = sort(unique(aborto$hospital)),
+                                     #                  multiple = T
+                                     #                ),
+                                     #                selectInput(
+                                     #                  inputId = "redad_aborto",
+                                     #                  label = "Rango de edad",
+                                     #                  choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                     #                              "Desconocido"),
+                                     #                  multiple = T,
+                                     #                ),
+                                     #                
+                                     #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                                     #   ),
+                                     #   mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                                     #             plotlyOutput("aborto_ts"),
+                                     #             h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                     #             # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                     #             #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                     #             # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                     #             #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                     #   )
+                                     # )
                                      
-                            ),
+                            # ),
                             tabPanel("Procedimiento", class="p-2", 
                                      box(
                                        width=12,
                                        div(class="row d-flex", #Replicar
                                            valueBox(
-                                             value = comma(nrow(aborto)),
-                                             subtitle = paste0("Total de interrupciones legales del embarazo en Jalisco con corte a ",
-                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), " ",
-                                                               year(max(aborto$fecha))
+                                             value = "En el histórico",
+                                             subtitle = paste0("De ", min(total_aborto$ao), " a ", max(total_aborto$ao), " (",
+                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), ") se han atendido ",
+                                                               comma(sum(total_aborto$Total)), " interrupciones del embarazo"
                                              ),
                                              icon=icon("wave-square"), color="fuchsia", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal=="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal=="Violación"))), 
-                                                                " interrupciones legales de embarazo por violación de ", 
-                                                                comma(nrow(aborto))
+                                             value = paste0("En el año ", max(total_aborto$ao)),
+                                             subtitle =  paste0("Se registran ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)])), 
+                                                                " iles mientras que en ",  max(total_aborto$ao)-1,
+                                                                " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
                                                                 
                                              ),icon=icon("chart-area"),color="purple", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal!="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal!="Violación"))), 
-                                                                " interrupciones legales de embarazo por grave riesgo a la salud de ", 
-                                                                comma(nrow(aborto))
-                                                                
-                                                                
-                                                                
-                                             ), icon=icon("equals"), color="maroon", width = 4))), 
+                                             value = "La causal principal es",
+                                             subtitle =  paste0(aborto_causal$causal[1], " con ", percent(aborto_causal$percent[1], .1), 
+                                                                " (año ",  max(total_aborto$ao), ")", " mientras que ", 
+                                                                aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
+                                             ), icon=icon("equals"), color="maroon", width = 4))
+                                     ),
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
                                                     dateRangeInput(
@@ -1852,33 +1854,100 @@ ui <- shinyUI(
                                        )
                                      )
                                      ), 
+                            tabPanel("Semanas de gestación", class="p-2", 
+                                     box(
+                                       width=12,
+                                       div(class="row d-flex", #Replicar
+                                           valueBox(
+                                             value = "En el histórico",
+                                             subtitle = paste0("De ", min(total_aborto$ao), " a ", max(total_aborto$ao), " (",
+                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), ") se han atendido ",
+                                                               comma(sum(total_aborto$Total)), " interrupciones del embarazo"
+                                             ),
+                                             icon=icon("wave-square"), color="fuchsia", width = 4),
+                                           valueBox(
+                                             value = paste0("En el año ", max(total_aborto$ao)),
+                                             subtitle =  paste0("Se registran ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)])), 
+                                                                " iles mientras que en ",  max(total_aborto$ao)-1,
+                                                                " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
+                                                                
+                                             ),icon=icon("chart-area"),color="purple", width = 4),
+                                           valueBox(
+                                             value = "La causal principal es",
+                                             subtitle =  paste0(aborto_causal$causal[1], " con ", percent(aborto_causal$percent[1], .1), 
+                                                                " (año ",  max(total_aborto$ao), ")", " mientras que ", 
+                                                                aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
+                                             ), icon=icon("equals"), color="maroon", width = 4))
+                                     ), 
+                                     sidebarLayout(
+                                       sidebarPanel("Seleccione algunas características",
+                                                    dateRangeInput(
+                                                      inputId = "date_aborto4",
+                                                      label = "Rango de fechas",
+                                                      start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                      min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                                                      max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                                                      end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
+                                                      separator = "-"
+                                                    ),
+                                                    selectInput(
+                                                      inputId = "causal_aborto4",
+                                                      label = "Causales",
+                                                      choices = sort(unique(aborto$causal)),
+                                                      multiple = T
+                                                    ),
+                                                    selectInput(
+                                                      inputId = "hospital_aborto4",
+                                                      label = "Hospital",
+                                                      choices = sort(unique(aborto$hospital)),
+                                                      multiple = T
+                                                    ),
+                                                    selectInput(
+                                                      inputId = "redad_aborto4",
+                                                      label = "Rango de edad",
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
+                                                                  "Desconocido"),
+                                                      multiple = T,
+                                                    ),
+                                                    
+                                                    downloadButton("downloadData_aborto4", "\nDescarga (.csv)")
+                                       ),
+                                       mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                                                 plotlyOutput("aborto_gestacion"),
+                                                 h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                                 
+                                                 # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                                 #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                                 # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                                 #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                                       )
+                                     )
+                            ),
                             tabPanel("Hospitales", class="p-2", 
                                      box(
                                        width=12,
                                        div(class="row d-flex", #Replicar
                                            valueBox(
-                                             value = comma(nrow(aborto)),
-                                             subtitle = paste0("Total de interrupciones legales del embarazo en Jalisco con corte a ",
-                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), " ",
-                                                               year(max(aborto$fecha))
+                                             value = "En el histórico",
+                                             subtitle = paste0("De ", min(total_aborto$ao), " a ", max(total_aborto$ao), " (",
+                                                               mes_nombre(floor_date(max(aborto$fecha), "month")), ") se han atendido ",
+                                                               comma(sum(total_aborto$Total)), " interrupciones del embarazo"
                                              ),
                                              icon=icon("wave-square"), color="fuchsia", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal=="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal=="Violación"))), 
-                                                                " interrupciones legales de embarazo por violación de ", 
-                                                                comma(nrow(aborto))
+                                             value = paste0("En el año ", max(total_aborto$ao)),
+                                             subtitle =  paste0("Se registran ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)])), 
+                                                                " iles mientras que en ",  max(total_aborto$ao)-1,
+                                                                " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
                                                                 
                                              ),icon=icon("chart-area"),color="purple", width = 4),
                                            valueBox(
-                                             value = percent(nrow(aborto %>% filter(causal!="Violación"))/nrow(aborto),1),
-                                             subtitle =  paste0(comma(nrow(aborto %>% filter(causal!="Violación"))), 
-                                                                " interrupciones legales de embarazo por grave riesgo a la salud de ", 
-                                                                comma(nrow(aborto))
-                                                                
-                                                                
-                                                                
-                                             ), icon=icon("equals"), color="maroon", width = 4))), 
+                                             value = "La causal principal es",
+                                             subtitle =  paste0(aborto_causal$causal[1], " con ", percent(aborto_causal$percent[1], .1), 
+                                                                " (año ",  max(total_aborto$ao), ")", " mientras que ", 
+                                                                aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
+                                             ), icon=icon("equals"), color="maroon", width = 4))
+                                     ),
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
                                                     dateRangeInput(
@@ -4163,6 +4232,15 @@ datatable_1
       
     })
   
+  output$downloadData_aborto4 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "datos_ile.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(aborto, file, row.names = F)
+      
+    })
+  
   
   
   output$atenciones_tipo<- renderPlotly({
@@ -4268,6 +4346,17 @@ datatable_1
     
   })
   
+  data_aborto4 <- reactive({
+    aborto %>%
+      filter(fecha>=min(input$date_aborto4), fecha<=max(input$date_aborto4),
+             if(is.null(input$causal_aborto4)) causal!="" else causal %in% input$causal_aborto4,
+             if(is.null(input$hospital_aborto4)) hospital!="" else hospital %in% input$hospital_aborto4,
+             if(is.null(input$redad_aborto4)) rango_edad!="" else rango_edad %in% input$redad_aborto
+
+      )
+
+  })
+
   output$aborto_ts <- renderPlotly({
     width <- session$clientData$output_plot_responsive_width
     height <- session$clientData$output_plot_responsive_height
@@ -4389,7 +4478,7 @@ datatable_1
     )
     
     data_aborto3() %>%
-      filter(!hospital %in% c("Sin información", 
+      filter(!hospital %in% c("Sin información", "Otro",
                              "Otra Instancia particular")) %>% 
       group_by(hospital) %>%
       summarise(Total=n()) %>% 
@@ -4402,6 +4491,74 @@ datatable_1
         "Total: ", Total
       ), icon=awesome)
     
+  })
+  
+  output$aborto_ts_anual <- renderPlotly({
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height
+    
+    plot <- total_aborto %>%
+      # mutate(text=paste0("Total: ", comma(Total))) %>%
+      ggplot(aes(x=ao, y=Total#, text=text
+      )) +
+      geom_col(size=2, fill="purple") + theme_minimal() +
+      # geom_line(size=1.2, color="purple") +
+      labs(x="Año") +
+      theme(legend.position = "none",
+            legend.key.height= unit(1.3, 'cm'),
+            legend.key.width= unit(1.3, 'cm'),
+            legend.title = element_text(size=14*textFunction()),
+            legend.text = element_text(size=12*textFunction()),
+            text=element_text(size=12*textFunction(), family="Nutmeg-Light"),
+            plot.title = element_text(size = 18L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 12L*textFunction(), hjust = 0),
+            strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction())) 
+    
+    ggplotly(plot#, tooltip = "text"
+    ) %>%
+      layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
+             margin = list(b=0,t=0)
+             # title = paste0("Total de servicios brindados por tipo de violencia\n", 
+             #                #atenciones_reactive3()$tipo, 
+             #                '</sup>',
+             #                '<br>')
+      )
+    
+  })
+  
+  output$aborto_gestacion <- renderPlotly({
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height
+
+    plot <- data_aborto4() %>%
+      # mutate(text=paste0("Total: ", comma(Total))) %>%
+      group_by(rango_sgd) %>% summarise(Total=n()) %>% 
+      ggplot(aes(x=reorder(rango_sgd, -Total), y=Total#, text=text
+      )) +
+      geom_col(size=2, fill="#D581B9") + theme_minimal() +
+      labs(x="Semanas de gestación") +
+      theme(legend.position = "none",
+            legend.key.height= unit(1.3, 'cm'),
+            legend.key.width= unit(1.3, 'cm'),
+            legend.title = element_text(size=14*textFunction()),
+            legend.text = element_text(size=12*textFunction()),
+            text=element_text(size=12*textFunction(), family="Nutmeg-Light"),
+            plot.title = element_text(size = 18L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 12L*textFunction(), hjust = 0),
+            strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
+
+    ggplotly(plot#, tooltip = "text"
+    ) %>%
+      layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
+             margin = list(b=0,t=0)
+             # title = paste0("Total de servicios brindados por tipo de violencia\n",
+             #                #atenciones_reactive3()$tipo,
+             #                '</sup>',
+             #                '<br>')
+      )
+
   })
   
   
