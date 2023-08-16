@@ -498,14 +498,18 @@ aborto <- aborto %>%
   rango_edad=case_when(
     edad<15 ~ "Menor a 15 años", 
     edad>=15 & edad<18~ "15 a 17", 
-    edad>=18 & edad<30 ~ "+18",
+    edad>=18 ~ "+18"#,
     # edad>=30 & edad<45 ~ "30 a 44", 
-    edad>=45 ~ "+45", T ~ "Desconocido"), 
+    # edad>=45 ~ "+45",
+    # T ~ "Desconocido"
+    ), 
     rango_edad=factor(rango_edad, 
                       levels=c("Menor a 15 años", 
-                               "15 a 17", "+18", 
+                               "15 a 17", "+18"#, 
                                # "30 a 44", "+45", 
-                               "Desconocido"))
+                               #"Desconocido"
+                               )
+                      )
     
     
   ) %>% 
@@ -1675,8 +1679,7 @@ ui <- shinyUI(
                                                                selectInput(
                                                                  inputId = "redad_aborto",
                                                                  label = "Rango de edad",
-                                                                 choices = c("Menor a 15 años", "15 a 17", "+18",
-                                                                             "Desconocido"),
+                                                                 choices = c("Menor a 15 años", "15 a 17", "+18"),
                                                                  multiple = T,
                                                                ),
                                                                
@@ -1838,8 +1841,7 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto2",
                                                       label = "Rango de edad",
-                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                                                  "Desconocido"),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18"),
                                                       multiple = T,
                                                     ),
                                                     
@@ -1905,8 +1907,7 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto4",
                                                       label = "Rango de edad",
-                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                                                  "Desconocido"),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18"),
                                                       multiple = T,
                                                     ),
                                                     
@@ -1974,8 +1975,7 @@ ui <- shinyUI(
                                                     selectInput(
                                                       inputId = "redad_aborto3",
                                                       label = "Rango de edad",
-                                                      choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                                                  "Desconocido"),
+                                                      choices = c("Menor a 15 años", "15 a 17", "+18"),
                                                       multiple = T,
                                                     ),
                                                     
