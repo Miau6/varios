@@ -20,9 +20,24 @@ library(scales)
 
 # Define UI for application that draws a histogram
 
-datos <- readxl::read_excel("vinculaciones.xlsx") %>% 
-  rename(carpetas=incidencia)
+datos <- readxl::read_excel("fichas_delitos_actualizada.xlsx", 
+                            sheet = 2) %>% 
+  rename(carpetas=incidencia) %>% 
+  replace_na(list(sentencias_actualizado=0)) %>% 
+  mutate(sentencias=ifelse(
+    sentencias_actualizado>sentencias, sentencias_actualizado, 
+    sentencias
+  )) %>% select(-sentencias_actualizado)
 
+
+datos_corte <- readxl::read_excel("fichas_delitos_actualizada.xlsx", 
+                            sheet = 3) %>% 
+  rename(carpetas=incidencia) %>% 
+  replace_na(list(sentencias_actualizado=0)) %>% 
+  mutate(sentencias=ifelse(
+    sentencias_actualizado>sentencias, sentencias_actualizado, 
+    sentencias
+  ))
 #####
 #ui
 ui <- fluidPage(
@@ -75,7 +90,7 @@ server <- function(input, output) {
     selectInput(inputId = "crimes", label = "Delitos", multiple = F,
                 #choices= unique(datos$delito)[datos$tipo==input$tipos],
                 choices= sort(unique(datos$delito[datos$tipo %in% input$tipos])), 
-                selected = "Alto impacto (ADIP)"
+                selected = "Alto impacto"
     )
   })
   
