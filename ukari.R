@@ -42,6 +42,9 @@ nb.cols <- 21
 mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
 
 
+nb.cols_miau <- 24
+mycolors_miau <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols_miau)
+
 nb.cols_10 <- 10
 mycolors_10 <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols_10)
 
@@ -830,6 +833,14 @@ ui <- shinyUI(
                                          fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
                                                   column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
                                                          ),
+                                         fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
+                                                                                 )),
+                                                  column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
+                                                                                ))
+                                         ),
+                                         plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"),
+                                         plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"),
+                                         
                                          
                                          h6("Fuente: Secretaría de Salud."),
                                          h6("Datos a diciembre de 2022")
@@ -1677,13 +1688,115 @@ fiscalia_data() %>%
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
               axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
-        labs(x="")
+        labs(x="", fill="")
       
       ggplotly(plot, tooltip="text"
       ) %>%
         layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
                margin = list(b=0,t=30),
                title = paste0("Causales")
+        )
+    })
+    
+    output$gr_aborto_ocupacion <- renderPlotly({
+      plot <- data_aborto() %>% 
+        group_by(ocupacion=str_wrap(ocupacion, 8)) %>% 
+        summarise(Total=n()) %>% 
+        mutate(text=paste0("Ocupacion: ", ocupacion, "\n", 
+                           "Total: ", comma(Total))) %>% 
+        ggplot(aes(reorder(ocupacion, -Total), Total, fill=ocupacion, text=text)) +
+        geom_col() + theme_light() +
+        scale_fill_manual(values = mycolors) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="")
+      
+      
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
+               margin = list(b=0,t=30),
+               title = paste0("Ocupación")
+        )
+    })
+    
+    output$gr_aborto_escolaridad <- renderPlotly({
+      plot <- data_aborto() %>%
+        group_by(escolaridad=str_wrap(escolaridad, 12)) %>%
+        summarise(Total=n()) %>%
+        mutate(text=paste0("Escolaridad: ", escolaridad, "\n",
+                           "Total: ", comma(Total))) %>%
+        ggplot(aes(reorder(escolaridad, -Total), Total, fill=escolaridad, text=text)) +
+        geom_col() + theme_light() +
+        scale_fill_manual(values = mycolors[5:12]) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="")
+
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
+               margin = list(b=0,t=30),
+               title = paste0("Escolaridad")
+        )
+    })
+    
+    output$gr_aborto_acompañamiento <- renderPlotly({
+      plot <- data_aborto() %>%
+        group_by(escolaridad=str_wrap(si_va_sola_o_acompanada, 12)) %>%
+        summarise(Total=n()) %>%
+        mutate(text=paste0("Acompañamiento: ", escolaridad, "\n",
+                           "Total: ", comma(Total))) %>%
+        ggplot(aes(reorder(escolaridad, -Total), Total, fill=escolaridad, text=text)) +
+        geom_col() + theme_light() +
+        scale_fill_manual(values = mycolors[5:12]) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="")
+      
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
+               margin = list(b=0,t=30),
+               title = paste0("Acompañamiento")
+        )
+    })
+    
+    output$gr_aborto_referencia <- renderPlotly({
+      plot <- data_aborto() %>%
+        group_by(referencia=str_wrap(referencia, 22)) %>%
+        summarise(Total=n()) %>%
+        mutate(text=paste0("Referencia: ", referencia, "\n",
+                           "Total: ", comma(Total))) %>%
+        ggplot(aes(reorder(referencia, -Total), Total, fill=referencia, text=text)) +
+        geom_col() + theme_light() +
+        scale_fill_manual(values = mycolors_miau) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="") + 
+        coord_flip()
+      
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Escolaridad")
         )
     })
     
