@@ -469,6 +469,23 @@ ui <- shinyUI(
    color: white !important; 
    font-family: Nutmeg-Light !important;
    }
+   
+   #controls {
+  /* Appearance */
+  background-color: #b4b4b4;
+  padding: 0 20px 20px 20px;
+  border-style: groove;
+  cursor: move;
+  /* Fade out while not hovering */
+  opacity: 0.6;
+  zoom: 0.9;
+  transition: opacity 500ms 1s;
+  }
+  #controls:hover {
+  /* Fade in while hovering */
+  opacity: 0.95;
+  transition-delay: 0;
+  }
     
                         "))),
       shinythemes::themeSelector(),
@@ -786,68 +803,137 @@ ui <- shinyUI(
                                      )
                             ), 
                  shiny::navbarMenu(title = "Salud", 
+                                   # shiny::tabPanel(
+                                   #   title = "Interrupción legal del embarazo", 
+                                   #   
+                                   #   sidebarLayout(
+                                   #     sidebarPanel(
+                                   #       dateRangeInput(
+                                   #         "aborto_date", 
+                                   #         "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
+                                   #         min = floor_date(min(aborto$fecha), "month"), 
+                                   #         end =ceiling_date(max(aborto$fecha), "month")-1, 
+                                   #         max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
+                                   #         separator = "-"
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "aborto_indigena",
+                                   #         label = "Hablante lengua indigena",
+                                   #         choices = sort(unique(aborto$indigena)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "aborto_edad",
+                                   #         label = "Rango de edad",
+                                   #         choices = sort(unique(aborto$rango_edad)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "aborto_causal",
+                                   #         label = "Causal",
+                                   #         choices = sort(unique(aborto$causal)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "aborto_violencia",
+                                   #         label = "Detención de violencia",
+                                   #         choices = sort(unique(aborto$violencia)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ),
+                                   #     ), 
+                                   #     shiny::mainPanel(#uiOutput("test"),
+                                   #       plotlyOutput("gr_aborto_date"),
+                                   #       fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
+                                   #                column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
+                                   #                       ),
+                                   #       fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
+                                   #                                               )),
+                                   #                column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
+                                   #                                              ))
+                                   #       ),
+                                   #       plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"),
+                                   #       plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"),
+                                   #       
+                                   #       
+                                   #       h6("Fuente: Secretaría de Salud."),
+                                   #       h6("Datos a diciembre de 2022")
+                                   #     )
+                                   # 
+                                   #     
+                                   #   )
+                                   # ), 
                                    shiny::tabPanel(
                                      title = "Interrupción legal del embarazo", 
                                      
-                                     sidebarLayout(
-                                       sidebarPanel(
-                                         dateRangeInput(
-                                           "aborto_date", 
-                                           "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
-                                           min = floor_date(min(aborto$fecha), "month"), 
-                                           end =ceiling_date(max(aborto$fecha), "month")-1, 
-                                           max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
-                                           separator = "-"
-                                         ),
-                                         selectInput(
-                                           inputId = "aborto_indigena",
-                                           label = "Hablante lengua indigena",
-                                           choices = sort(unique(aborto$indigena)),
-                                           # selected = "",
-                                           multiple = T
-                                         ),
-                                         selectInput(
-                                           inputId = "aborto_edad",
-                                           label = "Rango de edad",
-                                           choices = sort(unique(aborto$rango_edad)),
-                                           # selected = "",
-                                           multiple = T
-                                         ),
-                                         selectInput(
-                                           inputId = "aborto_causal",
-                                           label = "Causal",
-                                           choices = sort(unique(aborto$causal)),
-                                           # selected = "",
-                                           multiple = T
-                                         ),
-                                         selectInput(
-                                           inputId = "aborto_violencia",
-                                           label = "Detención de violencia",
-                                           choices = sort(unique(aborto$violencia)),
-                                           # selected = "",
-                                           multiple = T
-                                         ),
-                                       ), 
-                                       shiny::mainPanel(#uiOutput("test"),
+                                     # sidebarLayout(
+                                       # sidebarPanel(
+                                     
+                                       # shiny::mainPanel(#uiOutput("test"),
                                          plotlyOutput("gr_aborto_date"),
                                          fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
                                                   column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
-                                                         ),
+                                         ),
                                          fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
-                                                                                 )),
-                                                  column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
-                                                                                ))
+                                         )),
+                                         column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
+                                         ))
                                          ),
                                          plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"),
                                          plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"),
                                          
                                          
                                          h6("Fuente: Secretaría de Salud."),
-                                         h6("Datos a diciembre de 2022")
-                                       )
-
-                                       
+                                         h6("Datos a diciembre de 2022"), 
+                                     absolutePanel(id="controls", 
+                                       class = "panel panel-default", fixed = TRUE,
+                                       draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                       width = 400, height = "auto",
+                                       h2("Sección de filtros"), 
+                                       dateRangeInput(
+                                         "aborto_date", 
+                                         "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
+                                         min = floor_date(min(aborto$fecha), "month"), 
+                                         end =ceiling_date(max(aborto$fecha), "month")-1, 
+                                         max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
+                                         separator = "-"
+                                       ),
+                                       selectInput(
+                                         inputId = "aborto_indigena",
+                                         label = "Hablante lengua indigena",
+                                         choices = sort(unique(aborto$indigena)),
+                                         # selected = "",
+                                         multiple = T
+                                       ),
+                                       selectInput(
+                                         inputId = "aborto_edad",
+                                         label = "Rango de edad",
+                                         choices = sort(unique(aborto$rango_edad)),
+                                         # selected = "",
+                                         multiple = T
+                                       ),
+                                       selectInput(
+                                         inputId = "aborto_causal",
+                                         label = "Causal",
+                                         choices = sort(unique(aborto$causal)),
+                                         # selected = "",
+                                         multiple = T
+                                       ),
+                                       selectInput(
+                                         inputId = "aborto_violencia",
+                                         label = "Detención de violencia",
+                                         choices = sort(unique(aborto$violencia)),
+                                         # selected = "",
+                                         multiple = T
+                                       ),
                                      )
+                                       # )  
+                                       
+                                       
+                                     # )
                                    ), 
                                    shiny::tabPanel(
                                      title = "Lesiones"
