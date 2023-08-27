@@ -397,10 +397,18 @@ pivot_longer(cols = ene:dic,
   filter(Periodo <= "2022-12-01") #actualizar cada mes
 
 
+lesiones <- readxl::read_excel("Lesiones enero a noviembre 2022 folio 000561.xlsx") %>% 
+  clean_names()
 
+lesiones <- lesiones %>% 
+  mutate(fecha_atencion=as_date(fecha_atencion), 
+         afiliacion_des=case_when(
+           afiliacion_des=="SE IGNORA" ~ "NO ESPECIFICADO", 
+           T ~ afiliacion_des
+         ))
 
-
-
+shp_nay <- read_rds("shp_nay.rds") %>% 
+  mutate(id_municipio=as.integer(CVE_MUN))
 
 ui <- shinyUI(
   tagList(
@@ -936,7 +944,42 @@ ui <- shinyUI(
                                      # )
                                    ), 
                                    shiny::tabPanel(
-                                     title = "Lesiones"
+                                     title = "Lesiones", 
+                                     
+                                     
+                                     plotlyOutput("gr_lesiones_date"),
+                                     plotlyOutput("gr_lesiones_afiliacion"),
+                                     plotlyOutput("gr_lesiones_municipio"),
+                                     leafletOutput("mapa_municipio"), 
+                                     absolutePanel(
+                                       id="controls", 
+                                       class = "panel panel-default", fixed = TRUE,
+                                       draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                       width = 400, height = "auto",
+                                       h2("Sección de filtros"), 
+                                       dateRangeInput(
+                                         "lesiones_date", 
+                                         "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                         min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                         end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                         max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                         separator = "-"
+                                       ),
+                                       selectInput(
+                                         inputId = "lesiones_sexo",
+                                         label = "Sexo",
+                                         choices = sort(unique(lesiones$sexo)),
+                                         # selected = "",
+                                         multiple = T
+                                       ),
+                                       selectInput(
+                                         inputId = "lesiones_afiliacion",
+                                         label = "Afiliación",
+                                         choices = sort(unique(lesiones$afiliacion_des)),
+                                         # selected = "",
+                                         multiple = T
+                                       )
+                                     )
                                    )
                                    
                                    )
@@ -1708,6 +1751,15 @@ fiscalia_data() %>%
 
       )
   })
+  
+  data_lesiones <- reactive({
+    lesiones %>% 
+      filter(fecha_atencion>=min(input$lesiones_date), fecha_atencion<=max(input$lesiones_date), 
+             if(is.null(input$lesiones_sexo)) sexo!="" else sexo %in% input$lesiones_sexo,
+             if(is.null(input$lesiones_afiliacion)) afiliacion_des!="" else afiliacion_des %in% input$lesiones_afiliacion
+             
+      )
+  })
     
     output$gr_aborto_date <- renderPlotly({
       plot <- data_aborto() %>% 
@@ -1884,6 +1936,109 @@ fiscalia_data() %>%
                #margin = list(b=0,t=30),
                title = paste0("Escolaridad")
         )
+    })
+    
+    output$gr_lesiones_date <- renderPlotly({
+      plot <- data_lesiones() %>% 
+        group_by(Mes=floor_date(fecha_atencion, "month")) %>% 
+        summarise(Total=n()) %>% ungroup() %>% 
+        complete(Mes=seq.Date(as_date(min(input$lesiones_date)),
+                              as_date(max(input$lesiones_date)), "month"), 
+                 fill=list(Total=0)) %>% 
+        ggplot(aes(Mes, Total)) +
+        geom_point(size=2, color="#764a88") + 
+        geom_line(linewidth=1.2, color="#764a88") + theme_light() +
+        scale_x_date(date_breaks = "1 month", 
+                     date_labels = "%b-%y") +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))
+      
+      ggplotly(plot#, tooltip="text"
+      ) %>%
+        layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
+               margin = list(b=0,t=30),
+               title = paste0("Total lesiones")
+        )
+    })
+    
+    output$gr_lesiones_afiliacion <- renderPlotly({
+      plot <- data_lesiones() %>%
+        group_by(afiliacion_des=str_wrap(afiliacion_des, 22)) %>%
+        summarise(Total=n()) %>%
+        mutate(text=paste0("Afiliación: ", afiliacion_des, "\n",
+                           "Total: ", comma(Total))) %>%
+        ggplot(aes(reorder(afiliacion_des, -Total), Total, fill=afiliacion_des, text=text)) +
+        geom_col() + theme_light() +
+        scale_fill_manual(values = mycolors_miau) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="")
+      
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Afiliación")
+        )
+    })
+    
+    output$gr_lesiones_municipio <- renderPlotly({
+      plot <- data_lesiones() %>% 
+        group_by(id_municipio) %>% summarise(Total=n()) %>% 
+        left_join(shp_nay) %>% ungroup() %>% 
+        group_by(NOM_MUN=str_wrap(str_to_title(NOM_MUN), 15)) %>%
+        summarise(Total=sum(Total)) %>%
+        mutate(text=paste0("Municipio: ", NOM_MUN, "\n",
+                           "Total: ", comma(Total))) %>%
+        ggplot(aes(reorder(NOM_MUN, -Total), Total, text=text)) +
+        geom_col(fill=mycolors_miau[10]) + theme_light() +
+        scale_fill_manual(values = mycolors_miau) +
+        theme(text=element_text(size=11,  family="Century Gothic"),
+              strip.text.x = element_text(size = 12, face = "bold", angle=90),
+              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+              plot.caption = element_text(size = 12L, hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+        labs(x="", fill="")
+      
+      ggplotly(plot, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Municipio")
+        )
+    })
+    
+    output$mapa_municipio <- renderLeaflet({
+      
+      base <- data_lesiones() %>% 
+        group_by(id_municipio) %>% summarise(Total=n()) %>% 
+        full_join(shp_nay) %>% ungroup() %>% 
+        # group_by(NOM_MUN=str_wrap(str_to_title(NOM_MUN), 15)) %>%
+        # summarise(Total=sum(Total)) %>% 
+        replace_na(list(Total=0))
+      
+      colores <- colorNumeric("viridis", domain = base$Total, na.color = "grey", 
+                             reverse = T)
+      
+      base %>% st_as_sf() %>% leaflet() %>% 
+        addTiles() %>% 
+        addPolygons(opacity = .7, weight = .5, 
+                    color="black", fillOpacity = .7, 
+                    fillColor = ~colores(Total), 
+                     popup = ~paste0(NOM_MUN, ": ", comma(Total))
+                    ) %>% 
+        addLegend(position = "topright", pal = colores, 
+                  values = base$Total, title = "Lesiones por municipio")
+      
     })
     
     # output$test <- renderText({
