@@ -897,7 +897,7 @@ ui <- shinyUI(
                                          h6("Fuente: Secretaría de Salud."),
                                          h6("Datos a diciembre de 2022"), 
                                      absolutePanel(id="controls", 
-                                       class = "panel panel-default", fixed = TRUE,
+                                       class = "panel panel-default", fixed = F,
                                        draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
                                        width = 400, height = "auto",
                                        h2("Sección de filtros"), 
@@ -953,7 +953,7 @@ ui <- shinyUI(
                                      leafletOutput("mapa_municipio"), 
                                      absolutePanel(
                                        id="controls", 
-                                       class = "panel panel-default", fixed = TRUE,
+                                       class = "panel panel-default", fixed = F,
                                        draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
                                        width = 400, height = "auto",
                                        h2("Sección de filtros"), 
