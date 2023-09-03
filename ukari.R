@@ -78,17 +78,19 @@ cebp <- cebp %>%
       estatus=="NO LOCALIZADO" ~"No localizada"),
 
     edad=case_when(
-      edad == 0 ~ "Menores de 1 año",
-      edad >= 1 & edad <= 2 ~"1 a 2 años",
-      edad >= 3 & edad <= 5 ~"3 a 5 años",
-      edad >= 6 & edad <= 12 ~"6 a 12 años",
+      # edad == 0 ~ "Menores de 1 año",
+      # edad >= 1 & edad <= 2 ~"1 a 2 años",
+      # edad >= 3 & edad <= 5 ~"3 a 5 años",
+      #edad >= 6 & 
+        edad <= 12 ~"0 a 12 años",
       edad >= 13 & edad <= 17 ~"13 a 17 años",
       edad >= 18 & edad <= 25 ~"18 a 25 años",
       edad >= 26 & edad <= 35 ~"26 a 35 años",
       edad >= 36 & edad <= 45 ~"36 a 45 años",
       edad >= 46 & edad <= 59 ~"46 a 59 años",
       edad >= 60 ~"60 en adelante"),
-    edad=factor(edad, levels=c("Menores de 1 año", "1 a 2 años", "3 a 5 años", "6 a 12 años","13 a 17 años",
+    edad=factor(edad, levels=c(#"Menores de 1 año", "1 a 2 años", "3 a 5 años",
+                               "0 a 12 años","13 a 17 años",
                               "18 a 25 años", "26 a 35 años", "36 a 45 años", "46 a 59 años", "60 en adelante")))
 
 cebp$fecha   <-as.Date(cebp$fecha,format="%Y-%m-%d")
@@ -128,6 +130,11 @@ cebp <- cebp %>%
        T~"Sin especificar"),
     año=factor(
       año,levels=c("2017", "2018", "2019", "2020", "2021", "2022", "Sin especificar")))
+
+# cebp <- cebp %>% 
+#   mutate(edad=case_when(
+#     edad %in% c()
+#   ))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -627,7 +634,7 @@ ui <- shinyUI(
                                         #   fluidRow(
                                             #splitLayout(cellWidths = c("50%", "50%"),
                                                         plotlyOutput("grafico_cebp_5", height = "auto"),
-                                                        plotlyOutput("grafico_cebp_3", height = "650px"),
+                                                        plotlyOutput("grafico_cebp_3", height = "900px"),
                                                         
                                                         h6("Fuente: Datos de la Comisión Estatal de Busqueda de Personas."),
                                                         h6("Datos a octubre de 2022")
@@ -811,151 +818,200 @@ ui <- shinyUI(
                                      )
                             ), 
                  shiny::navbarMenu(title = "Salud", 
+                                   shiny::tabPanel(
+                                     title = "Interrupción legal del embarazo",
+                                     
+                                     valueBox(tags$p(paste0(
+                                       aborto %>% filter(si_se_llevo_a_cabo_el_procedimiento=="SI") %>% 
+                                         nrow() %>%  comma(), " procedimientos"
+                                     ), style = "font-size: 200%; font-weight: bold"), 
+                                     paste0("fueron realizados de ", 
+                                            year(min(aborto$fecha, na.rm = T)), " a ", 
+                                            year(max(aborto$fecha, na.rm = T))
+                                            ),
+                                     icon=icon("chart-area"),color="fuchsia", width = 4),
+                                     
+                                     valueBox(tags$p(paste0(
+                                       aborto %>% tabyl(violencia) %>% mutate(percent=percent(percent)) %>% 
+                                         filter(violencia=="SI") %>% pull(percent), 
+                                       " de los procedimientos"
+                                         
+                                     ),
+                                                     
+                                                     style = "font-size: 200%; font-weight: bold"), 
+                                     "fue detectada alguna violencia", icon=icon("equals"), color="purple", width = 4),
+                                     valueBox(tags$p(paste0(
+                                       aborto %>% tabyl(si_va_sola_o_acompanada) %>% 
+                                         filter(si_va_sola_o_acompanada=="Sola") %>% 
+                                         mutate(percent=percent(percent)) %>% 
+                                         pull(percent), " de las mujeres"
+                                     ),
+                                                     style = "font-size: 200%; font-weight: bold"), 
+                                     "fueron solas a realizarse el procedimiento", icon=icon("wave-square"), color="maroon", width = 4),
+
+                                     sidebarLayout(
+                                       sidebarPanel(
+                                         dateRangeInput(
+                                           "aborto_date",
+                                           "Rango de fecha", start = floor_date(min(aborto$fecha), "month"),
+                                           min = floor_date(min(aborto$fecha), "month"),
+                                           end =ceiling_date(max(aborto$fecha), "month")-1,
+                                           max = ceiling_date(max(aborto$fecha), "month")-1, language = "es",
+                                           separator = "-"
+                                         ),
+                                         selectInput(
+                                           inputId = "aborto_indigena",
+                                           label = "Hablante lengua indigena",
+                                           choices = sort(unique(aborto$indigena)),
+                                           # selected = "",
+                                           multiple = T
+                                         ),
+                                         selectInput(
+                                           inputId = "aborto_edad",
+                                           label = "Rango de edad",
+                                           choices = sort(unique(aborto$rango_edad)),
+                                           # selected = "",
+                                           multiple = T
+                                         ),
+                                         selectInput(
+                                           inputId = "aborto_causal",
+                                           label = "Causal",
+                                           choices = sort(unique(aborto$causal)),
+                                           # selected = "",
+                                           multiple = T
+                                         ),
+                                         selectInput(
+                                           inputId = "aborto_violencia",
+                                           label = "Detención de violencia",
+                                           choices = sort(unique(aborto$violencia)),
+                                           # selected = "",
+                                           multiple = T
+                                         ),
+                                       ),
+                                       shiny::mainPanel(#uiOutput("test"),
+                                         plotlyOutput("gr_aborto_date"), br(), br(),
+                                         fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
+                                                  column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
+                                                         ), br(), br(),
+                                         fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
+                                                                                 )),
+                                                  column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
+                                                                                ))
+                                         ), br(), br(),
+                                         plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"), br(), br(),
+                                         plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"), br(), br(),
+
+
+                                         h6("Fuente: Secretaría de Salud."),
+                                         h6("Datos a diciembre de 2022")
+                                       )
+
+
+                                     )
+                                   ),
                                    # shiny::tabPanel(
                                    #   title = "Interrupción legal del embarazo", 
                                    #   
-                                   #   sidebarLayout(
-                                   #     sidebarPanel(
-                                   #       dateRangeInput(
-                                   #         "aborto_date", 
-                                   #         "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
-                                   #         min = floor_date(min(aborto$fecha), "month"), 
-                                   #         end =ceiling_date(max(aborto$fecha), "month")-1, 
-                                   #         max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
-                                   #         separator = "-"
-                                   #       ),
-                                   #       selectInput(
-                                   #         inputId = "aborto_indigena",
-                                   #         label = "Hablante lengua indigena",
-                                   #         choices = sort(unique(aborto$indigena)),
-                                   #         # selected = "",
-                                   #         multiple = T
-                                   #       ),
-                                   #       selectInput(
-                                   #         inputId = "aborto_edad",
-                                   #         label = "Rango de edad",
-                                   #         choices = sort(unique(aborto$rango_edad)),
-                                   #         # selected = "",
-                                   #         multiple = T
-                                   #       ),
-                                   #       selectInput(
-                                   #         inputId = "aborto_causal",
-                                   #         label = "Causal",
-                                   #         choices = sort(unique(aborto$causal)),
-                                   #         # selected = "",
-                                   #         multiple = T
-                                   #       ),
-                                   #       selectInput(
-                                   #         inputId = "aborto_violencia",
-                                   #         label = "Detención de violencia",
-                                   #         choices = sort(unique(aborto$violencia)),
-                                   #         # selected = "",
-                                   #         multiple = T
-                                   #       ),
-                                   #     ), 
-                                   #     shiny::mainPanel(#uiOutput("test"),
+                                   #   # sidebarLayout(
+                                   #     # sidebarPanel(
+                                   #   
+                                   #     # shiny::mainPanel(#uiOutput("test"),
                                    #       plotlyOutput("gr_aborto_date"),
                                    #       fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
                                    #                column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
-                                   #                       ),
+                                   #       ),
                                    #       fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
-                                   #                                               )),
-                                   #                column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
-                                   #                                              ))
+                                   #       )),
+                                   #       column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
+                                   #       ))
                                    #       ),
                                    #       plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"),
                                    #       plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"),
                                    #       
                                    #       
                                    #       h6("Fuente: Secretaría de Salud."),
-                                   #       h6("Datos a diciembre de 2022")
-                                   #     )
-                                   # 
-                                   #     
+                                   #       h6("Datos a diciembre de 2022"), 
+                                   #   absolutePanel(id="controls", 
+                                   #     class = "panel panel-default", fixed = F,
+                                   #     draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                   #     width = 400, height = "auto",
+                                   #     h2("Sección de filtros"), 
+                                   #     dateRangeInput(
+                                   #       "aborto_date", 
+                                   #       "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
+                                   #       min = floor_date(min(aborto$fecha), "month"), 
+                                   #       end =ceiling_date(max(aborto$fecha), "month")-1, 
+                                   #       max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
+                                   #       separator = "-"
+                                   #     ),
+                                   #     selectInput(
+                                   #       inputId = "aborto_indigena",
+                                   #       label = "Hablante lengua indigena",
+                                   #       choices = sort(unique(aborto$indigena)),
+                                   #       # selected = "",
+                                   #       multiple = T
+                                   #     ),
+                                   #     selectInput(
+                                   #       inputId = "aborto_edad",
+                                   #       label = "Rango de edad",
+                                   #       choices = sort(unique(aborto$rango_edad)),
+                                   #       # selected = "",
+                                   #       multiple = T
+                                   #     ),
+                                   #     selectInput(
+                                   #       inputId = "aborto_causal",
+                                   #       label = "Causal",
+                                   #       choices = sort(unique(aborto$causal)),
+                                   #       # selected = "",
+                                   #       multiple = T
+                                   #     ),
+                                   #     selectInput(
+                                   #       inputId = "aborto_violencia",
+                                   #       label = "Detención de violencia",
+                                   #       choices = sort(unique(aborto$violencia)),
+                                   #       # selected = "",
+                                   #       multiple = T
+                                   #     ),
                                    #   )
+                                   #     # )  
+                                   #     
+                                   #     
+                                   #   # )
                                    # ), 
-                                   shiny::tabPanel(
-                                     title = "Interrupción legal del embarazo", 
-                                     
-                                     # sidebarLayout(
-                                       # sidebarPanel(
-                                     
-                                       # shiny::mainPanel(#uiOutput("test"),
-                                         plotlyOutput("gr_aborto_date"),
-                                         fluidRow(column(width = 6, plotlyOutput("gr_aborto_violencia", width = "100%", height="300px")),
-                                                  column(width = 6,plotlyOutput("gr_aborto_causal", width = "100%", height="300px"))
-                                         ),
-                                         fluidRow(column(width = 8, plotlyOutput("gr_aborto_ocupacion", width = "100%", height="450px"
-                                         )),
-                                         column(width = 4,plotlyOutput("gr_aborto_escolaridad", width = "100%", height="450px"
-                                         ))
-                                         ),
-                                         plotlyOutput("gr_aborto_acompañamiento", width = "100%", height="500px"),
-                                         plotlyOutput("gr_aborto_referencia", width = "100%", height="1000px"),
-                                         
-                                         
-                                         h6("Fuente: Secretaría de Salud."),
-                                         h6("Datos a diciembre de 2022"), 
-                                     absolutePanel(id="controls", 
-                                       class = "panel panel-default", fixed = F,
-                                       draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
-                                       width = 400, height = "auto",
-                                       h2("Sección de filtros"), 
-                                       dateRangeInput(
-                                         "aborto_date", 
-                                         "Rango de fecha", start = floor_date(min(aborto$fecha), "month"), 
-                                         min = floor_date(min(aborto$fecha), "month"), 
-                                         end =ceiling_date(max(aborto$fecha), "month")-1, 
-                                         max = ceiling_date(max(aborto$fecha), "month")-1, language = "es", 
-                                         separator = "-"
-                                       ),
-                                       selectInput(
-                                         inputId = "aborto_indigena",
-                                         label = "Hablante lengua indigena",
-                                         choices = sort(unique(aborto$indigena)),
-                                         # selected = "",
-                                         multiple = T
-                                       ),
-                                       selectInput(
-                                         inputId = "aborto_edad",
-                                         label = "Rango de edad",
-                                         choices = sort(unique(aborto$rango_edad)),
-                                         # selected = "",
-                                         multiple = T
-                                       ),
-                                       selectInput(
-                                         inputId = "aborto_causal",
-                                         label = "Causal",
-                                         choices = sort(unique(aborto$causal)),
-                                         # selected = "",
-                                         multiple = T
-                                       ),
-                                       selectInput(
-                                         inputId = "aborto_violencia",
-                                         label = "Detención de violencia",
-                                         choices = sort(unique(aborto$violencia)),
-                                         # selected = "",
-                                         multiple = T
-                                       ),
-                                     )
-                                       # )  
-                                       
-                                       
-                                     # )
-                                   ), 
                                    shiny::tabPanel(
                                      title = "Lesiones", 
                                      
+                                     valueBox(tags$p(paste0(
+                                       lesiones %>% 
+                                         nrow() %>%  comma(), " lesiones"
+                                     ), style = "font-size: 200%; font-weight: bold"), 
+                                     paste0("atendidas en 2022" 
+                                     ),
+                                     icon=icon("chart-area"),color="fuchsia", width = 4),
                                      
-                                     plotlyOutput("gr_lesiones_date"),
-                                     plotlyOutput("gr_lesiones_afiliacion"),
-                                     plotlyOutput("gr_lesiones_municipio"),
-                                     leafletOutput("mapa_municipio"), 
-                                     absolutePanel(
-                                       id="controls", 
-                                       class = "panel panel-default", fixed = F,
-                                       draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
-                                       width = 400, height = "auto",
+                                     valueBox(tags$p(paste0(
+                                       lesiones %>% mutate(mes=month(fecha_atencion)) %>% 
+                                         tabyl(mes) %>% arrange(desc(n)) %>% head(1) %>% 
+                                         pull(n), 
+                                       " atendidas en julio"
+                                       
+                                     ),
+                                     
+                                     style = "font-size: 200%; font-weight: bold"), 
+                                     "siendo el mes con mayor atención", icon=icon("equals"), color="purple", width = 4),
+                                     valueBox(tags$p(paste0(
+                                       lesiones %>% filter(sexo=="HOMBRE") %>% nrow() %>% 
+                                         comma(), " lesiones a hombres"
+                                     ),
+                                     style = "font-size: 200%; font-weight: bold"), 
+                                     "ha sido el sexo con más lesionados", icon=icon("wave-square"), color="maroon", width = 4),
+                                     
+                                    shiny::sidebarLayout(  
+                                      shiny::sidebarPanel(
+                                       # id="controls", 
+                                       # class = "panel panel-default", fixed = F,
+                                       # draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                       # width = 400, height = "auto",
                                        h2("Sección de filtros"), 
                                        dateRangeInput(
                                          "lesiones_date", 
@@ -979,7 +1035,46 @@ ui <- shinyUI(
                                          # selected = "",
                                          multiple = T
                                        )
+                                     ),
+                                     shiny::mainPanel(
+                                     plotlyOutput("gr_lesiones_date"), br(), br(),
+                                     plotlyOutput("gr_lesiones_afiliacion"), br(), br(),
+                                     plotlyOutput("gr_lesiones_municipio"), br(), br(),
+                                     leafletOutput("mapa_municipio"), br(),  br(),
+                                     h6("Fuente: Secretaría de Salud."),
+                                     h6("Datos a diciembre de 2022")
                                      )
+                                    
+                                     # absolutePanel(
+                                     #   id="controls", 
+                                     #   class = "panel panel-default", fixed = F,
+                                     #   draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                     #   width = 400, height = "auto",
+                                     #   h2("Sección de filtros"), 
+                                     #   dateRangeInput(
+                                     #     "lesiones_date", 
+                                     #     "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                     #     min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                     #     end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                     #     max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                     #     separator = "-"
+                                     #   ),
+                                     #   selectInput(
+                                     #     inputId = "lesiones_sexo",
+                                     #     label = "Sexo",
+                                     #     choices = sort(unique(lesiones$sexo)),
+                                     #     # selected = "",
+                                     #     multiple = T
+                                     #   ),
+                                     #   selectInput(
+                                     #     inputId = "lesiones_afiliacion",
+                                     #     label = "Afiliación",
+                                     #     choices = sort(unique(lesiones$afiliacion_des)),
+                                     #     # selected = "",
+                                     #     multiple = T
+                                     #   )
+                                     # )
+                                   )
                                    )
                                    
                                    )
@@ -1501,7 +1596,7 @@ server <- function(input, output) {
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_fiscalia
 
     ggplotly(gr_fiscalia, tooltip = "text") %>%
-      layout(title = paste0("Total de carpetas por el delito de \n" , fiscalia_data()$municipio[1]),
+      layout(title = paste0("Total de carpetas por tipo de delito\n" , fiscalia_data()$municipio[1]),
              legend = list(orientation = "h", x = 0.1, y = -0.4),
              margin = list(b=0,t=30))
 
@@ -1721,9 +1816,7 @@ fiscalia_data() %>%
       coord_flip()+
       scale_y_continuous(labels = comma_format()) +
       scale_fill_manual(
-        values = c(
-          `Indirecta` = "#A24895",
-          `Directa` = "#F18822"))+
+        values = mycolors[2:3])+
       theme_minimal()+
       theme(text=element_text(size=11,family="Century Gothic"),
             plot.margin = margin(2, 2, 2, 2, "cm"),
@@ -1770,13 +1863,15 @@ fiscalia_data() %>%
                  fill=list(Total=0)) %>% 
         ggplot(aes(Mes, Total)) +
         geom_point(size=2, color="#764a88") + 
+        scale_x_date(date_labels = "%b\n%Y") +
         geom_line(linewidth=1.2, color="#764a88") + theme_light() +
         theme(text=element_text(size=11,  family="Century Gothic"),
               strip.text.x = element_text(size = 12, face = "bold", angle=90),
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none")
       
       ggplotly(plot#, tooltip="text"
                ) %>%
@@ -1800,7 +1895,8 @@ fiscalia_data() %>%
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none") +
         coord_flip()
       
       ggplotly(plot, tooltip="text"
@@ -1825,7 +1921,8 @@ fiscalia_data() %>%
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none") +
         labs(x="", fill="")
       
       ggplotly(plot, tooltip="text"
@@ -1838,7 +1935,7 @@ fiscalia_data() %>%
     
     output$gr_aborto_ocupacion <- renderPlotly({
       plot <- data_aborto() %>% 
-        group_by(ocupacion=str_wrap(ocupacion, 8)) %>% 
+        group_by(ocupacion=str_wrap(ocupacion, 15)) %>% 
         summarise(Total=n()) %>% 
         mutate(text=paste0("Ocupacion: ", ocupacion, "\n", 
                            "Total: ", comma(Total))) %>% 
@@ -1850,7 +1947,8 @@ fiscalia_data() %>%
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none") +
         labs(x="", fill="")
       
       
@@ -1876,7 +1974,8 @@ fiscalia_data() %>%
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none") +
         labs(x="", fill="")
 
       ggplotly(plot, tooltip="text"
@@ -1901,7 +2000,8 @@ fiscalia_data() %>%
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
               plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
               plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11)) +
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+              legend.position = "none") +
         labs(x="", fill="")
       
       ggplotly(plot, tooltip="text"
@@ -1948,8 +2048,8 @@ fiscalia_data() %>%
         ggplot(aes(Mes, Total)) +
         geom_point(size=2, color="#764a88") + 
         geom_line(linewidth=1.2, color="#764a88") + theme_light() +
-        scale_x_date(date_breaks = "1 month", 
-                     date_labels = "%b-%y") +
+        scale_x_date(date_breaks = "3 months", 
+                     date_labels = "%b\n%y") +
         theme(text=element_text(size=11,  family="Century Gothic"),
               strip.text.x = element_text(size = 12, face = "bold", angle=90),
               plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
@@ -1999,7 +2099,7 @@ fiscalia_data() %>%
         mutate(text=paste0("Municipio: ", NOM_MUN, "\n",
                            "Total: ", comma(Total))) %>%
         ggplot(aes(reorder(NOM_MUN, -Total), Total, text=text)) +
-        geom_col(fill=mycolors_miau[10]) + theme_light() +
+        geom_col(fill="#764a88") + theme_light() +
         scale_fill_manual(values = mycolors_miau) +
         theme(text=element_text(size=11,  family="Century Gothic"),
               strip.text.x = element_text(size = 12, face = "bold", angle=90),
