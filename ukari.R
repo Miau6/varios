@@ -193,6 +193,8 @@ fiscalia<-read_excel("datos_ukari.xlsx", sheet = "fiscalia") %>%
                names_to = "municipio",
                 values_to = "total")
 
+fiscalia$Violencia[fiscalia$Violencia=="Violacion"] <- "Violación"
+
 fiscalia %>%
   group_by(año, Violencia) %>%
   summarise(total_violencia=sum(total, na.rm=T)) ->delitos_nacional
@@ -403,7 +405,10 @@ pivot_longer(cols = ene:dic,
                       "\nTotal de carpetas: ", scales::comma(total), sep="")) %>%
   filter(Periodo <= "2022-12-01") #actualizar cada mes
 
-
+no_delito <- municipios %>% group_by(Subtipo.de.delito) %>% 
+  summarise(Total=sum(Total)) %>% filter(Total==0) %>% 
+  pull(Subtipo.de.delito)
+  
 lesiones <- readxl::read_excel("Lesiones enero a noviembre 2022 folio 000561.xlsx") %>% 
   clean_names()
 
@@ -503,7 +508,7 @@ ui <- shinyUI(
   }
     
                         "))),
-      shinythemes::themeSelector(),
+      # shinythemes::themeSelector(),
 
       add_busy_spinner(onstart = F, spin = "fading-circle", color = "#E9860C"),
 
@@ -754,6 +759,8 @@ ui <- shinyUI(
                                                     downloadButton("downloadData_municipal", "\nDescarga (.csv)")
                                        ),
                                        mainPanel(plotlyOutput("grafico_municipal_periodo"),
+                                                 h6(knitr::combine_words(c("Los siguiente delitos cuentan con 0 carpetas de investigación:",
+                                                                           no_delito[1], no_delito[2]), and = ",", sep = " ")),
                                                  h6("Fuente: Datos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública (SESNSP)."),
                                                  h6("Datos a diciembre de 2022"),
                                                  h6("En este apartado sólo se muestran los delitos que se consideran estar relacionados a una razón de género: acoso sexual,
@@ -887,6 +894,7 @@ ui <- shinyUI(
                                            # selected = "",
                                            multiple = T
                                          ),
+                                         downloadButton("downloadData_aborto", "\nDescarga (.xlsx)")
                                        ),
                                        shiny::mainPanel(#uiOutput("test"),
                                          plotlyOutput("gr_aborto_date"), br(), br(),
@@ -1034,7 +1042,8 @@ ui <- shinyUI(
                                          choices = sort(unique(lesiones$afiliacion_des)),
                                          # selected = "",
                                          multiple = T
-                                       )
+                                       ), 
+                                       downloadButton("downloadData_lesiones", "\nDescarga (.xlsx)")
                                      ),
                                      shiny::mainPanel(
                                      plotlyOutput("gr_lesiones_date"), br(), br(),
@@ -1173,7 +1182,7 @@ server <- function(input, output) {
 
   output$downloadData_cebp <- downloadHandler(
     filename = function() {
-      paste(input$dataset, ".xlsx", sep = "")
+      paste("busqueda_personas", ".xlsx", sep = "")
     },
     content = function(file) {
       openxlsx::write.xlsx(cebp_data(), file, row.names = FALSE)
@@ -1359,7 +1368,7 @@ server <- function(input, output) {
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_cebp_3
 
     ggplotly(gr_cebp_3, tooltip = "text") %>%
-      layout(title = paste0("Busqueda de personas por rango de edad" ),
+      layout(title = paste0("Busqueda de personas por rango de edad y estado civil" ),
              #legend = list(orientation = "h", x = 0.1, y = -0.4),
              margin = list(b=0,t=60))
 
@@ -1562,7 +1571,7 @@ server <- function(input, output) {
 
   output$downloadData_fiscalia <- downloadHandler(
     filename = function() {
-      paste(input$dataset, ".xlsx", sep = "")
+      paste("fiscalia_nay", ".xlsx", sep = "")
     },
     content = function(file) {
       openxlsx::write.xlsx(fiscalia_data(), file, row.names = FALSE)
@@ -1587,6 +1596,7 @@ server <- function(input, output) {
       scale_y_continuous(labels = comma_format()) +
       labs(x="", y="", fill="", color="")+
       theme_minimal()+
+      scale_x_continuous(breaks = c(2017, 2019, 2021)) +
       theme(text=element_text(size=11,family="Century Gothic"),
             plot.margin = margin(2, 2, 2, 2, "cm"),
             strip.text.x = element_text(size = 12, face = "bold", angle=90),
@@ -1669,7 +1679,7 @@ fiscalia_data() %>%
 
   output$downloadData_municipal <- downloadHandler(
     filename = function() {
-      paste(input$dataset, ".csv", sep = "")
+      paste("municipios", ".csv", sep = "")
     },
     content = function(file) {
       write.csv(municipios_data(), file, row.names = FALSE)
@@ -1795,11 +1805,22 @@ fiscalia_data() %>%
 
   output$downloadData_ceav <- downloadHandler(
     filename = function() {
-      paste(input$dataset, ".xlsx", sep = "")
+      paste("victimas", ".xlsx", sep = "")
     },
     content = function(file) {
       openxlsx::write.xlsx(ceav_data(), file, row.names = FALSE)
     })
+  
+  
+  output$downloadData_aborto <- downloadHandler(
+    filename = function() {
+      paste("interrupciones", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(data_aborto(), file, row.names = FALSE)
+    })
+  
+  
 
   output$grafico_ceav<- renderPlotly({
 
@@ -1808,10 +1829,13 @@ fiscalia_data() %>%
       group_by(`tipo de victima`) %>%
       filter(!is.na(`tipo de victima`)) %>%
       summarise(total=n()) %>%
+      mutate(porcentaje=percent(total/sum(total))) %>% 
       ggplot(aes(x="", weight=total, fill=`tipo de victima` ,
                  label=total,
                  text = paste("\nTotal de cias: ", total,
-                              "\nConducta: ", `tipo de victima` , sep="")))+
+                              "\nConducta: ", `tipo de victima` ,
+                              "\nPorcentaje: ", porcentaje,
+                              sep="")))+
       geom_bar(position = "fill",  alpha=1)+
       coord_flip()+
       scale_y_continuous(labels = comma_format()) +
@@ -1824,7 +1848,7 @@ fiscalia_data() %>%
             plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
             plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
             plot.caption = element_text(size = 12L, hjust = 0.5),
-            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=11))->gr_ceav
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_ceav
 
     ggplotly(gr_ceav, tooltip = "text") %>%
       layout(title = paste0("Total de atenciones a víctimas \n" ),
@@ -1853,6 +1877,14 @@ fiscalia_data() %>%
              
       )
   })
+  
+  output$downloadData_lesiones <- downloadHandler(
+    filename = function() {
+      paste("lesiones", ".xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(data_lesiones(), file, row.names = FALSE)
+    })
     
     output$gr_aborto_date <- renderPlotly({
       plot <- data_aborto() %>% 
