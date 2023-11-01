@@ -704,6 +704,8 @@ ui <- shinyUI(
                                                                downloadButton("downloadData_fiscalia", "\nDescarga (.xlsx)")
                                                   ),
                                                   mainPanel(plotlyOutput("grafico_fiscalia"),
+                                                            
+                                                            leaflet::leafletOutput("mapa_fiscalia", height = "800px"),
                                                             h6("Fuente: Datos de la Fiscalía del Estado de Nayarit."),
                                                             h6("Datos a octubre de 2022"),
                                                             h6("En este apartado sólo se muestran los delitos que se consideran: feminicidio, hostigamiento y acoso sexual, homicidio
@@ -2223,9 +2225,37 @@ fiscalia_data() %>%
       
     })
     
+    output$mapa_fiscalia <- renderLeaflet({
+      datos <- fiscalia %>%
+        filter(        año>=     min(input$fiscalia_año), año<=max(input$fiscalia_año),
+                       if(!is.null(input$fiscalia_delito))      Violencia %in% input$fiscalia_delito      else Violencia != "") %>% 
+        filter(municipio!="Estado de Nayarit") %>% 
+        group_by(municipio) %>% summarise(Total=sum(total_violencia, na.rm = T)) %>% 
+        mutate(municipio=case_when(
+          municipio=="Amatlán" ~ "Amatlán de Cañas", 
+          municipio=="Ixtlán del Río" ~ "Ixtlán del RÍo", 
+          T ~ municipio
+        )) %>% 
+        left_join(shp_nay, by=c("municipio"="NOM_MUN")) %>% st_as_sf() 
+      
+      paleta <- colorNumeric("viridis", datos$Total)
+      datos %>% 
+        leaflet() %>% addProviderTiles(providers$CartoDB.Positron) %>% 
+        addPolygons(fillColor = ~paleta(Total), color="grey", 
+                    fillOpacity = .7, 
+                    popup = ~paste0(municipio, "</br>",
+                                    "Total: ", comma(Total, 1)
+                                    )
+                    ) %>% 
+        addLegend(position="topright", paleta, values = datos$Total, 
+                  title = "Total de carpetas por municipio")
+      
+    })
+    
     output$test <- renderText({
       paste0("prueba", input$municipal_año)
     })
+    
 
 
     # [1] "#1B9E77" "#5D874E" "#A07125" "#D35F0A"
