@@ -522,9 +522,9 @@ ui <- shinyUI(
                      background = " white"),
                 
                  useShinydashboard(),
-                 shiny::navbarMenu(title = "Busqueda y localización", #icon = icon("dot-circle"),
+                 shiny::navbarMenu(title = "Búsqueda y localización", #icon = icon("dot-circle"),
                             
-                                   shiny::tabPanel(title = "Comisión Estatal de Busqueda de Personas",
+                                   shiny::tabPanel(title = "Comisión Estatal de Búsqueda de Personas",
                                      #tabsetPanel(
                                      #icon = icon("dot-circle"),
                                      # tabPanel(title = "Municipal",
@@ -532,7 +532,7 @@ ui <- shinyUI(
                                        div(class="row d-flex", #Replicar
                                            
                                        
-                                       valueBox(tags$p("565 casos de mujeres", style = "font-size: 200%; font-weight: bold"), "fueron iniciadas su busqueda y localización entre junio del 2015 a septiembre 2022.",icon=icon("chart-area"),color="fuchsia", width = 4),
+                                       valueBox(tags$p("565 casos de mujeres", style = "font-size: 200%; font-weight: bold"), "fueron iniciadas su búsqueda y localización entre junio del 2017 a septiembre 2022.",icon=icon("chart-area"),color="fuchsia", width = 4),
                                        valueBox(tags$p("61% han sido localizadas con vida", style = "font-size: 200%; font-weight: bold"), "siendo el mayor porcentaje, seguido de 26% no localizadas, 10% como desaparecidas y 3% localizadas sin vida.", icon=icon("equals"), color="purple", width = 4),
                                        valueBox(tags$p("Menores de 1 año representa 27.1%", style = "font-size: 200%; font-weight: bold"), "lo cual puede entenderse como que sí son menores de la edad señala o simplemente las edades no fueron especificaddas.", icon=icon("wave-square"), color="maroon", width = 4)),
                                     # tabsetPanel(
@@ -595,7 +595,7 @@ ui <- shinyUI(
                                                        plotlyOutput("grafico_cebp_1"),
                                                        dataTableOutput("table_1"),
                                                  
-                                                 h6("Fuente: Datos de la Comisión Estatal de Busqueda de Personas."),
+                                                 h6("Fuente: Datos de la Comisión Estatal de Búsqueda de Personas."),
                                                  h6("Datos a octubre de 2022"),
                                     
                                     # - - - - - - - - - - - - - - - - - - - - - -
@@ -641,7 +641,7 @@ ui <- shinyUI(
                                                         plotlyOutput("grafico_cebp_5", height = "auto"),
                                                         plotlyOutput("grafico_cebp_3", height = "900px"),
                                                         
-                                                        h6("Fuente: Datos de la Comisión Estatal de Busqueda de Personas."),
+                                                        h6("Fuente: Datos de la Comisión Estatal de Búsqueda de Personas."),
                                                         h6("Datos a octubre de 2022")
                                     
                                     # )
@@ -657,19 +657,30 @@ ui <- shinyUI(
                                                   div(class="row d-flex", #Replicar
                                                       
                                                   valueBox("2022 (ene-dic)", "se registran 4,588 carpetas iniciadas
-                                                por incidencia delicitva por razón de género.",icon=icon("chart-area"),color="fuchsia", width = 4),
+                                                por incidencia delictiva por razón de género.",icon=icon("chart-area"),color="fuchsia", width = 4),
                                                   valueBox("De 2018 a 2019", "se presenta la variación anual más grande del histórico con 88%, al pasar de 972 a 1,828", icon=icon("equals"), color="purple", width = 4),
                                                   valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 83%,
-                                                seguido de violación con (15%) y abuso sexual con 1%.", icon=icon("wave-square"), color="maroon", width = 4)),
+                                                seguido de violación con (15%) y acoso sexual con 1%.", icon=icon("wave-square"), color="maroon", width = 4)),
 
                                                 sidebarLayout(
                                                   sidebarPanel("\nSeleccione algunas características",
-                                                               selectInput(
-                                                                 inputId = "fiscalia_año",
-                                                                 label = "Año",
-                                                                 choices = sort(unique(fiscalia$año)),
-                                                                 multiple = T
-                                                               ),
+                                                               # selectInput(
+                                                               #   inputId = "fiscalia_año",
+                                                               #   label = "Año",
+                                                               #   choices = sort(unique(fiscalia$año)),
+                                                               #   multiple = T
+                                                               # ),
+                                                               sliderInput("fiscalia_año", 
+                                                                           label = "Rango de años", 
+                                                                           min = min(fiscalia$año, na.rm = T), 
+                                                                           max=max(fiscalia$año, na.rm = T), 
+                                                                           value = c(min(fiscalia$año, na.rm = T), 
+                                                                                     max(fiscalia$año, na.rm = T)
+                                                                                     ), 
+                                                                           sep="",
+                                                                           
+                                                                           
+                                                                           ),
                                                                selectInput(
                                                                  inputId = "fiscalia_delito",
                                                                  label = "Delito",
@@ -714,10 +725,10 @@ ui <- shinyUI(
                                        div(class="row d-flex", #Replicar
                                            
                                        valueBox("2022 (ene-dic)", "se registran 4,588 carpetas iniciadas
-                                                por incidencia delicitva por razón de género.",icon=icon("chart-area"),color="fuchsia", width = 4),
+                                                por incidencia delictiva por razón de género.",icon=icon("chart-area"),color="fuchsia", width = 4),
                                        valueBox("De 2018 a 2019", "se presenta la variación anual más grande del histórico con 88%, al pasar de 972 a 1,828", icon=icon("equals"), color="purple", width = 4),
                                        valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 83%,
-                                                seguido de violación con (15%) y abuso sexual con 1%.", icon=icon("wave-square"), color="maroon", width = 4)
+                                                seguido de violación con (15%) y acoso sexual con 1%.", icon=icon("wave-square"), color="maroon", width = 4)
                                      )
                                      ,
 
@@ -779,11 +790,10 @@ ui <- shinyUI(
                                      #box(width=12,
                                          div(class="row d-flex", #Replicar
                                              
-                                     valueBox("2022 (ene-dic)", "se registran 4,588 carpetas iniciadas
-                                                por incidencia delicitva por razón de género.",icon=icon("chart-area"),color="fuchsia", width = 4),
-                                     valueBox("De 2018 a 2019", "se presenta la variación anual más grande del histórico con 88%, al pasar de 972 a 1,828", icon=icon("equals"), color="purple", width = 4),
-                                     valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 83%,
-                                                seguido de violación con (15%) y abuso sexual con 1%.", icon=icon("wave-square"), color="maroon", width = 4)),
+                                     valueBox(tags$p("2022 (ene-oct)", style = "font-size: 200%; font-weight: bold"), "se registran 457
+                                                atenciones a víctimas",icon=icon("chart-area"),color="fuchsia", width = 4),
+                                     valueBox(tags$p("445 personas", style = "font-size: 200%; font-weight: bold"), "con residencia en el estado de Nayarit", icon=icon("equals"), color="purple", width = 4),
+                                     valueBox(tags$p("12 personas", style = "font-size: 200%; font-weight: bold"), "con residencia en otro estado o sin especificar", icon=icon("wave-square"), color="maroon", width = 4)),
 
                                                 sidebarLayout(
                                                   sidebarPanel("\nSeleccione algunas características",
@@ -811,7 +821,7 @@ ui <- shinyUI(
                                                   ),
 
                                                   mainPanel(plotlyOutput("grafico_ceav"),
-                                                            h6("Fuente: Datos de la Comisión Estatal de Busqueda de Personas."),
+                                                            h6("Fuente: Comisión Ejecutiva de Atención a Victimas del Estado de Nayarit"),
                                                             h6("Datos a octubre de 2022")#,
                                                             # plotlyOutput("mapa_ceav"),
                                                             # h6("Fuente: Datos de la Comisión Estatal de Busqueda de Personas."),
@@ -1087,6 +1097,7 @@ ui <- shinyUI(
                                    )
                                    
                                    )
+      
     ))))
 
 
@@ -1216,7 +1227,7 @@ server <- function(input, output) {
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_cebp_1
 
     ggplotly(gr_cebp_1, tooltip = "text") %>%
-      layout(title = paste0("Total de investigaciones iniciadas \n por busqueda de mujeres \n" ),
+      layout(title = paste0("Total de investigaciones iniciadas \n por búsqueda de mujeres \n" ),
              legend = list(orientation = "h", x = 0.1, y = -0.4),
              margin = list(b=0,t=50))
 
@@ -1368,7 +1379,7 @@ server <- function(input, output) {
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_cebp_3
 
     ggplotly(gr_cebp_3, tooltip = "text") %>%
-      layout(title = paste0("Busqueda de personas por rango de edad y estado civil" ),
+      layout(title = paste0("Búsqueda de personas por rango de edad y estado civil" ),
              #legend = list(orientation = "h", x = 0.1, y = -0.4),
              margin = list(b=0,t=60))
 
@@ -1469,7 +1480,7 @@ server <- function(input, output) {
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_cebp_4
 
     ggplotly(gr_cebp_4, tooltip = "text") %>%
-      layout(title = paste0("Busqueda de personas por estado civil \n" ),
+      layout(title = paste0("Búsqueda de personas por estado civil \n" ),
              #legend = list(orientation = "v", x = 0.1, y = -0.4),
              margin = list(b=0,t=150))
 
@@ -1483,6 +1494,12 @@ server <- function(input, output) {
 
 
   output$grafico_cebp_5<- renderPlotly({
+    
+    scala_color <- c("Desaparecida"="#4b9b7c", 
+                     "Localizada con vida"="#cb6626",
+                     "Localizada sin vida"="#7571ae", 
+                     "No localizada"="#d43e88"
+                     )
 
     cebp_data() %>%
     # cebp %>%
@@ -1490,24 +1507,29 @@ server <- function(input, output) {
       group_by(año, estatus) %>%
       summarise(total=n()
                 #Porcentaje= `Total de cias`/total_det
-      ) %>%
-      ggplot(aes(x=año, weight=total, fill=estatus ,
+      ) %>% ungroup() %>% group_by(año) %>% 
+      mutate(porcentaje=percent(total/sum(total), .1)) %>% 
+      ggplot(aes(x=año, y=total, fill=estatus ,
                  label=total,
                  text = paste("Año", año,
                               "\nTotal: ", total,
-                              "\nEstatus: ", estatus , sep="")))+
-      geom_bar(position = "fill",  alpha=1)+
+                              "\nPorcentaje: ", porcentaje,
+                              "\nEstatus: ", estatus ,
+                              
+                              sep="")))+
+      geom_col(position = "fill",  alpha=1
+               )+
       geom_text(aes(y=total, group=estatus), colour="white",
                  position = position_fill(vjust = 0.5), size = 3)+
       # scale_fill_viridis_d(option = "D", alpha = .8)+
       # scale_color_viridis_d(option = "D") +
-      scale_color_brewer(palette = "Dark2")+
-      scale_fill_brewer(palette = "Dark2")+
+      # scale_color_brewer(palette = "Dark2")+
+      # scale_fill_brewer(palette = "Dark2")+
       coord_flip()+
       scale_y_continuous(labels = percent_format()) +
       labs(x="", y="", fill="", color="")+
 
-      theme_minimal()+
+      theme_minimal()+ scale_fill_manual(values = scala_color) +
       theme(
             text=element_text(size=11,family="Century Gothic"),
             plot.margin = margin(2, 2, 2, 2, "cm"),
@@ -1516,11 +1538,14 @@ server <- function(input, output) {
             plot.title = element_text(size = 6L, hjust = 0.5, family="Century Gothic"),
             plot.caption = element_text(size = 12L, hjust = 0.5),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11))->gr_cebp_5
+    
+    # browser()
 
     ggplotly(gr_cebp_5, tooltip = "text") %>%
-      layout(title = paste0("Busqueda de personas por estatus de su busqueda" ),
+      layout(title = paste0("Búsqueda de personas por estatus de su búsqueda" ),
              legend = list(orientation = "h", x = 0.1, y = -0.4),
-             margin = list(b=0,t=50))
+             margin = list(b=0,t=50)
+             )
 
 
   })
@@ -1562,8 +1587,9 @@ server <- function(input, output) {
   fiscalia_data <- reactive({
 
     fiscalia %>%
-      filter(if(!is.null(input$fiscalia_año))               año %in% input$municipal_año        else año != "",
-             if(!is.null(input$fiscalia_delito))      Violencia %in% input$fiscalia_delito      else Violencia != "",
+      filter(#if(!is.null(input$fiscalia_año))               año %in% as.integer(input$municipal_año)        else año != "",
+        año>=     min(input$fiscalia_año), año<=max(input$fiscalia_año),
+        if(!is.null(input$fiscalia_delito))      Violencia %in% input$fiscalia_delito      else Violencia != "",
              if(!is.null(input$fiscalia_municipio))  municipio %in% input$fiscalia_municipio   else municipio != "")
 
   })
@@ -1830,13 +1856,14 @@ fiscalia_data() %>%
       filter(!is.na(`tipo de victima`)) %>%
       summarise(total=n()) %>%
       mutate(porcentaje=percent(total/sum(total))) %>% 
-      ggplot(aes(x="", weight=total, fill=`tipo de victima` ,
+      ggplot(aes(x="", y=total, fill=`tipo de victima` ,
                  label=total,
-                 text = paste("\nTotal de cias: ", total,
+                 text = paste("\nTotal: ", total,
                               "\nConducta: ", `tipo de victima` ,
                               "\nPorcentaje: ", porcentaje,
                               sep="")))+
-      geom_bar(position = "fill",  alpha=1)+
+      geom_col(#position = "fill",  alpha=1
+               )+ labs(x="", y="") +
       coord_flip()+
       scale_y_continuous(labels = comma_format()) +
       scale_fill_manual(
@@ -1914,29 +1941,52 @@ fiscalia_data() %>%
     })
     
     output$gr_aborto_violencia<- renderPlotly({
-      plot <- data_aborto() %>% 
-        group_by(violencia) %>% 
-        summarise(Total=n()) %>% 
-        mutate(text=paste0("Violencia: ", violencia, "\n", 
-                           "Total: ", comma(Total))) %>% 
-        ggplot(aes("", Total, fill=violencia, text=text)) +
-        geom_col() + theme_light() +
-        scale_fill_manual(values = mycolors[2:3]) +
-        theme(text=element_text(size=11,  family="Century Gothic"),
-              strip.text.x = element_text(size = 12, face = "bold", angle=90),
-              plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
-              plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
-              plot.caption = element_text(size = 12L, hjust = 0.5),
-              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
-              legend.position = "none") +
-        coord_flip()
       
-      ggplotly(plot, tooltip="text"
-      ) %>%
-        layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
-               margin = list(b=0,t=30),
-               title = paste0("Detección de violencia")
-        )
+      if(nrow(data_aborto())>0){
+        plot <- data_aborto() %>% 
+          group_by(violencia) %>% 
+          summarise(Total=n()) %>% 
+          mutate(text=paste0("Violencia: ", violencia, "\n", 
+                             "Total: ", comma(Total))) %>% 
+          ggplot(aes("", Total, fill=violencia, text=text)) +
+          geom_col() + theme_light() + 
+          labs(x="Violencia", y="Total") +
+          scale_fill_manual(values = mycolors[2:3]) +
+          theme(text=element_text(size=11,  family="Century Gothic"),
+                strip.text.x = element_text(size = 12, face = "bold", angle=90),
+                plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+                plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+                plot.caption = element_text(size = 12L, hjust = 0.5),
+                axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+                legend.position = "none") +
+          coord_flip()
+        
+        ggplotly(plot, tooltip="text"
+        ) %>%
+          layout(legend = list(orientation = "h", x = 0.1, y = -0.8),
+                 margin = list(b=0,t=30),
+                 title = paste0("Detección de violencia")
+          )
+      } else{
+        plot <- data_aborto() %>% 
+          ggplot() +
+          annotate(geom = "text", x=0, y=0,
+                   label="No existe información para\n los filtros seleccionados", 
+                   size=6, color="black"
+                   ) + theme_light()+
+          theme(text=element_text(size=11,  family="Century Gothic"),
+                strip.text.x = element_text(size = 12, face = "bold", angle=90),
+                plot.tag = element_text(size = 15L, hjust = 0, family="Century Gothic"),
+                plot.title = element_text(size = 8L, hjust = 0.5, family="Century Gothic"),
+                plot.caption = element_text(size = 12L, hjust = 0.5),
+                axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=11), 
+                legend.position = "none") +
+          labs(x="", y="")
+        
+        ggplotly(plot)
+          
+      }
+     
     })
     
     output$gr_aborto_causal<- renderPlotly({
@@ -2173,9 +2223,9 @@ fiscalia_data() %>%
       
     })
     
-    # output$test <- renderText({
-    #   paste0("prueba", nrow(data_aborto()))
-    # })
+    output$test <- renderText({
+      paste0("prueba", input$municipal_año)
+    })
 
 
     # [1] "#1B9E77" "#5D874E" "#A07125" "#D35F0A"
