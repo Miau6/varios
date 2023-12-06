@@ -20,6 +20,57 @@ library(leaflet)
 library(sf)
 library(scales)
 
+library(shiny)
+library(tidyverse)
+library(lubridate) 
+library(janitor)
+library(stringr)
+library(plotly)
+library(fuzzyjoin)
+library(zoo)
+library(shinyWidgets)
+library(scales)
+library(shinydashboard)
+library(extrafont)
+library(sysfonts)
+library(DT)
+library(leaflet)
+library(sf)
+library(googledrive)
+library(googlesheets4)
+library(shiny)
+library(readxl)
+library(readr)
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(tidyverse)
+library(DT)
+library(plotly)
+library(lubridate)
+library(RColorBrewer) 
+library(janitor)
+library(mxmaps)
+library(stringr)
+library(wordcloud2)
+library(RColorBrewer)
+library(shinydashboard)
+library(wordcloud)
+library(shinydashboard)
+library(shiny)
+library(plotly)
+library(dashboardthemes)
+library(shinythemes)
+library(shinybusy)
+library(extrafont)
+library(showtext)
+library(jsonlite)
+library(data.table)
+library(shinyjs)
+library(leaflet)
+library(mxmaps)
+library(shinyWidgets)
+
 # Idioma #
 Sys.setlocale(locale="es_ES.UTF-8")
 
@@ -52,7 +103,7 @@ base_ordenes <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 3
 
 ### iv) Base de servicios
 base_servicios <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 4.csv",
-                                  encoding = "UTF-8")
+                                    encoding = "UTF-8")
 
 
 ### v) Base de población
@@ -302,15 +353,15 @@ ui <- dashboardPage(
   
   # Título de la aplicación
   header = dashboardHeader(title = "Herramienta de análisis - BANAVIM",
-                           titleWidth = 350,
-                           
-                           # Logo parte superior derecha
-                           tags$li(class = "dropdown",
-                                   tags$style(".main-header {height: 50px}"),
-                                   a(img(src = 'logo-SISEHM.png',
-                                         title = "logo", height = "40px"),
-                                     style = "padding-top:10px; padding-bottom:10px;"),
-                                   class = "dropdown")),
+                           titleWidth = 330),
+  
+  # # Logo parte superior derecha
+  # tags$li(class = "dropdown",
+  #         tags$style(".main-header {height: 50px}"),
+  #         a(img(src = 'logo-SISEHM.png',
+  #               title = "logo", height = "40px"),
+  #           style = "padding-top:10px; padding-bottom:10px;"),
+  #         class = "dropdown")),
   
   
   # Layout de barra lateral
@@ -323,11 +374,138 @@ ui <- dashboardPage(
       menuItem("Evolución en el tiempo", tabName = "evolucion"),
       menuItem("Características de los casos", tabName = "variables"),
       menuItem("Características de las personas agresoras", tabName = "agresoras"),
-      menuItem("Interacción de variables", tabName = "interaccion"),
+      # menuItem("Interacción de variables", tabName = "interaccion"),
       menuItem("Órdenes de protección", tabName = "ordenes"),
       menuItem("Servicios otorgados", tabName = "servicios"))),
   
   body = dashboardBody(
+    includeCSS("www/style.css"),
+    
+    tags$head(
+      tags$style(HTML("
+        
+        
+      .p-0 {
+       padding: 0px!important;
+      }
+      .small-box h3 {
+    font-size: 38px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    white-space: normal!important;
+    padding: 0;
+    }
+    @media (min-width: 768px) {
+  .d-flex {
+    display: flex;
+  }
+    }
+    .small-box{
+    border-radius: 2px;
+    position: relative;
+    display: block;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgb(0 0 0 / 10%);
+    height: calc(100% - 20px);
+    }
+    # .html-widget{min-width: 300px;
+    # }
+    .mb-2{ 
+    margin-bottom:20px;
+    }
+    .p-2{ 
+    padding: 20px;     
+    }x|
+    #table_muertes{overflow: scroll; 
+    }   
+    
+  .small-box.bg-olive{
+   background-color: #b06497 !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+
+   }
+   .small-box.bg-fuchsia{
+   background-color: #B14C71 !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+
+   }
+
+   .small-box.bg-maroon{
+     background-color: #8F5199 !important; 
+   color: white !important;       
+   font-family: Nutmeg-Light !important;
+
+   }
+   .small-box.bg-yellow{
+   background-color: #7e5691 !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+   }
+   
+      .small-box.bg-red{
+   background-color: #854858 !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+      }
+   
+      .small-box.bg-navy{
+   background-color: #702f2b !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+      }
+   
+      .small-box.bg-aqua {
+   background-color: #488269 !important; 
+   color: white !important; 
+   font-family: Nutmeg-Light !important;
+   }
+   
+    
+                        ")),
+      tags$script(HTML("window.addEventListener('message', event => {
+    // IMPORTANT: check the origin of the data!
+    console.log('recibi un mensaje', event);
+    if (event.origin.includes('https://igualdad.jalisco.gob.mx')) {
+        // The data was sent from your site.
+        // Data sent with postMessage is stored in event.data:
+
+        let height = 0;
+        if (document.body) {
+            if (document.body.scrollHeight) {
+                height= document.body.scrollHeight;
+            }
+        }
+
+        event.source.postMessage(height, event.origin);
+    } 
+
+    return;
+});")),
+      tags$script('
+           var dimension = [0, 0];
+                        $(document).on("shiny:connected", function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        $(window).resize(function(e) {
+                        dimension[0] = window.innerWidth;
+                        dimension[1] = window.innerHeight;
+                        Shiny.onInputChange("dimension", dimension);
+                        });
+                        ')),
+    
+    add_busy_spinner(onstart = F, spin = "fading-circle", color = "#E34F70"),
+    busy_start_up(
+      loader = spin_epic("flower", color = "#7e3794"),
+      text = "Cargando",
+      timeout = 1500,
+      color = "#7e3794",
+      background = " white"),
+    
+    
     tabItems(
       
       ## 2.1.- Información general (UI)----
@@ -336,7 +514,6 @@ ui <- dashboardPage(
               ### a) Título----
               
               fluidRow(align = "center",
-                       h1(""),
                        h1("Casos de Violencia contra las Mujeres", 
                           align = "center"),
                        h1(""),
@@ -352,13 +529,15 @@ ui <- dashboardPage(
               ### c) Filtros de fecha y depdendencia----
               
               fluidRow( 
+                h3("Municipios con mayor incidencia (top 10)", align = "center"),
+                
                 column(width = 4,
                        align = "center",
                        pickerInput(
                          inputId = "depen_check_1",
                          label = "Lista de dependencias",
                          selected = c("Todas las dependencias"),
-                         multiple = T,
+                         multiple = F,
                          width = 190,
                          choices = dependencias_base_casos)),
                 column(width = 4,
@@ -378,7 +557,7 @@ ui <- dashboardPage(
               fluidRow(align = "center",
                        h1(""),
                        h1(""),
-                       h3("Municipios con mayor incidencia (top 10)", align = "center"),
+                       # h3("Municipios con mayor incidencia (top 10)", align = "center"),
                        h1(""),
                        tags$div(
                          style = "width: 100%;",
@@ -448,7 +627,7 @@ ui <- dashboardPage(
                          inputId = "depen_check_2",
                          label = "Lista de dependencias",
                          selected = c("Todas las dependencias"),
-                         multiple = T,
+                         multiple = F,
                          width = 190,
                          choices = dependencias_base_casos)),
                 column(width = 3,
@@ -545,7 +724,7 @@ ui <- dashboardPage(
                        column(width = 4,
                               valueBoxOutput(width = 18, 
                                              "vb_embarazada"))),
-            
+              
               
               
               ### c) Filtros de información y periodo de análisis----
@@ -556,7 +735,7 @@ ui <- dashboardPage(
                          inputId = "depen_check_3",
                          label = "Lista de dependencias",
                          selected = c("Todas las dependencias"),
-                         multiple = T,
+                         multiple = F,
                          width = 190,
                          choices = dependencias_base_casos)),
                 column(width = 3,
@@ -666,7 +845,7 @@ ui <- dashboardPage(
                          inputId = "depen_check_4",
                          label = "Lista de dependencias",
                          selected = c("Todas las dependencias"),
-                         multiple = T,
+                         multiple = F,
                          width = 190,
                          choices = dependencias_base_casos)),
                 column(width = 3,
@@ -695,7 +874,7 @@ ui <- dashboardPage(
               
               fluidRow(align = "center",
                        box(title = h3("Edad", align = "center"),
-                           plotlyOutput("edad_agresor_plot"),
+                           plotlyOutput("edad_agresor_plot"), #cocca
                            h6("Fuente: BANAVIM 2023.", align = "right")),
                        box(title = h3("Escolaridad", align = "center"),
                            plotlyOutput("escolaridad_agresor_plot"),
@@ -726,14 +905,14 @@ ui <- dashboardPage(
                        h1("")),
               
               fluidRow(algin = "center", 
-                  column(width = 2), 
-                  column(width = 4, 
-                     valueBoxOutput(width = 18, 
-                                    "vb_arma_agresor")),
-                  column(width = 4, 
-                         valueBoxOutput(width = 18, 
-                                        "vb_arma_agresor_por")),
-                  column(width = 2)),
+                       column(width = 2), 
+                       column(width = 4, 
+                              valueBoxOutput(width = 18, 
+                                             "vb_arma_agresor")),
+                       column(width = 4, 
+                              valueBoxOutput(width = 18, 
+                                             "vb_arma_agresor_por")),
+                       column(width = 4)),
               
               ### f) Gráficas armas ----
               
@@ -759,101 +938,103 @@ ui <- dashboardPage(
       
       ## 2.5- Interacción de variables (UI)----
       
-      tabItem(tabName = "interaccion",
-              
-              ### a) Títulos----
-              fluidRow(
-                align = "center",
-                h1(""),
-                h1("Interacción de variables"),
-                h1(""),
-                h1("")),
-              
-              ### b) Filtros de información, periodo de análisis----
-              fluidRow(
-                column(width = 4,
-                       align = "center",
-                       dateInput("fecha_hecho_inicio_5",
-                                 "Ingresa la fecha inicial:",
-                                 language = "es", 
-                                 value = "2020-01-01")),
-                
-                column(width = 4,
-                       align = "center",
-                       dateInput("fecha_hecho_final_5",
-                                 "Ingresa la fecha final:",
-                                 language = "es", 
-                                 value = as.Date("2023-09-30"))),
-                
-                column(width = 4,
-                       align = "center",
-                       selectInput("municipio_seleccionado_3", 
-                                   "Ingresa el municipio:", 
-                                   choices = municipios_en_base, 
-                                   selected = "Todos los municipios de Jalisco"))),
-              
-              ### c) Explicación y filtros de variables----
-              
-              fluidRow(h1(""),
-                       h4("Selecciona dos variables para generar una gráfica que muestre el comportamiento de ambas.", 
-                          align = "center"),
-                       h1("")),
-              
-              fluidRow(
-                box(width = 6,
-                    radioButtons("eje_x",
-                                 "Variable en el eje de las X:",
-                                 c("Modalidad" = "modalidad",
-                                   "Estado civil de la víctima" = "estado_civil",
-                                   "Edad de la víctima" = "rango_de_edades",
-                                   "Actividad principal de la víctima" = "actividad",
-                                   "Número de hijos de la víctima" = "numero_de_hijos",
-                                   "Vínculo" = "vinculo",
-                                   "Tipo de violencia" = "tipo",
-                                   "Lugar de los hechos" = "lugar",
-                                   "Escolaridad del agresor" = "escolaridad", 
-                                   "Edad del agresor" = "rango_de_edades_agresor",
-                                   "Género del agresor" = "genero_del_agresor",
-                                   "Uso de sustancias" = "uso_de_sustancias",
-                                   "Actividad principal del agresor" = "actividad_del_agresor",
-                                   "Ingreso principal del agresor" = "ingresos_agresor",
-                                   "Arma blanca" = "indicador_de_arma_blanca", 
-                                   "Arma de fuego" = "indicador_de_arma_fuego",
-                                   "Conocimiento de autoridad" = "conocimiento_de_autoridad"),
-                                 selected = "modalidad")),
-                
-                box(width = 6,
-                    radioButtons("eje_y",
-                                 "Variable en el eje de las Y:",
-                                 c("Modalidad" = "modalidad",
-                                   "Estado civil de la víctima" = "estado_civil",
-                                   "Edad de la víctima" = "rango_de_edades",
-                                   "Actividad principal de la víctima" = "actividad",
-                                   "Número de hijos de la víctima" = "numero_de_hijos",
-                                   "Vínculo" = "vinculo",
-                                   "Tipo de violencia" = "tipo",
-                                   "Lugar de los hechos" = "lugar",
-                                   "Escolaridad del agresor" = "escolaridad", 
-                                   "Edad del agresor" = "rango_de_edades_agresor",
-                                   "Género del agresor" = "genero_del_agresor",
-                                   "Uso de sustancias" = "uso_de_sustancias",
-                                   "Actividad principal del agresor" = "actividad_del_agresor",
-                                   "Ingreso principal del agresor" = "ingresos_agresor",
-                                   "Arma blanca" = "indicador_de_arma_blanca", 
-                                   "Arma de fuego" = "indicador_de_arma_fuego",
-                                   "Conocimiento de autoridad" = "conocimiento_de_autoridad"),
-                                 selected = "rango_de_edades"))),
-              
-              ### d) Plot----
-              
-              fluidRow(
-                
-                column(width = 12,
-                       box( width = 12,
-                            plotlyOutput("plot_interaccion"),
-                            h6("Fuente: BANAVIM 2023.", align = "right"))))),
+      # tabItem(tabName = "interaccion",
+      #         
+      #         ### a) Títulos----
+      #         fluidRow(
+      #           align = "center",
+      #           h1(""),
+      #           h1("Interacción de variables"),
+      #           h1(""),
+      #           h1("")),
+      #         
+      #         ### b) Filtros de información, periodo de análisis----
+      #         fluidRow(
+      #           column(width = 4,
+      #                  align = "center",
+      #                  dateInput("fecha_hecho_inicio_5",
+      #                            "Ingresa la fecha inicial:",
+      #                            language = "es", 
+      #                            value = "2020-01-01")),
+      #           
+      #           column(width = 4,
+      #                  align = "center",
+      #                  dateInput("fecha_hecho_final_5",
+      #                            "Ingresa la fecha final:",
+      #                            language = "es", 
+      #                            value = as.Date("2023-09-30"))),
+      #           
+      #           column(width = 4,
+      #                  align = "center",
+      #                  selectInput("municipio_seleccionado_3", 
+      #                              "Ingresa el municipio:", 
+      #                              choices = municipios_en_base, 
+      #                              selected = "Todos los municipios de Jalisco"))),
+      #         
+      #         ### c) Explicación y filtros de variables----
+      #         
+      #         fluidRow(h1(""),
+      #                  h4("Selecciona dos variables para generar una gráfica que muestre el comportamiento de ambas.", 
+      #                     align = "center"),
+      #                  h1("")),
+      #         
+      #         fluidRow(
+      #           box(width = 6,
+      #               radioButtons("eje_x",
+      #                            "Variable en el eje de las X:",
+      #                            c("Modalidad" = "modalidad",
+      #                              "Estado civil de la víctima" = "estado_civil",
+      #                              "Edad de la víctima" = "rango_de_edades",
+      #                              "Actividad principal de la víctima" = "actividad",
+      #                              "Número de hijos de la víctima" = "numero_de_hijos",
+      #                              "Vínculo" = "vinculo",
+      #                              "Tipo de violencia" = "tipo",
+      #                              "Lugar de los hechos" = "lugar",
+      #                              "Escolaridad del agresor" = "escolaridad", 
+      #                              "Edad del agresor" = "rango_de_edades_agresor",
+      #                              "Género del agresor" = "genero_del_agresor",
+      #                              "Uso de sustancias" = "uso_de_sustancias",
+      #                              "Actividad principal del agresor" = "actividad_del_agresor",
+      #                              "Ingreso principal del agresor" = "ingresos_agresor",
+      #                              "Arma blanca" = "indicador_de_arma_blanca", 
+      #                              "Arma de fuego" = "indicador_de_arma_fuego",
+      #                              "Conocimiento de autoridad" = "conocimiento_de_autoridad"),
+      #                            selected = "modalidad")),
+      #           
+      #           box(width = 6,
+      #               radioButtons("eje_y",
+      #                            "Variable en el eje de las Y:",
+      #                            c("Modalidad" = "modalidad",
+      #                              "Estado civil de la víctima" = "estado_civil",
+      #                              "Edad de la víctima" = "rango_de_edades",
+      #                              "Actividad principal de la víctima" = "actividad",
+      #                              "Número de hijos de la víctima" = "numero_de_hijos",
+      #                              "Vínculo" = "vinculo",
+      #                              "Tipo de violencia" = "tipo",
+      #                              "Lugar de los hechos" = "lugar",
+      #                              "Escolaridad del agresor" = "escolaridad", 
+      #                              "Edad del agresor" = "rango_de_edades_agresor",
+      #                              "Género del agresor" = "genero_del_agresor",
+      #                              "Uso de sustancias" = "uso_de_sustancias",
+      #                              "Actividad principal del agresor" = "actividad_del_agresor",
+      #                              "Ingreso principal del agresor" = "ingresos_agresor",
+      #                              "Arma blanca" = "indicador_de_arma_blanca", 
+      #                              "Arma de fuego" = "indicador_de_arma_fuego",
+      #                              "Conocimiento de autoridad" = "conocimiento_de_autoridad"),
+      #                            selected = "rango_de_edades"))),
+      #         
+      #         ### d) Plot----
+      #         
+      #         fluidRow(
+      #           
+      #           column(width = 12,
+      #                  box( width = 12,
+      #                       plotlyOutput("plot_interaccion"),
+      #                       h6("Fuente: BANAVIM 2023.", align = "right"))))),
       
-      ## 2.6- Órdenes de protección (UI)----
+      
+       
+      # ## 2.6- Órdenes de protección (UI)----
       
       tabItem(tabName = "ordenes",
               
@@ -883,7 +1064,7 @@ ui <- dashboardPage(
                          inputId = "depen_check_5",
                          label = "Lista de dependencias",
                          selected = c("Todas las dependencias"),
-                         multiple = T,
+                         multiple = F,
                          width = 190,
                          choices = dependencias_base_casos)),
                 column(width = 3,
@@ -931,138 +1112,138 @@ ui <- dashboardPage(
       
       ## 2.7- Servicios otorgados (UI)----
       
-    tabItem(tabName = "servicios",
-            
-            ### a) Títulos----
-            
+      tabItem(tabName = "servicios",
+              
+              ### a) Títulos----
+              
               fluidRow(align = "center",
                        h1(""),
                        h1("Servicios otorgados"),
                        h1(""),
                        h1("")),
-            
-            ### b) Cajas de valor ----
-            fluidRow(align = "center",
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_total_servicios")),
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_total_mujeres_servicios")),
-                     
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_tipo_servicio"))),
-            
-            fluidRow(align = "center",
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_edad_servicio")),
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_edociv_servicio")),
-                     
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_dependencia_servicio"))),
-            
-            fluidRow(align = "center",
-                     column(width = 2),
-                     column(width = 4,
-                                   valueBoxOutput(width = 18, 
-                                                  "vb_categoria_servicio")),
-                     
-                     column(width = 4,
-                            valueBoxOutput(width = 18, 
-                                           "vb_estatus_servicio")),
-                     column(width = 2)),
-            
-            ### c) Filtros de información, periodo de análisis----
-            fluidRow(
-              column(width = 3,
-                     align = "center",
-                     pickerInput(
-                       inputId = "depen_check_6",
-                       label = "Lista de dependencias",
-                       selected = c("Todas las dependencias"),
-                       multiple = T,
-                       width = 190,
-                       choices = dependencias_base_servicios)),
-              column(width = 3,
-                     align = "center",
-                     dateInput("fecha_de_captura_inicial",
-                               "Ingresa la fecha de captura inicial:",
-                               language = "es", 
-                               value = "2020-01-01")),
               
-              column(width = 3,
-                     align = "center",
-                     dateInput("fecha_de_captura_final",
-                               "Ingresa la fecha de captura final:",
-                               language = "es", 
-                               value = as.Date("2023-09-30"))),
+              ### b) Cajas de valor ----
+              fluidRow(align = "center",
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_total_servicios")),
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_total_mujeres_servicios")),
+                       
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_tipo_servicio"))),
               
-              column(width = 3,
-                     align = "center",
-                     selectInput("municipio_seleccionado_5", 
-                                 "Ingresa el municipio:", 
-                                 choices = municipios_en_base, 
-                                 selected = "Todos los municipios de Jalisco"))),
-            ### d) Mapa ----
-            
-            fluidRow(column(width = 12,
-                            h1(""),
-                            h3("Mapa", align = "center"),
-                            h1(""),
-                            leafletOutput("mapa_2"))),
-            
-            ### e) Primera gráfica ----
-            
-            fluidRow(
-              column(width = 12,
+              fluidRow(align = "center",
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_edad_servicio")),
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_edociv_servicio")),
+                       
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_dependencia_servicio"))),
+              
+              fluidRow(align = "center",
+                       column(width = 2),
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_categoria_servicio")),
+                       
+                       column(width = 4,
+                              valueBoxOutput(width = 18, 
+                                             "vb_estatus_servicio")),
+                       column(width = 2)),
+              
+              ### c) Filtros de información, periodo de análisis----
+              fluidRow(
+                column(width = 3,
+                       align = "center",
+                       pickerInput(
+                         inputId = "depen_check_6",
+                         label = "Lista de dependencias",
+                         selected = c("Todas las dependencias"),
+                         multiple = F,
+                         width = 190,
+                         choices = dependencias_base_servicios)),
+                column(width = 3,
+                       align = "center",
+                       dateInput("fecha_de_captura_inicial",
+                                 "Ingresa la fecha de captura inicial:",
+                                 language = "es", 
+                                 value = "2020-01-01")),
+                
+                column(width = 3,
+                       align = "center",
+                       dateInput("fecha_de_captura_final",
+                                 "Ingresa la fecha de captura final:",
+                                 language = "es", 
+                                 value = as.Date("2023-09-30"))),
+                
+                column(width = 3,
+                       align = "center",
+                       selectInput("municipio_seleccionado_5", 
+                                   "Ingresa el municipio:", 
+                                   choices = municipios_en_base, 
+                                   selected = "Todos los municipios de Jalisco"))),
+              ### d) Mapa ----
+              
+              fluidRow(column(width = 12,
+                              h1(""),
+                              h3("Mapa", align = "center"),
+                              h1(""),
+                              leafletOutput("mapa_2"))),
+              
+              ### e) Primera gráfica ----
+              
+              fluidRow(
+                column(width = 12,
                        box(width = 12,
-                                 h1(""),
-                                 h3("Evolución del número de servicios otorgados",
-                                    align = "center"),
-                                 plotlyOutput("plot_evolucion_servicios"),
-                                 h1(""),
-                                 h6("Fuente: BANAVIM 2023.", 
-                                    align = "right")))),
-            
-            ### f) Segunda y tercera gráfica ----
-            
-           fluidRow(align = "center",
-                     box(title = h3("Tipo de servicio más común", align = "center"),
-                         plotlyOutput("tipo_servicio_plot"),
-                         h6("Fuente: BANAVIM 2023.", align = "right")),
-                     box(title = h3("Edad de mujeres atendidas", align = "center"),
-                         plotlyOutput("servicios_edad_plot"),
-                         h6("Fuente: BANAVIM 2023.", align = "right"))),
-           
-           ### g) Cuarta y quinta gráfica ----
-           
-           fluidRow(align = "center",
-                    box(title = h3("Estado civil", align = "center"),
-                        plotlyOutput("servicios_edocivil_plot"),
-                        h6("Fuente: BANAVIM 2023.", align = "right")),
-                    box(title = h3("Dependencias con más servicios", align = "center"),
-                        plotlyOutput("servicios_dependencia_plot"),
-                        h6("Fuente: BANAVIM 2023.", align = "right"))),
-           
-           ### h) Sexta y séptima gráfica ----
-           
-           fluidRow(align = "center",
-                    # box(title = h3("Top 10 usuarios con más servicios", align = "center"),
-                    #     plotlyOutput("servicios_usuarios_plot"),
-                    #     h6("Fuente: BANAVIM 2023.", align = "right")),
-                    box(title = h3("Categoría con más servicios", align = "center"),
-                        plotlyOutput("servicios_categoria_plot"),
-                        h6("Fuente: BANAVIM 2023.", align = "right")))
-           
-           
-            
-            
-      
+                           h1(""),
+                           h3("Evolución del número de servicios otorgados",
+                              align = "center"),
+                           plotlyOutput("plot_evolucion_servicios"),
+                           h1(""),
+                           h6("Fuente: BANAVIM 2023.", 
+                              align = "right")))),
+              
+              ### f) Segunda y tercera gráfica ----
+              
+              fluidRow(align = "center",
+                       box(title = h3("Tipo de servicio más común", align = "center"),
+                           plotlyOutput("tipo_servicio_plot"),
+                           h6("Fuente: BANAVIM 2023.", align = "right")),
+                       box(title = h3("Edad de mujeres atendidas", align = "center"),
+                           plotlyOutput("servicios_edad_plot"),
+                           h6("Fuente: BANAVIM 2023.", align = "right"))),
+              
+              ### g) Cuarta y quinta gráfica ----
+              
+              fluidRow(align = "center",
+                       box(title = h3("Estado civil", align = "center"),
+                           plotlyOutput("servicios_edocivil_plot"),
+                           h6("Fuente: BANAVIM 2023.", align = "right")),
+                       box(title = h3("Dependencias con más servicios", align = "center"),
+                           plotlyOutput("servicios_dependencia_plot"),
+                           h6("Fuente: BANAVIM 2023.", align = "right"))),
+              
+              ### h) Sexta y séptima gráfica ----
+              
+              fluidRow(align = "center",
+                       # box(title = h3("Top 10 usuarios con más servicios", align = "center"),
+                       #     plotlyOutput("servicios_usuarios_plot"),
+                       #     h6("Fuente: BANAVIM 2023.", align = "right")),
+                       box(title = h3("Categoría con más servicios", align = "center"),
+                           plotlyOutput("servicios_categoria_plot"),
+                           h6("Fuente: BANAVIM 2023.", align = "right")))
+              
+              
+              
+              
+              
       ) # Cerrar Tab Item
       
       
@@ -1164,72 +1345,72 @@ server <- function(input, output) {
         mapa_1p <- base_casos_clean
         
       }
-    
-    mapa_1p <- mapa_1p %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio &
-               fecha_hechos <= input$fecha_hecho_final) %>%
-      group_by(municipio_hecho_clean) %>% 
-      filter(municipio_hecho_clean !=  "") %>% 
-      summarise(cuenta = n()) %>% 
-      stringdist_join(., poblacion, 
-                      by= c("municipio_hecho_clean" = "municipio"),
-                      mode='left',
-                      method = "jw", 
-                      max_dist=.08, 
-                      distance_col='dist') %>% 
-      mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
-      filter(!is.na(municipio)) %>% 
-      select(-dist) %>% 
-      replace(is.na(.), 0) %>% 
-      left_join(., jalisco_shape, by = c("municipio")) %>% 
-      mutate(quantile = ntile(cuenta, 5)) 
-    
-    quantiles <- data.frame(quantile = 1:5,
-                            upr = round(quantile(mapa_1p$cuenta, 
-                                                 probs = seq(.2, 1, by = .2))),
-                            lwr = c(-1, 
-                                    round(quantile(mapa_1p$cuenta, 
-                                                   probs = seq(.2, 1, by = .2))[1:4]))) %>% 
-      mutate(lwr = lwr + 1) %>% 
-      mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
-      mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
-      mutate(rango = paste0(lwr, "-", upr)) %>% 
-      select(quantile, rango) %>% 
-      arrange(-quantile)
-    
-    mapa_1p <- mapa_1p %>% 
-      left_join(., quantiles) %>% 
-      mutate(rango = factor(rango, 
-                            levels = quantiles$rango)) %>% 
-      st_as_sf()
-    
-    pal1 <- colorFactor(palette=c("#BA0000", 
-                                  "#F98D19", 
-                                           "#FAB733",
-                                           "#ACB334",
-                                           "#69B34C"),
-                                           levels=sort(unique(mapa_1p$rango)))
-    
-    labels_map <- sprintf(
-      "<strong>%s</strong><br/>%s",
-      mapa_1p$municipio_hecho_clean, 
-      paste0("Número de casos: ", prettyNum(mapa_1p$cuenta, big.mark = ","))) %>%
-      lapply(htmltools::HTML)
-    
-    leaflet() %>%
-      addProviderTiles(providers$CartoDB.Positron) %>% 
-      addPolygons(data =  mapa_1p,
-                  color = "black",
-                  weight=3,
-                  fillOpacity = 0.8,
-                  fillColor  = ~pal1(rango),
-                  label=~labels_map) %>% 
-      leaflet::addLegend(pal = pal1,
-                values = sort(unique(mapa_1p$rango)),
-                opacity = 0.75,
-                title = "Número de casos",
-                position = "bottomright")
-    
+      
+      mapa_1p <- mapa_1p %>% 
+        filter(fecha_hechos >= input$fecha_hecho_inicio &
+                 fecha_hechos <= input$fecha_hecho_final) %>%
+        group_by(municipio_hecho_clean) %>% 
+        filter(municipio_hecho_clean !=  "") %>% 
+        summarise(cuenta = n()) %>% 
+        stringdist_join(., poblacion, 
+                        by= c("municipio_hecho_clean" = "municipio"),
+                        mode='left',
+                        method = "jw", 
+                        max_dist=.08, 
+                        distance_col='dist') %>% 
+        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        filter(!is.na(municipio)) %>% 
+        select(-dist) %>% 
+        replace(is.na(.), 0) %>% 
+        left_join(., jalisco_shape, by = c("municipio")) %>% 
+        mutate(quantile = ntile(cuenta, 5)) 
+      
+      quantiles <- data.frame(quantile = 1:5,
+                              upr = round(quantile(mapa_1p$cuenta, 
+                                                   probs = seq(.2, 1, by = .2))),
+                              lwr = c(-1, 
+                                      round(quantile(mapa_1p$cuenta, 
+                                                     probs = seq(.2, 1, by = .2))[1:4]))) %>% 
+        mutate(lwr = lwr + 1) %>% 
+        mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
+        mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
+        mutate(rango = paste0(lwr, "-", upr)) %>% 
+        select(quantile, rango) %>% 
+        arrange(-quantile)
+      
+      mapa_1p <- mapa_1p %>% 
+        left_join(., quantiles) %>% 
+        mutate(rango = factor(rango, 
+                              levels = quantiles$rango)) %>% 
+        st_as_sf()
+      
+      pal1 <-  colorFactor(palette=c("#0f0a1f", 
+                                     "#3c3065", 
+                                     "#9784d7",
+                                     "#cbc1eb",
+                                     "#ffffff"),
+                           levels=sort(unique(mapa_1p$rango)))
+      
+      labels_map <- sprintf(
+        "<strong>%s</strong><br/>%s",
+        mapa_1p$municipio_hecho_clean, 
+        paste0("Número de casos: ", prettyNum(mapa_1p$cuenta, big.mark = ","))) %>%
+        lapply(htmltools::HTML)
+      
+      leaflet() %>%
+        addProviderTiles(providers$CartoDB.Positron) %>% 
+        addPolygons(data =  mapa_1p,
+                    color = "black",
+                    weight=1,
+                    fillOpacity = 0.8,
+                    fillColor  = ~pal1(rango),
+                    label=~labels_map) %>% 
+        leaflet::addLegend(pal = pal1,
+                           values = sort(unique(mapa_1p$rango)),
+                           opacity = 0.75,
+                           title = "Número de casos",
+                           position = "bottomright")
+      
     } else {
       
       if(!grepl("Todas las dependencias", input$depen_check_1)){
@@ -1282,12 +1463,12 @@ server <- function(input, output) {
                               levels = quantiles$rango)) %>% 
         st_as_sf()
       
-      pal1 <- colorFactor(palette=c("#BA0000", 
-                                             "#F98D19", 
-                                             "#FAB733",
-                                             "#ACB334",
-                                             "#69B34C"),
-                                             levels=sort(unique(mapa_1p$rango)))
+      pal1 <- colorFactor(palette=c("#0f0a1f", 
+                                    "#3c3065", 
+                                    "#9784d7",
+                                    "#cbc1eb",
+                                    "#ffffff"),
+                          levels=sort(unique(mapa_1p$rango)))
       
       labels_map <- sprintf(
         "<strong>%s</strong><br/>%s",
@@ -1299,15 +1480,15 @@ server <- function(input, output) {
         addProviderTiles(providers$CartoDB.Positron) %>% 
         addPolygons(data =  mapa_1p,
                     color = "black",
-                    weight=3,
+                    weight=1,
                     fillOpacity = 0.8,
                     fillColor  = ~pal1(rango),
                     label=~labels_map) %>% 
         leaflet::addLegend(pal = pal1,
-                  values = sort(unique(mapa_1p$rango)),
-                  opacity = 0.75,
-                  title = "Tasa por 100 mil mujeres",
-                  position = "bottomright")
+                           values = sort(unique(mapa_1p$rango)),
+                           opacity = 0.75,
+                           title = "Tasa por 100 mil mujeres",
+                           position = "bottomright")
       
       
       
@@ -1437,7 +1618,8 @@ server <- function(input, output) {
       
       
       fig <- plot_ly(data = p1 %>% slice_head(n = 10),
-                     x = ~ municipio_hecho_clean, 
+                     x = ~ reorder(
+                       str_wrap(municipio_hecho_clean, width=6), -tasa), 
                      y = ~ tasa,
                      type = "bar",
                      marker = list(color = '#5F5CA8',
@@ -1447,33 +1629,33 @@ server <- function(input, output) {
                      hoverinfo = "text", 
                      textfont = list(color = '#5F5CA8', 
                                      size=0
-                                     )
-                     ) %>% 
+                     )
+      ) %>% 
         # add_trace(textfont = list(color = '#5F5CA8'))
         add_text(text = ~prettyNum(tasa, big.mark = ","),
                  textposition = "top",
                  hoverinfo="none") %>%
         layout(
           title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
-                              "(",
-                              format(input$fecha_hecho_inicio, "%d/%b/%y"),
-                              " al ",
-                              format(input$fecha_hecho_final, "%d/%b/%y"),
-                              ")"),
-               xaxis = list(
-                 title = "Municipio",
-                 zerolinecolor = '#ffff',
-                 zerolinewidth = 2,
-                 gridcolor = '#fff'),
-               yaxis = list(
-                 title = "Tasa",
-                 zerolinecolor = '#ffff',
-                 zerolinewidth = 2,
-                 gridcolor = '#fff'),
-               showlegend = FALSE,
-               layout.separators=",.",
-               hoverlabel=list(bgcolor="white")
-               ) 
+                         "(",
+                         format(input$fecha_hecho_inicio, "%d/%b/%y"),
+                         " al ",
+                         format(input$fecha_hecho_final, "%d/%b/%y"),
+                         ")"),
+          xaxis = list(
+            title = "Municipio",
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = '#fff'),
+          yaxis = list(
+            title = "Tasa",
+            zerolinecolor = '#ffff',
+            zerolinewidth = 2,
+            gridcolor = '#fff'),
+          showlegend = FALSE,
+          layout.separators=",.",
+          hoverlabel=list(bgcolor="white")
+        ) 
       
       fig
       
@@ -1512,7 +1694,7 @@ server <- function(input, output) {
       
       
       fig1_total <- plot_ly(data = p1_total %>% slice_head(n = 10),
-                            x = ~ municipio_hecho_clean, 
+                            x = ~ reorder(str_wrap(municipio_hecho_clean, width=6), -cuenta),
                             y = ~ cuenta,
                             type = "bar",
                             marker = list(color = '#5F5CA8',
@@ -1613,9 +1795,9 @@ server <- function(input, output) {
                      "Tasa de casos x 100 mil mujeres")
       
       DT::datatable(t1,
-                    options = list(scrollY = "500px",
-                      "pageLength" = 500
-                      ))
+                    options = list(scrollY = "300px",
+                                   "pageLength" = 10
+                    ))
       
     } else { # Analizar casos totales
       
@@ -1656,10 +1838,10 @@ server <- function(input, output) {
                            "Número de casos en el periodo")
       
       DT::datatable(t1_total,
-                    options = list(scrollY = "500px",
-                      "pageLength" = 500
-                      )
+                    options = list(scrollY = "300px",
+                                   "pageLength" = 10
                     )
+      )
       
       
     }
@@ -1888,7 +2070,7 @@ server <- function(input, output) {
                tags$p("Municipio con mayor aumento (total)", style = "font-size: 100%;"), 
                icon = icon("arrow-up"),
                width = 15, 
-               color = "maroon")
+               color = "purple")
       
     })
     
@@ -1988,7 +2170,7 @@ server <- function(input, output) {
                tags$p("Municipio con mayor disminución (total)", style = "font-size: 91%;"), 
                icon = icon("arrow-down"),
                width = 15, 
-               color = "olive")
+               color = "red") #cocca
       
     })
     
@@ -2038,13 +2220,13 @@ server <- function(input, output) {
                tags$p("Municipio con mayor disminución (%)", style = "font-size: 95%;"), 
                icon = icon("percent"),
                width = 15, 
-               color = "olive")
+               color = "yellow")
       
     })
     
     if(input$tempo_analisis == "Últimos 14 días" ){ 
       
-      t2 <- p2_sem %>% 
+      t2 <- p2_sem %>% relocate(ultima_semana, .before = semana_anterior) %>% 
         mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         mutate(cambio_semana_por = scales::percent(cambio_semana_por, accuracy = 0.1)) %>% 
         select(-frase_1, -signo, - label_semana) %>% 
@@ -2086,7 +2268,7 @@ server <- function(input, output) {
     }
     if(input$tempo_analisis == "Último año" ){ 
       
-      t2 <- p2_anios %>% 
+      t2 <- p2_anios %>% relocate(ultimo_anio, .before = anio_anterior) %>% 
         mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         mutate(cambio_anio_por = scales::percent(cambio_anio_por, accuracy = 0.1)) %>% 
         select(-frase_1, -signo, - label_anio) %>% 
@@ -2097,6 +2279,7 @@ server <- function(input, output) {
       names(t2) <- c("Municipio",
                      paste0("Del ", format(input$fecha_hecho_final_2-182, "%d de %B del %Y"),
                             " al ", format(input$fecha_hecho_final_2, "%d de %B del %Y")),
+                     
                      paste0("Del ", format(input$fecha_hecho_final_2-365, "%d de %B del %Y"),
                             " al ", format(input$fecha_hecho_final_2-183, "%d de %B del %Y")),
                      "Cambio en número",
@@ -2105,11 +2288,11 @@ server <- function(input, output) {
       
     }
     
-    datatable(t2, options = list("pageLength" = 1000,
+    datatable(t2, options = list("pageLength" = 10,
                                  columnDefs = list(list(targets = 6, visible = FALSE)))) %>% 
       formatStyle(
         "Municipio", "ind",
-        backgroundColor = styleEqual(c(0, 1, -1), c('#73746D', '#D81B60', '#3D9970'))) %>% 
+        backgroundColor = styleEqual(c(0, 1, -1), c('#73746D', '#6e4854', '#63917d'))) %>% 
       formatStyle(
         "Municipio", 
         fontWeight = "bold",
@@ -2202,7 +2385,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "yellow")
+               color = "fuchsia")
       
       
       
@@ -2211,17 +2394,17 @@ server <- function(input, output) {
     # Plot - tipo de violencia
     
     fig_4 <- plot_ly(data = p4,
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#f49c13',
-                                   line = list(color = '#f49c13',
+                     marker = list(color = '#9c4068',
+                                   line = list(color = '#9c4068',
                                                width = 1.5)),
                      text = ~ label,
                      hoverinfo = "text", 
-                     textfont=list(color='#f49c13', 
+                     textfont=list(color='#9c4068', 
                                    size=0)
-                     ) %>% 
+    ) %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
                hoverinfo="none") %>% 
@@ -2232,7 +2415,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Tipo de violencia",
-               tickangle = 45),
+               tickangle = 0), 
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2250,7 +2433,7 @@ server <- function(input, output) {
   ### b) Tipo de modalidad ----
   
   output$tipo_modalidad_plot <- renderPlotly({
-
+    
     p5 <- base_casos_clean
     
     if(!grepl("Todas las dependencias", input$depen_check_3)){
@@ -2326,7 +2509,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "aqua")
+               color = "maroon")
       
       
       
@@ -2335,14 +2518,14 @@ server <- function(input, output) {
     # Plot - modalidad de violencia
     
     fig_5 <- plot_ly(data = p5,
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#0ac0ef',
-                                   line = list(color = '#0ac0ef',
+                     marker = list(color = '#40639c',
+                                   line = list(color = '#40639c',
                                                width = 1.5)),
                      text = ~ label,
-                     textfont=list(color='#0ac0ef', 
+                     textfont=list(color='#40639c', 
                                    size=0),
                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -2355,7 +2538,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Tipo de modalidad",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2401,12 +2584,12 @@ server <- function(input, output) {
       filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
                fecha_hechos <= input$fecha_hecho_final_3) %>%
       mutate(name_clean = case_when(edad <= 11 ~ "0 a 11 años",
-                                         edad >= 12 & edad <= 18 ~ "12 a 18 años",
-                                         edad >= 19 & edad <= 29 ~ "19 a 29 años",
-                                         edad >= 30 & edad <= 39 ~ "30 a 39 años",
-                                         edad >= 40 & edad <= 49 ~ "40 a 49 años",
-                                         edad >= 50 & edad <= 59 ~ "50 a 59 años",
-                                         edad >= 60 ~ "60 años o más")) %>% 
+                                    edad >= 12 & edad <= 18 ~ "12 a 18 años",
+                                    edad >= 19 & edad <= 29 ~ "19 a 29 años",
+                                    edad >= 30 & edad <= 39 ~ "30 a 39 años",
+                                    edad >= 40 & edad <= 49 ~ "40 a 49 años",
+                                    edad >= 50 & edad <= 59 ~ "50 a 59 años",
+                                    edad >= 60 ~ "60 años o más")) %>% 
       group_by(name_clean) %>% 
       summarise(cuenta = n()) %>% 
       ungroup() %>% 
@@ -2444,7 +2627,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "red")
+               color = "navy")
       
       
       
@@ -2453,14 +2636,14 @@ server <- function(input, output) {
     # Plot - rango de edad
     
     fig_6 <- plot_ly(data = p6,
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#d34736',
-                                   line = list(color = '#d34736',
+                     marker = list(color = '#ba5e36',
+                                   line = list(color = '#ba5e36',
                                                width = 1.5)),
                      text = ~ label,
-                     textfont=list(color='#d34736', 
+                     textfont=list(color='#ba5e36', 
                                    size=0),
                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -2473,7 +2656,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Rango de edad",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2600,14 +2783,14 @@ server <- function(input, output) {
     # Plot - vínculo
     
     fig_7 <- plot_ly(data = p7 %>% slice_head(n = 8),
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#d81b60',
-                                   line = list(color = '#d81b60',
+                     marker = list(color = '#824470',
+                                   line = list(color = '#824470',
                                                width = 1.5)),
                      text = ~ label,
-                     textfont=list(color='#d81b60',
+                     textfont=list(color='#824470',
                                    size=0),
                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -2620,7 +2803,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Vínculo",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2727,7 +2910,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "olive")
+               color = "aqua")
       
       
       
@@ -2736,14 +2919,14 @@ server <- function(input, output) {
     # Plot - lugar
     
     fig_8 <- plot_ly(data = p8 %>% slice_head(n = 8),
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#3d9970',
-                                   line = list(color = '#3d9970',
+                     marker = list(color = '#447042',
+                                   line = list(color = '#447042',
                                                width = 1.5)),
                      text = ~ label,
-                     textfont= list(color='#3d9970', size=0),
+                     textfont= list(color='#447042', size=0),
                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
@@ -2755,7 +2938,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Vínculo",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2859,14 +3042,14 @@ server <- function(input, output) {
     # Plot - edo civil
     
     fig_9 <- plot_ly(data = p9 %>% slice_head(n = 8),
-                     x = ~ name_clean, 
+                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                      y = ~ cuenta,
                      type = "bar",
-                     marker = list(color = '#58569c',
-                                   line = list(color = '#58569c',
+                     marker = list(color = '#7356b0',
+                                   line = list(color = '#7356b0',
                                                width = 1.5)),
                      text = ~ label,
-                     textfont= list(color='#58569c', size=0),
+                     textfont= list(color='#7356b0', size=0),
                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
@@ -2878,7 +3061,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Estado civil",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -2925,7 +3108,7 @@ server <- function(input, output) {
              "Casos de mujeres migrantes recibidos", 
              icon = NULL,
              width = 18, 
-             color = "navy")
+             color = "fuchsia")
     
   })
   
@@ -2960,7 +3143,7 @@ server <- function(input, output) {
              "Casos de mujeres indígenas recibidos", 
              icon = NULL,
              width = 18, 
-             color = "navy")
+             color = "purple")
     
     
   })
@@ -3005,9 +3188,9 @@ server <- function(input, output) {
     
   })
   
-
+  
   ### g) Número de hijos ----
-
+  
   output$numero_de_hijos_plot <- renderPlotly({
     
     p21 <- base_casos_clean
@@ -3085,7 +3268,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "yellow")
+               color = "red")
       
       
       
@@ -3094,15 +3277,15 @@ server <- function(input, output) {
     # Plot - número de hijos
     
     fig_21 <- plot_ly(data = p21,
-                     x = ~ name_clean, 
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#F49C13',
-                                   line = list(color = '#F49C13',
-                                               width = 1.5)),
-                     textfont= list(color='#F49C13', size=0),
-                     text = ~ label,
-                     hoverinfo = "text") %>% 
+                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+                      y = ~ cuenta,
+                      type = "bar",
+                      marker = list(color = '#ab673a',
+                                    line = list(color = '#ab673a',
+                                                width = 1.5)),
+                      textfont= list(color='#ab673a', size=0),
+                      text = ~ label,
+                      hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
                hoverinfo="none") %>% 
@@ -3113,7 +3296,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Número de hijos",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3128,7 +3311,7 @@ server <- function(input, output) {
   ### h) Actividades de la víctima ----
   
   output$actividades_victima_plot <- renderPlotly({
-
+    
     p22 <- base_casos_clean
     
     if(!grepl("Todas las dependencias", input$depen_check_3)){
@@ -3162,7 +3345,7 @@ server <- function(input, output) {
       pivot_longer(cols = 1:9) %>% 
       filter(value != 0) %>% 
       select(-value)
-        
+    
     p22 <- p22 %>% 
       mutate(name_clean = case_match(name,
                                      "vict_trabaja_f_hogar" ~ "Trabaja fuera",
@@ -3218,14 +3401,14 @@ server <- function(input, output) {
     # Plot - número de hijos
     
     fig_22 <- plot_ly(data = p22,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#d81b60',
-                                    line = list(color = '#d81b60',
+                      marker = list(color = '#9c5286',
+                                    line = list(color = '#9c5286',
                                                 width = 1.5)),
                       text = ~ label,
-                      textfont=list(color='#d81b60', size=0),
+                      textfont=list(color='#9c5286', size=0),
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
@@ -3237,7 +3420,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Actividad de la víctima",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3288,12 +3471,12 @@ server <- function(input, output) {
              "de los casos hay conocimiento de los hechos por parte de las autoridades", 
              icon = NULL,
              width = 18, 
-             color = "olive")
+             color = "yellow")
     
     
   })
   
-
+  
   ## 3.4.- Características de las personas agresoras (Server)----
   
   ### a) Edad----
@@ -3402,7 +3585,8 @@ server <- function(input, output) {
     # Plot - rango edad agresor
     
     fig_13 <- plot_ly(data = p13,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+
                       y = ~ cuenta,
                       type = "bar",
                       marker = list(color = '#58569c',
@@ -3421,7 +3605,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Rango de edad",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3545,13 +3729,13 @@ server <- function(input, output) {
     # Plot - escolaridad agresor
     
     fig_14 <- plot_ly(data = p14,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#d34736',
-                                    line = list(color = '#d34736',
+                      marker = list(color = '#3d9970',
+                                    line = list(color = '#3d9970',
                                                 width = 1.5)),
-                      textfont=list(color='#d34736', size=0),
+                      textfont=list(color='#3d9970', size=0),
                       text = ~ label,
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -3564,7 +3748,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Escolaridad",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3608,7 +3792,7 @@ server <- function(input, output) {
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(genero) 
-
+    
     p24 <- p24 %>% 
       mutate(name_clean = case_match(genero, 
                                      "Hombre" ~ "Hombre",
@@ -3670,7 +3854,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "olive")
+               color = "yellow")
       
       
       
@@ -3679,13 +3863,13 @@ server <- function(input, output) {
     # Plot - genero agresor
     
     fig_24 <- plot_ly(data = p24,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#3d9970',
-                                    line = list(color = '#3d9970',
+                      marker = list(color = '#bf5841',
+                                    line = list(color = '#bf5841',
                                                 width = 1.5)),
-                      textfont= list(color='#3d9970', size=0),
+                      textfont= list(color='#bf5841', size=0),
                       text = ~ label,
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -3698,7 +3882,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Género",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3742,7 +3926,7 @@ server <- function(input, output) {
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(starts_with("prin")) 
-
+    
     p25 <- p25 %>% 
       pivot_longer(cols = 1:10) %>% 
       filter(value != 0) %>% 
@@ -3754,9 +3938,9 @@ server <- function(input, output) {
                                      "prin_act_ag_act_ilicita" ~ "Actividad ilícita",
                                      "prin_act_ag_estudia" ~ "Estudia",
                                      "prin_act_ag_trab_hogar" ~ "Trabaja en el hogar",
-                                     "prin_act_ag_jub_pens" ~ "Jubilado/pensionado",
-                                     "prin_act_ag_pens" ~ "Jubilado/pensionado"
-                                     ))  %>% 
+                                     "prin_act_ag_jub_pens" ~ "Jubilado o pensionado",
+                                     "prin_act_ag_pens" ~ "Jubilado o pensionado"
+      ))  %>% 
       group_by(name_clean) %>% 
       summarise(cuenta = n()) %>% 
       ungroup() %>% 
@@ -3820,13 +4004,13 @@ server <- function(input, output) {
     # Plot - actividad agresor
     
     fig_25 <- plot_ly(data = p25,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#d81b60',
-                                    line = list(color = '#d81b60',
+                      marker = list(color = '#9e4767',
+                                    line = list(color = '#9e4767',
                                                 width = 1.5)),
-                      textfont=list(color='#d81b60', size=0),
+                      textfont=list(color='#9e4767', size=0),
                       text = ~ label,
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -3839,7 +4023,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Actividad principal",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -3883,7 +4067,7 @@ server <- function(input, output) {
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(starts_with("fte")) 
-
+    
     p26 <- p26 %>% 
       pivot_longer(cols = 1:9) %>% 
       filter(value != 0) %>% 
@@ -3951,7 +4135,7 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "yellow")
+               color = "aqua")
       
       
       
@@ -3960,15 +4144,15 @@ server <- function(input, output) {
     # Plot - actividad agresor
     
     fig_26 <- plot_ly(data = p26,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#f49c13',
-                                    line = list(color = '#f49c13',
+                      marker = list(color = '#a6568b',
+                                    line = list(color = '#a6568b',
                                                 width = 1.5)
-                                    ),
+                      ),
                       text = ~ label,
-                      textfont=list(color='#f49c13', size=0),
+                      textfont=list(color='#a6568b', size=0),
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
@@ -3980,7 +4164,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Fuente de ingreso",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -4019,7 +4203,7 @@ server <- function(input, output) {
       municipio_seleccionado_drog_ag <- "Todos los municipios de Jalisco"
       
     }
-
+    
     p27 <- p27 %>% 
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
@@ -4059,32 +4243,32 @@ server <- function(input, output) {
     
     output$vb_drogas_agresor <- renderValueBox({
       
-        valor_drogas_agresor <- 
-          p27$name_clean[1]
-        
-        por_drogas_agresor <- 
-          scales::percent(p27$porcentaje[1], accuracy = 1)
-
+      valor_drogas_agresor <- 
+        p27$name_clean[1]
+      
+      por_drogas_agresor <- 
+        scales::percent(p27$porcentaje[1], accuracy = 1)
+      
       valueBox(valor_drogas_agresor, 
                paste0("Tipo de situación más común con ", 
                       por_drogas_agresor,
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "aqua")
+               color = "fuchsia")
       
     })
     
     # Plot - drogas agresor
     
     fig_27 <- plot_ly(data = p27,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#0ac0ef',
-                                    line = list(color = '#0ac0ef',
+                      marker = list(color = '#4a8594',
+                                    line = list(color = '#4a8594',
                                                 width = 1.5)),
-                      textfont=list(color='#0ac0ef', size=0),
+                      textfont=list(color='#4a8594', size=0),
                       text = ~ label,
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -4097,7 +4281,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Uso de drogas",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de casos"),
              showlegend = FALSE,
@@ -4287,7 +4471,7 @@ server <- function(input, output) {
       
     })
     
-
+    
     #### iv) Vínculo arma----
     
     output$vinculo_arma_plot <- renderPlotly({
@@ -4353,7 +4537,7 @@ server <- function(input, output) {
                "Porcentaje del total de casos en los que se reportó que la persona agresora poseía algún arma", 
                icon = NULL,
                width = 18, 
-               color = "navy")
+               color = "purple")
       
       
       
@@ -4367,7 +4551,7 @@ server <- function(input, output) {
              "Casos en los que se reportó que la persona agresora poseía algún tipo de arma", 
              icon = NULL,
              width = 18, 
-             color = "navy")
+             color = "purple")
     
   })
   
@@ -4439,28 +4623,28 @@ server <- function(input, output) {
       
       p16_ac <- p16_ac %>% 
         mutate(actividad = case_match(name,
-                                       "vict_trabaja_f_hogar" ~ "Trabaja fuera",
-                                       "vict_se_desconoce" ~ "Se desconoce",
-                                       "vict_trabaja_hogar" ~ "Trabaja en el hogar",
-                                       "vict_jubilada_pensionada" ~ "Jubilada/pensionada",
-                                       "vict_estudia" ~ "Estudia",
-                                       "vict_otro" ~ "Otra actividad",
-                                       "vict_pensionada" ~ "Jubilada/pensionada",
-                                       "vict_act_ilicita" ~ "Actividad ilícita"))
+                                      "vict_trabaja_f_hogar" ~ "Trabaja fuera",
+                                      "vict_se_desconoce" ~ "Se desconoce",
+                                      "vict_trabaja_hogar" ~ "Trabaja en el hogar",
+                                      "vict_jubilada_pensionada" ~ "Jubilada/pensionada",
+                                      "vict_estudia" ~ "Estudia",
+                                      "vict_otro" ~ "Otra actividad",
+                                      "vict_pensionada" ~ "Jubilada/pensionada",
+                                      "vict_act_ilicita" ~ "Actividad ilícita"))
       
       p16_ac_ag <- base_agre_clean %>% 
         select(euv, starts_with("fte")) %>% 
         pivot_longer(cols = 2:10) %>% 
         filter(value != 0) %>% 
         mutate(ingresos_agresor = case_match(name, 
-                                       "fte_ingresos_ag_trab_formal" ~ "Trabajo formal",
-                                       "fte_ingresos_ag_remesas" ~ "Remesas",
-                                       "fte_ingresos_ag_trab_informal" ~ "Trabajo informal",
-                                       "fte_ingresos_ag_otro" ~ "Otra",
-                                       "fte_ingresos_ag_ahorros" ~ "Ahorros",
-                                       "fte_ingresos_ag_herencia" ~ "Herencia",
-                                       "fte_ingresos_ag_rentas" ~ "Rentas",
-                                       "fte_ingresos_ag_pensiones" ~ "Pensiones"
+                                             "fte_ingresos_ag_trab_formal" ~ "Trabajo formal",
+                                             "fte_ingresos_ag_remesas" ~ "Remesas",
+                                             "fte_ingresos_ag_trab_informal" ~ "Trabajo informal",
+                                             "fte_ingresos_ag_otro" ~ "Otra",
+                                             "fte_ingresos_ag_ahorros" ~ "Ahorros",
+                                             "fte_ingresos_ag_herencia" ~ "Herencia",
+                                             "fte_ingresos_ag_rentas" ~ "Rentas",
+                                             "fte_ingresos_ag_pensiones" ~ "Pensiones"
         )) %>% 
         select(-name, - value)
       
@@ -4469,19 +4653,19 @@ server <- function(input, output) {
         pivot_longer(cols = 2:11) %>% 
         filter(value != 0) %>% 
         mutate(actividad_del_agresor = case_match(name, 
-                                       "prin_act_ag_se_desc" ~ "Sin información",
-                                       "prin_act_ag_trab_f_hogar" ~ "Fuera del hogar",
-                                       "prin_act_ag_otro" ~ "Otro",
-                                       "prin_act_ag_ning" ~ "Ninguna",
-                                       "prin_act_ag_act_ilicita" ~ "Actividad ilícita",
-                                       "prin_act_ag_estudia" ~ "Estudia",
-                                       "prin_act_ag_trab_hogar" ~ "Trabaja en el hogar",
-                                       "prin_act_ag_jub_pens" ~ "Jubilado/pensionado",
-                                       "prin_act_ag_pens" ~ "Jubilado/pensionado"
+                                                  "prin_act_ag_se_desc" ~ "Sin información",
+                                                  "prin_act_ag_trab_f_hogar" ~ "Fuera del hogar",
+                                                  "prin_act_ag_otro" ~ "Otro",
+                                                  "prin_act_ag_ning" ~ "Ninguna",
+                                                  "prin_act_ag_act_ilicita" ~ "Actividad ilícita",
+                                                  "prin_act_ag_estudia" ~ "Estudia",
+                                                  "prin_act_ag_trab_hogar" ~ "Trabaja en el hogar",
+                                                  "prin_act_ag_jub_pens" ~ "Jubilado o pensionado",
+                                                  "prin_act_ag_pens" ~ "Jubilado o pensionado"
         )) %>% 
         select(-name, - value)
       
-
+      
       
       p16 <- base_casos_clean %>% 
         select(euv, 
@@ -4503,7 +4687,7 @@ server <- function(input, output) {
       p16$detalle_de_va_nculo_con_victima[which(p16$detalle_de_va_nculo_con_victima == "Otro")] <- 
         p16$va_nculo_con_victima[which(p16$detalle_de_va_nculo_con_victima == "Otro")]
       
-
+      
       
       p16_ag <- base_agre_clean %>% 
         select(euv, 
@@ -4520,14 +4704,14 @@ server <- function(input, output) {
                genero,
                droga_alcohol) %>% 
         mutate(genero_del_agresor = case_match(genero, 
-                                                 "Hombre" ~ "Hombre",
-                                                 "" ~ "Sin información",
-                                                 "Mujer" ~ "Mujer",
-                                                 "Seleccione" ~ "Sin información",
-                                                 "Otro (Especifique)" ~ "Sin información")) %>% 
+                                               "Hombre" ~ "Hombre",
+                                               "" ~ "Sin información",
+                                               "Mujer" ~ "Mujer",
+                                               "Seleccione" ~ "Sin información",
+                                               "Otro (Especifique)" ~ "Sin información")) %>% 
         mutate(uso_de_sustancias = case_match(droga_alcohol, 
-                                       1 ~ "Sí drogas/alcohol",
-                                       0 ~ "No drogas/alcohol")) %>% 
+                                              1 ~ "Sí drogas/alcohol",
+                                              0 ~ "No drogas/alcohol")) %>% 
         mutate(indicador_de_arma_blanca = case_when(chacos == 1 |
                                                       macanas == 1 |
                                                       objeto_punzo_cortante == 1|
@@ -4545,12 +4729,12 @@ server <- function(input, output) {
                genero_del_agresor, 
                uso_de_sustancias) %>% 
         mutate(rango_de_edades_agresor =case_when(     edad >=  0 & edad <= 11 ~ "0 a 11 años",
-                                                          edad >= 12 & edad <= 18 ~ "12 a 18 años",
-                                                          edad >= 19 & edad <= 29 ~ "19 a 29 años",
-                                                          edad >= 30 & edad <= 39 ~ "30 a 39 años",
-                                                          edad >= 40 & edad <= 49 ~ "40 a 49 años",
-                                                          edad >= 50 & edad <= 59 ~ "50 a 59 años",
-                                                          edad >= 60 ~ "60 años o más")) %>% 
+                                                       edad >= 12 & edad <= 18 ~ "12 a 18 años",
+                                                       edad >= 19 & edad <= 29 ~ "19 a 29 años",
+                                                       edad >= 30 & edad <= 39 ~ "30 a 39 años",
+                                                       edad >= 40 & edad <= 49 ~ "40 a 49 años",
+                                                       edad >= 50 & edad <= 59 ~ "50 a 59 años",
+                                                       edad >= 60 ~ "60 años o más")) %>% 
         mutate(escolaridad = case_match(escolaridad, 
                                         "No identificado" ~ "Sin información",
                                         "Primaria" ~ "Primaria",
@@ -4627,9 +4811,9 @@ server <- function(input, output) {
                                                   "Centro recreativo" ~ "Centro recreativo",
                                                   "AutobÃºs" ~ "Autobús")) %>% 
         mutate(numero_de_hijos = case_when(numero_de_hijos <= 0  ~ "Sin hijos",
-                                      numero_de_hijos >0 & numero_de_hijos < 5 ~
-                                        paste0(as.character(numero_de_hijos), " hijos"),
-                                      numero_de_hijos >= 5 ~ "5 hijos o más")) %>% 
+                                           numero_de_hijos >0 & numero_de_hijos < 5 ~
+                                             paste0(as.character(numero_de_hijos), " hijos"),
+                                           numero_de_hijos >= 5 ~ "5 hijos o más")) %>% 
         mutate(numero_de_hijos = gsub("1 hijos", "1 hijo", numero_de_hijos)) %>% 
         mutate(modalidad_de_la_violencia = case_match(modalidad_de_la_violencia, 
                                                       "1 - Familiar" ~ "Familiar",
@@ -4992,7 +5176,7 @@ server <- function(input, output) {
              "Órdenes de protección registradas", 
              icon = icon("scale-balanced"),
              width = 18, 
-             color = "olive")
+             color = "fuchsia")
     
     
   })
@@ -5098,7 +5282,7 @@ server <- function(input, output) {
                        x = ~ mes_anio,
                        y = ~ cuenta, 
                        text = ~label, 
-                       marker = list(color = "#3D9970"),
+                       marker = list(color = "#58569c"), #cocca
                        hoverinfo = "text", 
                        type = "bar") %>% 
       layout(yaxis = list(title = "Número de casos"),
@@ -5296,11 +5480,11 @@ server <- function(input, output) {
       mutate(quantile = ntile(cuenta, 5)) 
     
     quantiles_2 <- data.frame(quantile = 1:5,
-                            upr = round(quantile(mapa_2p$cuenta, 
-                                                 probs = seq(.2, 1, by = .2))),
-                            lwr = c(-1, 
-                                    round(quantile(mapa_2p$cuenta, 
-                                                   probs = seq(.2, 1, by = .2))[1:4]))) %>% 
+                              upr = round(quantile(mapa_2p$cuenta, 
+                                                   probs = seq(.2, 1, by = .2))),
+                              lwr = c(-1, 
+                                      round(quantile(mapa_2p$cuenta, 
+                                                     probs = seq(.2, 1, by = .2))[1:4]))) %>% 
       mutate(lwr = lwr + 1) %>% 
       mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
       mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
@@ -5315,11 +5499,11 @@ server <- function(input, output) {
       st_as_sf()
     
     pal2 <- colorFactor(palette=c("#0f0a1f", 
-                                           "#3c3065", 
-                                           "#9784d7",
-                                           "#cbc1eb",
-                                           "#ffffff"),
-                                           levels=sort(unique(mapa_2p$rango)))
+                                  "#3c3065", 
+                                  "#9784d7",
+                                  "#cbc1eb",
+                                  "#ffffff"),
+                        levels=sort(unique(mapa_2p$rango)))
     
     labels_map_2 <- sprintf(
       "<strong>%s</strong><br/>%s",
@@ -5331,20 +5515,20 @@ server <- function(input, output) {
       addProviderTiles(providers$CartoDB.Positron) %>% 
       addPolygons(data =  mapa_2p,
                   color = "black",
-                  weight=3,
+                  weight=1,
                   fillOpacity = 0.8,
                   fillColor  = ~pal2(rango),
                   label=~labels_map_2)  %>% 
       leaflet::addLegend(pal = pal2,
-                values = sort(unique(mapa_2p$rango)),
-                opacity = 0.75,
-                title = "Número de servicios",
-                position = "bottomright")
-
+                         values = sort(unique(mapa_2p$rango)),
+                         opacity = 0.75,
+                         title = "Número de servicios",
+                         position = "bottomright")
+    
   })
   
   ### b) Plot de evolución y vb total de servicios y mujeres atendidas ----
-
+  
   output$plot_evolucion_servicios <- renderPlotly({
     
     if(!grepl("Todas las dependencias", input$depen_check_6)){
@@ -5384,8 +5568,8 @@ server <- function(input, output) {
                paste0("Total del número de servicios otorgados en el periodo señalado."), 
                icon = NULL,
                width = 18, 
-               color = "yellow")
-
+               color = "yellow") #jati 1
+      
       
     })
     
@@ -5394,15 +5578,15 @@ server <- function(input, output) {
       
       
       valueBox(prettyNum(length(unique(p28$ind_mujeres)), big.mark = ","), 
-               paste0("Total del mujeres atendidas en el periodo señalado."), 
+               paste0("Total de mujeres atendidas en el periodo señalado."), 
                icon = NULL,
                width = 18, 
-               color = "maroon")
+               color = "fuchsia") #jati 2
       
       
       
     })
-
+    
     # Plot - evolución de servicios
     
     p28_aux <- p28 %>% 
@@ -5421,16 +5605,16 @@ server <- function(input, output) {
              label_plot_30 = paste0(format(fecha_captura, "%d/%B/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
     
     fig_28 <- plot_ly(p28_aux, 
-                    x = ~ fecha_captura,
-                    y = ~ avg_30,
-                    type = 'scatter',
-                    mode = 'lines',
-                    name = "Promedio móvil (30 días)", 
-                    line = list(color = "#fd9c13", 
-                                width = 4),
-                    text = ~ label_plot_30,
-                    hoverinfo = "text", 
-                    hoverlabel = list(bgcolor='#fd9c13')) %>% 
+                      x = ~ fecha_captura,
+                      y = ~ avg_30,
+                      type = 'scatter',
+                      mode = 'lines',
+                      name = "Promedio móvil (30 días)", 
+                      line = list(color = "#514885", 
+                                  width = 4),
+                      text = ~ label_plot_30,
+                      hoverinfo = "text", 
+                      hoverlabel = list(bgcolor='#514885')) %>% 
       add_trace(y = ~avg_15, 
                 name = 'Promedio móvil (15 días)', 
                 line = list(color = '#d34736',
@@ -5541,13 +5725,13 @@ server <- function(input, output) {
                icon = NULL,
                width = 18, 
                color = "purple")
-
+      
     })
     
     # Plot - rango edad agresor
     
     fig_29 <- plot_ly(data = p29,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
                       marker = list(color = '#58569c',
@@ -5567,7 +5751,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Tipo de servicio",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de servicios"),
              showlegend = FALSE,
@@ -5663,7 +5847,7 @@ server <- function(input, output) {
     # Plot - rango edad persona atendida
     
     fig_30 <- plot_ly(data = p30,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
                       marker = list(color = '#5d9970',
@@ -5682,7 +5866,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Rango de edad",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de servicios"),
              showlegend = FALSE,
@@ -5764,20 +5948,20 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "red")
+               color = "aqua") #jati 5
       
     })
     
     # Plot - estado civil edad persona atendida
     
     fig_31 <- plot_ly(data = p31,
-                      x = ~ name_clean, 
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#d34736',
-                                    line = list(color = '#d34736',
+                      marker = list(color = '#8a4960',
+                                    line = list(color = '#8a4960',
                                                 width = 1.5)),
-                      textfont=list(color='#d34736', size=0),
+                      textfont=list(color='#8a4960', size=0),
                       text = ~ label,
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
@@ -5790,7 +5974,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Estado civil",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de servicios"),
              showlegend = FALSE,
@@ -5879,25 +6063,25 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "aqua")
+               color = "red") #jati 6
       
     })
     
     # Plot - dependencia más común
     
     fig_32 <- plot_ly(data = p32,
-                      x = ~ cuenta, 
-                      y = ~ name_clean,
+                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+                      y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#0ac0ef',
-                                    line = list(color = '#0ac0ef',
-                                                width = 1.5)),
+                      marker = list(color = '#46648f',
+                                    line = list(color = '#46648f',
+                                                width = 0)),
                       text = ~ label,
-                      textfont=list(color='#0ac0ef', size=0),
+                      textfont=list(color='#46648f', size=0),
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
-               hoverinfo="none") %>% 
+               hoverinfo="none") %>%
       layout(title = paste0(municipio_seleccionado_ser_depen, " (", 
                             format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
                             " al ", 
@@ -5905,13 +6089,13 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Número de servicios",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Dependencia"),
              showlegend = FALSE,
              layout.separators=",.",
              hoverlabel=list(bgcolor="white")) 
-    
+
     
     fig_32
     
@@ -6014,7 +6198,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Usuario",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número de servicio"),
              showlegend = FALSE,
@@ -6097,19 +6281,19 @@ server <- function(input, output) {
                       " de los casos."), 
                icon = NULL,
                width = 18, 
-               color = "yellow")
+               color = "purple") #Jati 7
       
     })
     
     # Value Box - estado civil persona atendida
     
     output$vb_estatus_servicio <- renderValueBox({
-
+      
       valueBox(scales::percent(length(which(p34$estatus=="Concluido"))/nrow(p34), accuracy = 1),
                "Porcentaje de los casos que fue registrado como concluido.", 
                icon = NULL,
                width = 18, 
-               color = "olive")
+               color = "yellow") # jati 8
       
     })
     
@@ -6119,11 +6303,11 @@ server <- function(input, output) {
                       x = ~ name_clean, 
                       y = ~ cuenta,
                       type = "bar",
-                      marker = list(color = '#f49c13',
-                                    line = list(color = '#f49c13',
+                      marker = list(color = '#bf8037',
+                                    line = list(color = '#bf8037',
                                                 width = 1.5)),
                       text = ~ label,
-                      textfont=list(color='#f49c13', size=0),
+                      textfont=list(color='#bf8037', size=0),
                       hoverinfo = "text") %>% 
       add_text(text = ~ prettyNum(cuenta, big.mark = ","),
                textposition = "top",
@@ -6135,7 +6319,7 @@ server <- function(input, output) {
                             ")"),
              xaxis = list(
                title = "Categoría de servicio",
-               tickangle = 45),
+               tickangle = 0),
              yaxis = list(
                title = "Número"),
              showlegend = FALSE,
