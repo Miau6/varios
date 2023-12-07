@@ -83,50 +83,56 @@ Sys.setlocale(locale="es_ES.UTF-8")
 # setwd("~/Documents/GitHub/PAIMEF/BANAVIM")
 
 ## b) Leer base de datos----
+# 
+# ### i) Base de casos
+# base_casos <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 1.csv",
+#                                 encoding = "UTF-8")
+# # base_casos <- read.csv("Base de Datos Jalisco corte septiembre 2023 1.csv",
+# #                        fileEncoding = "LATIN1"
+# #                                 )
+# 
+# ### ii) Base de personas agresoras
+# # Base de personas agresoras
+# base_agre <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 2.csv",
+#                                encoding = "UTF-8")
+# 
+# 
+# ### iii) Base de ordenes
+# base_ordenes <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 3.csv",
+#                                   encoding = "UTF-8")
+# 
+# ### iv) Base de servicios
+# base_servicios <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 4.csv",
+#                                     encoding = "UTF-8")
+# 
 
-### i) Base de casos
-base_casos <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 1.csv",
-                                encoding = "UTF-8")
-# base_casos <- read.csv("Base de Datos Jalisco corte septiembre 2023 1.csv",
-#                        fileEncoding = "LATIN1"
-#                                 )
+data <- read_rds("data_banavim.rds")
 
-### ii) Base de personas agresoras
-# Base de personas agresoras
-base_agre <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 2.csv",
-                               encoding = "UTF-8")
-
-
-### iii) Base de ordenes
-base_ordenes <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 3.csv",
-                                  encoding = "UTF-8")
-
-### iv) Base de servicios
-base_servicios <- data.table::fread("Base de Datos Jalisco corte septiembre 2023 4.csv",
-                                    encoding = "UTF-8")
-
-
+base_agre_clean <- data$base_agre_clean
+base_casos_clean <- data$base_casos_clean
+base_ordenes_clean <- data$base_ordenes_clean
+base_servicios_clean <- data$base_servicios_clean
 ### v) Base de población
 poblacion <- data.table::fread("pob_mun_jalisco.csv") %>% 
   filter(variable == "pob_muj") 
 
 ### vi) Mapa
-jalisco_shape <- read_sf("Municipios/Municipios.shp") %>% 
-  clean_names() %>% 
-  filter(estado == "Jalisco")  %>% 
-  mutate(municipios = toupper(municipios)) %>% 
-  stringdist_join(., poblacion, 
-                  by= c("municipios" = "municipio"),
-                  mode='left',
-                  method = "jw", 
-                  max_dist=.08, 
-                  distance_col='dist')  %>% 
-  select(-variable, -valor)
-
-jalisco_shape <- st_transform(jalisco_shape, 
-                              st_crs("+proj=longlat +datum=WGS84 +no_defs"))
-
-
+# jalisco_shape <- read_sf("Municipios/Municipios.shp") %>% 
+#   clean_names() %>% 
+#   filter(estado == "Jalisco")  %>% 
+#   mutate(municipios = toupper(municipios)) %>% 
+#   stringdist_join(., poblacion, 
+#                   by= c("municipios" = "municipio"),
+#                   mode='left',
+#                   method = "jw", 
+#                   max_dist=.08, 
+#                   distance_col='dist')  %>% 
+#   select(-variable, -valor)
+# 
+# jalisco_shape <- st_transform(jalisco_shape, 
+#                               st_crs("+proj=longlat +datum=WGS84 +no_defs"))
+# 
+jalisco_shape <- read_rds("municipios_shp.rds")
 
 ## c) Limpiar datos ----
 clean_acentos <- function(palabra){
@@ -176,55 +182,55 @@ dropdownButton <- function(label = "", status = c("default", "primary", "success
 }
 
 # Limpiar base de casos
-base_casos_clean <- base_casos %>% 
-  # Limpiar nombres
-  clean_names() %>% 
-  # Seleccionar variables de interés
-  select(euv, 
-         fecha_de_recepcion,
-         dep_exp,
-         fecha_hechos,
-         municipio_hecho,
-         municipio_del_domicilio, 
-         rango_de_edades,
-         econ_a3mica, 
-         fa_sica,
-         patrimonial, 
-         psicol_a3gica, 
-         sexual, 
-         otro, 
-         descripcion_tipo_violencia,
-         modalidad_de_la_violencia,
-         va_nculo_con_victima,
-         detalle_de_va_nculo_con_victima,
-         pertenece_etnia,
-         migrante,
-         descripcion_del_lugar,
-         esta_embarazada,
-         estado_civil,
-         numero_de_hijos,
-         starts_with("vict"),
-         conocimiento_de_autoridad,
-         edad,
-         conocimiento_de_autoridad
-  ) %>% 
-  select(-victima_de_delincuencia) %>% 
-  # Limpiar acentos #
-  mutate(municipio_hecho_clean = clean_acentos(municipio_hecho)) %>% 
-  # Limpiar fechas #
-  mutate(fecha_de_recepcion = as.Date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
-  mutate(fecha_hechos = as.Date(fecha_hechos, format = "%d/%m/%y")) %>% 
-  # Unir población para ubicar municipios de Jalisco
-  stringdist_join(., poblacion, 
-                  by= c("municipio_hecho_clean" = "municipio"),
-                  mode='left',
-                  method = "jw", 
-                  max_dist=.08, 
-                  distance_col='dist') %>% 
-  mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
-                                           !is.na(dist) ~ municipio_hecho_clean)) %>% 
-  mutate(dep_exp = str_to_title(dep_exp)) %>% 
-  mutate(dep_exp = gsub("ã‘", "ñ", dep_exp))
+# base_casos_clean <- base_casos %>% 
+#   # Limpiar nombres
+#   clean_names() %>% 
+#   # Seleccionar variables de interés
+#   select(euv, 
+#          fecha_de_recepcion,
+#          dep_exp,
+#          fecha_hechos,
+#          municipio_hecho,
+#          municipio_del_domicilio, 
+#          rango_de_edades,
+#          econ_a3mica, 
+#          fa_sica,
+#          patrimonial, 
+#          psicol_a3gica, 
+#          sexual, 
+#          otro, 
+#          descripcion_tipo_violencia,
+#          modalidad_de_la_violencia,
+#          va_nculo_con_victima,
+#          detalle_de_va_nculo_con_victima,
+#          pertenece_etnia,
+#          migrante,
+#          descripcion_del_lugar,
+#          esta_embarazada,
+#          estado_civil,
+#          numero_de_hijos,
+#          starts_with("vict"),
+#          conocimiento_de_autoridad,
+#          edad,
+#          conocimiento_de_autoridad
+#   ) %>% 
+#   select(-victima_de_delincuencia) %>% 
+#   # Limpiar acentos #
+#   mutate(municipio_hecho_clean = clean_acentos(municipio_hecho)) %>% 
+#   # Limpiar fechas #
+#   mutate(fecha_de_recepcion = as.Date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
+#   mutate(fecha_hechos = as.Date(fecha_hechos, format = "%d/%m/%y")) %>% 
+#   # Unir población para ubicar municipios de Jalisco
+#   stringdist_join(., poblacion, 
+#                   by= c("municipio_hecho_clean" = "municipio"),
+#                   mode='left',
+#                   method = "jw", 
+#                   max_dist=.08, 
+#                   distance_col='dist') %>% 
+#   mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
+#                                            !is.na(dist) ~ municipio_hecho_clean)) %>% 
+#   mutate(dep_exp = str_to_title(dep_exp)) %>% 
+#   mutate(dep_exp = gsub("ã‘", "ñ", dep_exp))
 
 # Dependencias 
 dependencias_base_casos <- 
@@ -232,102 +238,102 @@ dependencias_base_casos <-
     unique(base_casos_clean$dep_exp)[order(unique(base_casos_clean$dep_exp))])
 
 # Limpiar base de personas agresoras
-base_agre_clean <- base_agre %>% 
-  # Limpiar nombres
-  clean_names() %>% 
-  # Seleccionar variables de interés
-  select(euv, 
-         edad,
-         genero,
-         escolaridad, 
-         fecha_hechos,
-         municipio,
-         genero,
-         droga_alcohol, 
-         droga_drogas_ilegales,
-         posee_algun_tipo_de_arma, 
-         portaba_dicha_arma, 
-         chacos, 
-         macanas, 
-         objeto_punzo_cortante,
-         machete,
-         proyectil,
-         arma_fuego_corta,
-         arma_fuego_larga,
-         otra_fuego_larga,
-         vinculo_con_va_ctima, 
-         lugar_hechos,
-         starts_with("prin"),
-         starts_with("fte")) %>% 
-  left_join(., base_casos_clean %>% select(euv, dep_exp) %>% unique()) %>% 
-  # Limpiar acentos #
-  mutate(municipio_hecho_clean = clean_acentos(municipio)) %>% 
-  # Limpiar fechas #
-  mutate(fecha_hechos = as.Date(fecha_hechos, format = "%d/%m/%y")) %>% 
-  # Unir población para ubicar municipios de Jalisco
-  stringdist_join(., poblacion, 
-                  by= c("municipio_hecho_clean" = "municipio"),
-                  mode='left',
-                  method = "jw", 
-                  max_dist=.08, 
-                  distance_col='dist') %>% 
-  mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
-                                           !is.na(dist) ~ municipio_hecho_clean))
-
-# Limpiar base de órdenes de protección
-base_ordenes_clean <- base_ordenes %>% 
-  clean_names() %>% 
-  select(euv, 
-         fecha_de_recepcion, 
-         desc_tipo_orden, 
-         municipio_evento, 
-         autoridad_emisora) %>% 
-  left_join(., base_casos_clean %>% select(euv, dep_exp) %>% unique()) %>% 
-  # Limpiar acentos #
-  mutate(municipio_hecho_clean = clean_acentos(municipio_evento)) %>% 
-  # Limpiar fechas #
-  mutate(fecha_de_recepcion = as.Date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
-  mutate(fecha_de_recepcion = as_date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
-  # Unir población para ubicar municipios de Jalisco
-  stringdist_join(., poblacion, 
-                  by= c("municipio_hecho_clean" = "municipio"),
-                  mode='left',
-                  method = "jw", 
-                  max_dist=.08, 
-                  distance_col='dist') %>% 
-  mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
-                                           !is.na(dist) ~ municipio_hecho_clean))
-
-# Limpiar base de casos
-base_servicios_clean <- base_servicios %>% 
-  # Limpiar nombres
-  clean_names() %>% 
-  rename(fecha_captura = fecha_cap_servicio) %>% 
-  # Seleccionar variables de interés
-  select(euv, 
-         fecha_captura,
-         mun,
-         edad_vict,
-         serviciodetalle,
-         estatus, 
-         estado_civil_vict,
-         ususervicio,
-         tiposervicio, 
-         dependenciaquebrindoservicio) %>% 
-  # Limpiar acentos #
-  mutate(municipio_hecho_clean = clean_acentos(mun)) %>% 
-  # Limpiar fechas #
-  mutate(fecha_captura = as.Date(fecha_captura, format = "%d/%m/%y")) %>%  
-  # Unir población para ubicar municipios de Jalisco
-  stringdist_join(., poblacion, 
-                  by= c("municipio_hecho_clean" = "municipio"),
-                  mode='left',
-                  method = "jw", 
-                  max_dist=.08, 
-                  distance_col='dist') %>% 
-  mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
-                                           !is.na(dist) ~ municipio_hecho_clean)) %>% 
-  select(-variable, -dist, -valor)
+# base_agre_clean <- base_agre %>% 
+#   # Limpiar nombres
+#   clean_names() %>% 
+#   # Seleccionar variables de interés
+#   select(euv, 
+#          edad,
+#          genero,
+#          escolaridad, 
+#          fecha_hechos,
+#          municipio,
+#          genero,
+#          droga_alcohol, 
+#          droga_drogas_ilegales,
+#          posee_algun_tipo_de_arma, 
+#          portaba_dicha_arma, 
+#          chacos, 
+#          macanas, 
+#          objeto_punzo_cortante,
+#          machete,
+#          proyectil,
+#          arma_fuego_corta,
+#          arma_fuego_larga,
+#          otra_fuego_larga,
+#          vinculo_con_va_ctima, 
+#          lugar_hechos,
+#          starts_with("prin"),
+#          starts_with("fte")) %>% 
+#   left_join(., base_casos_clean %>% select(euv, dep_exp) %>% unique()) %>% 
+#   # Limpiar acentos #
+#   mutate(municipio_hecho_clean = clean_acentos(municipio)) %>% 
+#   # Limpiar fechas #
+#   mutate(fecha_hechos = as.Date(fecha_hechos, format = "%d/%m/%y")) %>% 
+#   # Unir población para ubicar municipios de Jalisco
+#   stringdist_join(., poblacion, 
+#                   by= c("municipio_hecho_clean" = "municipio"),
+#                   mode='left',
+#                   method = "jw", 
+#                   max_dist=.08, 
+#                   distance_col='dist') %>% 
+#   mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
+#                                            !is.na(dist) ~ municipio_hecho_clean))
+# 
+# # Limpiar base de órdenes de protección
+# base_ordenes_clean <- base_ordenes %>% 
+#   clean_names() %>% 
+#   select(euv, 
+#          fecha_de_recepcion, 
+#          desc_tipo_orden, 
+#          municipio_evento, 
+#          autoridad_emisora) %>% 
+#   left_join(., base_casos_clean %>% select(euv, dep_exp) %>% unique()) %>% 
+#   # Limpiar acentos #
+#   mutate(municipio_hecho_clean = clean_acentos(municipio_evento)) %>% 
+#   # Limpiar fechas #
+#   mutate(fecha_de_recepcion = as.Date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
+#   mutate(fecha_de_recepcion = as_date(fecha_de_recepcion, format = "%d/%m/%y")) %>% 
+#   # Unir población para ubicar municipios de Jalisco
+#   stringdist_join(., poblacion, 
+#                   by= c("municipio_hecho_clean" = "municipio"),
+#                   mode='left',
+#                   method = "jw", 
+#                   max_dist=.08, 
+#                   distance_col='dist') %>% 
+#   mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
+#                                            !is.na(dist) ~ municipio_hecho_clean))
+# 
+# # Limpiar base de casos
+# base_servicios_clean <- base_servicios %>% 
+#   # Limpiar nombres
+#   clean_names() %>% 
+#   rename(fecha_captura = fecha_cap_servicio) %>% 
+#   # Seleccionar variables de interés
+#   select(euv, 
+#          fecha_captura,
+#          mun,
+#          edad_vict,
+#          serviciodetalle,
+#          estatus, 
+#          estado_civil_vict,
+#          ususervicio,
+#          tiposervicio, 
+#          dependenciaquebrindoservicio) %>% 
+#   # Limpiar acentos #
+#   mutate(municipio_hecho_clean = clean_acentos(mun)) %>% 
+#   # Limpiar fechas #
+#   mutate(fecha_captura = as.Date(fecha_captura, format = "%d/%m/%y")) %>%  
+#   # Unir población para ubicar municipios de Jalisco
+#   stringdist_join(., poblacion, 
+#                   by= c("municipio_hecho_clean" = "municipio"),
+#                   mode='left',
+#                   method = "jw", 
+#                   max_dist=.08, 
+#                   distance_col='dist') %>% 
+#   mutate(municipio_hecho_clean = case_when(is.na(dist) ~ "MUNICIPIOS FUERA DE JALISCO",
+#                                            !is.na(dist) ~ municipio_hecho_clean)) %>% 
+#   select(-variable, -dist, -valor)
 
 dependencias_base_servicios <- 
   c("Todas las dependencias", 
@@ -1326,29 +1332,40 @@ ui <- dashboardPage(
 # 3.- Definir server----
 server <- function(input, output) {
   
+  ### Vamos a hacer las bases artificales que van a filtrar
+  #se va hacer una base por cada pestaña
+  
+  # Información general
+  data1 <- reactive({
+    base_casos_clean %>% 
+      filter(if(input$depen_check_1=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_1, 
+             fecha_hechos >= input$fecha_hecho_inicio &
+               fecha_hechos <= input$fecha_hecho_final
+             )
+  })
   
   ## 3.1.- Información general (Server) ----
   
   ### a) Mapa ----
-  
+   
   output$mapa_1 <- renderLeaflet({
     
     if(input$switch_tasa != T){
+      # 
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   mapa_1p <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   mapa_1p <- base_casos_clean
+      #   
+      # }
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        mapa_1p <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        mapa_1p <- base_casos_clean
-        
-      }
-      
-      mapa_1p <- mapa_1p %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      mapa_1p <- data1() %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1413,18 +1430,18 @@ server <- function(input, output) {
       
     } else {
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        mapa_1p <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        mapa_1p <- base_casos_clean
-        
-      }
-      
-      mapa_1p <- mapa_1p %>% 
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   mapa_1p <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   mapa_1p <- base_casos_clean
+      #   
+      # }
+      # 
+      mapa_1p <- data1() %>% 
         filter(fecha_hechos >= input$fecha_hecho_inicio &
                  fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
@@ -1500,20 +1517,20 @@ server <- function(input, output) {
   
   output$total_casos <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_1)){
-      
-      total_ind <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_1)
-      
-    } else {
-      
-      total_ind <- base_casos_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_1)){
+    #   
+    #   total_ind <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_1)
+    #   
+    # } else {
+    #   
+    #   total_ind <- base_casos_clean
+    #   
+    # }
     
-    total_ind <- total_ind %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio &
-               fecha_hechos <= input$fecha_hecho_final) 
+    total_ind <- data1() #%>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio &
+      #          fecha_hechos <= input$fecha_hecho_final) 
     
     valueBox(prettyNum(nrow(total_ind), big.mark = ","), 
              "Número de casos recibidos", 
@@ -1526,20 +1543,20 @@ server <- function(input, output) {
   
   output$tasa_casos <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_1)){
-      
-      tasa_ind <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_1)
-      
-    } else {
-      
-      tasa_ind <- base_casos_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_1)){
+    #   
+    #   tasa_ind <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_1)
+    #   
+    # } else {
+    #   
+    #   tasa_ind <- base_casos_clean
+    #   
+    # }
     
-    tasa_ind <- tasa_ind %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio &
-               fecha_hechos <= input$fecha_hecho_final) 
+    tasa_ind <- data1() #%>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio &
+      #          fecha_hechos <= input$fecha_hecho_final) 
     
     valor_tasa <- nrow(tasa_ind)/4249696*100000
     
@@ -1561,21 +1578,21 @@ server <- function(input, output) {
     
     if(input$switch_tasa == T){
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        p1 <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        p1 <- base_casos_clean
-        
-      }
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   p1 <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   p1 <- base_casos_clean
+      #   
+      # }
       
       
-      p1 <- p1 %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      p1 <- data1() %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1661,20 +1678,20 @@ server <- function(input, output) {
       
     } else { # Procesar total de casos
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        p1_total <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        p1_total <- base_casos_clean
-        
-      }
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   p1_total <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   p1_total <- base_casos_clean
+      #   
+      # }
       
-      p1_total <- p1_total %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      p1_total <- data1() %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1742,20 +1759,20 @@ server <- function(input, output) {
     
     if(input$switch_tasa == T){
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        t1 <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        t1 <- base_casos_clean
-        
-      }
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   t1 <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   t1 <- base_casos_clean
+      #   
+      # }
       
-      t1 <- t1 %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      t1 <- data1() %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1801,20 +1818,20 @@ server <- function(input, output) {
       
     } else { # Analizar casos totales
       
-      if(!grepl("Todas las dependencias", input$depen_check_1)){
-        
-        t1_total <- base_casos_clean %>% 
-          filter(dep_exp %in% input$depen_check_1)
-        
-      } else {
-        
-        t1_total <- base_casos_clean
-        
-      }
+      # if(!grepl("Todas las dependencias", input$depen_check_1)){
+      #   
+      #   t1_total <- base_casos_clean %>% 
+      #     filter(dep_exp %in% input$depen_check_1)
+      #   
+      # } else {
+      #   
+      #   t1_total <- base_casos_clean
+      #   
+      # }
       
-      t1_total <- t1_total %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      t1_total <- data1() %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1851,22 +1868,30 @@ server <- function(input, output) {
   
   ## 3.2.- Evolución de casos (Server) ----
   
+  data2 <- reactive({
+    base_casos_clean %>% 
+      filter(if(input$depen_check_2=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_2, 
+             fecha_hechos >= input$fecha_hecho_inicio_2 &
+               fecha_hechos <= input$fecha_hecho_final_2
+      )
+    
+  })
   output$evolucion_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_2)){
-      
-      p2 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_2)
-      
-    } else {
-      
-      p2 <- base_casos_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_2)){
+    #   
+    #   p2 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_2)
+    #   
+    # } else {
+    #   
+    #   p2 <- base_casos_clean
+    #   
+    # }
     
-    p2 <- p2 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_2 &
-               fecha_hechos <= input$fecha_hecho_final_2) 
+    p2 <- data2() #%>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_2 &
+      #          fecha_hechos <= input$fecha_hecho_final_2) 
     
     
     p2 <- p2 %>% 
@@ -1932,21 +1957,21 @@ server <- function(input, output) {
   
   output$tabla_cambio_municipios <- DT::renderDataTable({
     
-    if(!grepl("Todas las dependencias", input$depen_check_2)){
-      
-      p2_plots <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_2)
-      
-    } else {
-      
-      p2_plots <- base_casos_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_2)){
+    #   
+    #   p2_plots <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_2)
+    #   
+    # } else {
+    #   
+    #   p2_plots <- base_casos_clean
+    #   
+    # }
     
     # Últimos 14 días
-    p2_sem <- p2_plots %>% 
+    p2_sem <- data2() %>% 
       filter(fecha_hechos >= input$fecha_hecho_final_2-13) %>% 
-      filter(fecha_hechos <=input$fecha_hecho_final_2) %>% 
+      # filter(fecha_hechos <=input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-6 ~ "ultima_semana",
                                  fecha_hechos < input$fecha_hecho_final_2-6 ~ "semana_anterior")) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
@@ -1971,9 +1996,9 @@ server <- function(input, output) {
       arrange(-cambio_semana) 
     
     # Últimos 60 días
-    p2_mes <- p2_plots %>% 
+    p2_mes <- data2() %>% 
       filter(fecha_hechos >= input$fecha_hecho_final_2-59) %>% 
-      filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
+      # filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-29 ~ "ultimo_mes",
                                  fecha_hechos < input$fecha_hecho_final_2-29 ~ "mes_anterior")) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
@@ -1998,9 +2023,9 @@ server <- function(input, output) {
       arrange(-cambio_mes) 
     
     # Últimos 180 días
-    p2_anios <- p2_plots %>% 
+    p2_anios <- data2() %>% 
       filter(fecha_hechos >= input$fecha_hecho_final_2-365) %>% 
-      filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
+      # filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-182 ~ "ultimo_anio",
                                  fecha_hechos < input$fecha_hecho_final_2-182 ~ "anio_anterior")) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
@@ -2300,38 +2325,49 @@ server <- function(input, output) {
     
   })
   
+  data3 <- reactive({
+    base_casos_clean %>% 
+      filter(
+        if(input$depen_check_3=="Todas las dependencias") dep_exp!="" else dep_exp %in%input$depen_check_3,
+        if(input$municipio_seleccionado=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado),
+        fecha_hechos >= input$fecha_hecho_inicio_3,
+                 fecha_hechos <= input$fecha_hecho_final_3
+        
+      )
+  })
+  
   ## 3.3.- Caracterísiticas de los casos (Server)----
   
   ### a) Tipo de violencia ----
   
   output$tipo_violencia_plot <- renderPlotly({
     
-    p4 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p4 <- p4 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p4 <- p4
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p4 <- p4 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    # p4 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p4 <- p4 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p4 <- p4
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p4 <- p4 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
       
       municipio_seleccionado_tv <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_tv <- "Todos los municipios de Jalisco"
-    }
+
+    # } else {
+    # 
+    #   municipio_seleccionado_tv <- "Todos los municipios de Jalisco"
+    # }
     
-    p4 <- p4 %>% 
+    p4 <- data3() %>% 
       # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
       #          fecha_hechos <= input$fecha_hecho_final_3) %>% 
       select(econ_a3mica,
@@ -2434,35 +2470,35 @@ server <- function(input, output) {
   
   output$tipo_modalidad_plot <- renderPlotly({
     
-    p5 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p5 <- p5 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p5 <- p5
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p5 <- p5 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
+    # p5 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p5 <- p5 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p5 <- p5
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p5 <- p5 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
       municipio_seleccionado_tm <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_tm <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p5 <- p5 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_tm <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p5 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(modalidad_de_la_violencia) %>% 
       group_by(modalidad_de_la_violencia) %>% 
       summarise(cuenta = n()) %>% 
@@ -2554,33 +2590,33 @@ server <- function(input, output) {
   
   output$rango_edad_plot <- renderPlotly({
     
-    p6 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p6 <- p6 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p6 <- p6
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p6 <- p6 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_re <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_re <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p6 <- p6 %>% 
+    # p6 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p6 <- p6 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p6 <- p6
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p6 <- p6 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+       municipio_seleccionado_re <- input$municipio_seleccionado
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_re <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p6 <- data3() %>% 
       filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
                fecha_hechos <= input$fecha_hecho_final_3) %>%
       mutate(name_clean = case_when(edad <= 11 ~ "0 a 11 años",
@@ -2672,35 +2708,35 @@ server <- function(input, output) {
   
   output$vinculo_plot <- renderPlotly({
     
-    p7 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p7 <- p7 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p7 <- p7
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p7 <- p7 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_vn <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_vn <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p7 <- p7 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # p7 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p7 <- p7 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p7 <- p7
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p7 <- p7 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+       municipio_seleccionado_vn <- input$municipio_seleccionado
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_vn <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p7 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(detalle_de_va_nculo_con_victima, va_nculo_con_victima) 
     
     p7$detalle_de_va_nculo_con_victima[which(p7$detalle_de_va_nculo_con_victima == "")] <- 
@@ -2820,34 +2856,34 @@ server <- function(input, output) {
   
   output$lugar_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p8 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p8 <- base_casos_clean
-      
-    }
-    
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p8 <- p8 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_lug <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p8 <- p8 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p8 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p8 <- base_casos_clean
+    #   
+    # }
+    # 
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p8 <- p8 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+    #   municipio_seleccionado_lug <- input$municipio_seleccionado
+    #   
+    # } else {
+    #   
+       municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p8 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(descripcion_del_lugar) 
     
     
@@ -2955,32 +2991,32 @@ server <- function(input, output) {
   
   output$estado_civil_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p9 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p9 <- base_casos_clean
-      
-    }
-    
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p9 <- p9 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p9 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p9 <- base_casos_clean
+    #   
+    # }
+    # 
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p9 <- p9 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
       municipio_seleccionado_ec <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_ec <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p9 <- p9 %>% 
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ec <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p9 <- data3() %>% 
       filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
                fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(estado_civil) 
@@ -3078,29 +3114,29 @@ server <- function(input, output) {
   # Value Box - Migrante
   
   output$vb_migrante <- renderValueBox({
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p10 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p10 <- base_casos_clean
-      
-    }
-    
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p10 <- p10 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-    } 
-    
-    p10 <- p10 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p10 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p10 <- base_casos_clean
+    #   
+    # }
+    # 
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p10 <- p10 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+    # } 
+    # 
+    p10 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(migrante, pertenece_etnia, esta_embarazada)
     
     
@@ -3116,27 +3152,27 @@ server <- function(input, output) {
   
   output$vb_etnia <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p11 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p11 <- base_casos_clean
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p11 <- p11 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-    } 
-    
-    p11 <- p11 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p11 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p11 <- base_casos_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p11 <- p11 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+    # } 
+    # 
+    p11 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(migrante, pertenece_etnia, esta_embarazada)
     
     valueBox(length(p11$pertenece_etnia[grepl("SÃ­", p11$pertenece_etnia, ignore.case = T)]), 
@@ -3152,27 +3188,27 @@ server <- function(input, output) {
   
   output$vb_embarazada <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p12 <- base_casos_clean %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p12 <- base_casos_clean
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p12 <- p12 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-    } 
-    
-    p12 <- p12 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p12 <- base_casos_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p12 <- base_casos_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p12 <- p12 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+    # } 
+    # 
+    p12 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(migrante, pertenece_etnia, esta_embarazada)
     
     
@@ -3193,35 +3229,35 @@ server <- function(input, output) {
   
   output$numero_de_hijos_plot <- renderPlotly({
     
-    p21 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p21 <- p21 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p21 <- p21
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p21 <- p21 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_nh <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_nh <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p21 <- p21 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # p21 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p21 <- p21 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p21 <- p21
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p21 <- p21 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+       municipio_seleccionado_nh <- input$municipio_seleccionado
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_nh <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p21 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(numero_de_hijos) 
     
     
@@ -3312,35 +3348,35 @@ server <- function(input, output) {
   
   output$actividades_victima_plot <- renderPlotly({
     
-    p22 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p22 <- p22 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p22 <- p22
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p22 <- p22 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_actv <- input$municipio_seleccionado
-      
-    } else {
-      
-      municipio_seleccionado_actv <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p22 <- p22 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # p22 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p22 <- p22 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p22 <- p22
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p22 <- p22 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+       municipio_seleccionado_actv <- input$municipio_seleccionado
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_actv <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p22 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(starts_with("vict")) %>% 
       pivot_longer(cols = 1:9) %>% 
       filter(value != 0) %>% 
@@ -3436,29 +3472,29 @@ server <- function(input, output) {
   
   output$vb_conocimiento_a <- renderValueBox({
     
-    p23 <- base_casos_clean
-    
-    if(!grepl("Todas las dependencias", input$depen_check_3)){
-      
-      p23 <- p23 %>% 
-        filter(dep_exp %in% input$depen_check_3)
-      
-    } else {
-      
-      p23 <- p23
-      
-    }
-    
-    if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
-      
-      p23 <- p23 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-    } 
-    
-    p23 <- p23 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
-               fecha_hechos <= input$fecha_hecho_final_3) %>%
+    # p23 <- base_casos_clean
+    # 
+    # if(!grepl("Todas las dependencias", input$depen_check_3)){
+    #   
+    #   p23 <- p23 %>% 
+    #     filter(dep_exp %in% input$depen_check_3)
+    #   
+    # } else {
+    #   
+    #   p23 <- p23
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado != "Todos los municipios de Jalisco"){
+    #   
+    #   p23 <- p23 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
+    #   
+    # } 
+    # 
+    p23 <- data3() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_3 &
+      #          fecha_hechos <= input$fecha_hecho_final_3) %>%
       select(conocimiento_de_autoridad) %>% 
       group_by(conocimiento_de_autoridad) %>% 
       summarise(cuenta = n()) %>% 
@@ -3478,39 +3514,47 @@ server <- function(input, output) {
   
   
   ## 3.4.- Características de las personas agresoras (Server)----
-  
+  data4 <- reactive({
+    base_agre_clean %>% 
+      filter(
+        if(input$depen_check_4=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_4,
+        if(input$municipio_seleccionado_2=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_2,
+        fecha_hechos >= input$fecha_hecho_inicio_4,
+          fecha_hechos <= input$fecha_hecho_final_4
+      )
+  })
   ### a) Edad----
   
   output$edad_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p13 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p13 <- base_agre_clean
-      
-    }
-    
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p13 <- p13 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p13 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p13 <- base_agre_clean
+    #   
+    # }
+    # 
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p13 <- p13 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
       municipio_seleccionado_e_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_e_ag <- "Todos los municipios de Jalisco"
-      
-    }
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_e_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
     
-    p13 <- p13 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
-               fecha_hechos <= input$fecha_hecho_final_4) %>%
+    p13 <- data4() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
+      #          fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(edad) 
     
     p13 <- p13 %>% 
@@ -3621,33 +3665,33 @@ server <- function(input, output) {
   
   output$escolaridad_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p14 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p14 <- base_agre_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p14 <- p14 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_es_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_es_ag <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p14 <- p14 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
-               fecha_hechos <= input$fecha_hecho_final_4) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p14 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p14 <- base_agre_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p14 <- p14 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_es_ag <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_es_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p14 <- data4() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
+      #          fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(escolaridad) 
     
     p14 <- p14 %>% 
@@ -3764,33 +3808,33 @@ server <- function(input, output) {
   
   output$genero_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p24 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p24 <- base_agre_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p24 <- p24 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_gen_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_gen_ag <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p24 <- p24 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
-               fecha_hechos <= input$fecha_hecho_final_4) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p24 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p24 <- base_agre_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p24 <- p24 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_gen_ag <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_gen_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p24 <- data4() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
+      #          fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(genero) 
     
     p24 <- p24 %>% 
@@ -3898,33 +3942,33 @@ server <- function(input, output) {
   
   output$actividad_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p25 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p25 <- base_agre_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p25 <- p25 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_act_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_act_ag <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p25 <- p25 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
-               fecha_hechos <= input$fecha_hecho_final_4) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p25 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p25 <- base_agre_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p25 <- p25 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_act_ag <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_act_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p25 <- data4() %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
+      #          fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(starts_with("prin")) 
     
     p25 <- p25 %>% 
@@ -4039,31 +4083,31 @@ server <- function(input, output) {
   
   output$fuente_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p26 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p26 <- base_agre_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p26 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p26 <- base_agre_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p26 <- p26 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_fte_ag <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_fte_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
     
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p26 <- p26 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_fte_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_fte_ag <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p26 <- p26 %>% 
+    p26 <- data4() %>% 
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(starts_with("fte")) 
@@ -4180,31 +4224,31 @@ server <- function(input, output) {
   
   output$drogas_agresor_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p27 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p27 <- base_agre_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p27 <- p27 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_drog_ag <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_drog_ag <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p27 <- p27 %>% 
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p27 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p27 <- base_agre_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p27 <- p27 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_drog_ag <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_drog_ag <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p27 <- data4() %>% 
       filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
                fecha_hechos <= input$fecha_hecho_final_4) %>%
       select(droga_alcohol) 
@@ -4298,40 +4342,40 @@ server <- function(input, output) {
   
   output$vb_arma_agresor <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_4)){
-      
-      p15 <- base_agre_clean %>% 
-        filter(dep_exp %in% input$depen_check_4)
-      
-    } else {
-      
-      p15 <- base_agre_clean
-      
-    }
-    
-    p15 <-  p15 %>% 
-      filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
-               fecha_hechos <= input$fecha_hecho_final_4) %>%
-      filter(posee_algun_tipo_de_arma == "SI")
-    
-    if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
-      
-      p15 <- p15 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
-      
-      municipio_seleccionado_arma <- input$municipio_seleccionado_2
-      
-    } else {
-      
-      municipio_seleccionado_arma <- "Todos los municipios de Jalisco"
-      
-    }
-    
+    # if(!grepl("Todas las dependencias", input$depen_check_4)){
+    #   
+    #   p15 <- base_agre_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_4)
+    #   
+    # } else {
+    #   
+    #   p15 <- base_agre_clean
+    #   
+    # }
+    # 
+    # p15 <-  p15 %>% 
+    #   filter(fecha_hechos >= input$fecha_hecho_inicio_4 &
+    #            fecha_hechos <= input$fecha_hecho_final_4) %>%
+    #   filter(posee_algun_tipo_de_arma == "SI")
+    # 
+    # if(input$municipio_seleccionado_2 != "Todos los municipios de Jalisco"){
+    #   
+    #   p15 <- p15 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
+    #   
+       municipio_seleccionado_arma <- input$municipio_seleccionado_2
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_arma <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
     #### i) Plot tipo de arma ----
     
     output$tipo_arma_plot <- renderPlotly({
       
-      p15_1 <- p15 %>% 
+      p15_1 <- data4() %>% 
         select(chacos, 
                macanas,
                objeto_punzo_cortante,
@@ -4389,7 +4433,7 @@ server <- function(input, output) {
     
     output$edad_agresor_arma_plot <- renderPlotly({
       
-      p15_2 <- p15 %>% 
+      p15_2 <- data4() %>% 
         select(edad) %>% 
         mutate(name_clean = case_when(     edad >=  0 & edad <= 11 ~ "0 a 11 años",
                                            edad >= 12 & edad <= 18 ~ "12 a 18 años",
@@ -4434,7 +4478,7 @@ server <- function(input, output) {
     
     output$lugar_arma_plot <- renderPlotly({
       
-      p15_3 <- p15 %>% 
+      p15_3 <- data4() %>% 
         select(lugar_hechos)  %>% 
         mutate(name_clean = case_match(lugar_hechos, 
                                        "Espacio particular" ~ "Espacio particular",
@@ -4476,7 +4520,7 @@ server <- function(input, output) {
     
     output$vinculo_arma_plot <- renderPlotly({
       
-      p15_4 <- p15 %>% 
+      p15_4 <- data4() %>% 
         select(vinculo_con_va_ctima)  %>% 
         mutate(name_clean = case_match(vinculo_con_va_ctima, 
                                        "Otro" ~ "Otro",
@@ -4531,7 +4575,7 @@ server <- function(input, output) {
     
     output$vb_arma_agresor_por <- renderValueBox({
       
-      por_armas <- nrow(p15)/nrow(base_agre_clean)
+      por_armas <- nrow(data4())/nrow(base_agre_clean)
       
       valueBox(scales::percent(por_armas, accuracy = 1), 
                "Porcentaje del total de casos en los que se reportó que la persona agresora poseía algún arma", 
@@ -4547,7 +4591,7 @@ server <- function(input, output) {
     
     #### v) Value box arma---- 
     
-    valueBox(prettyNum(nrow(p15), big.mark = ","), 
+    valueBox(prettyNum(nrow(data4()), big.mark = ","), 
              "Casos en los que se reportó que la persona agresora poseía algún tipo de arma", 
              icon = NULL,
              width = 18, 
@@ -5143,34 +5187,43 @@ server <- function(input, output) {
   
   
   ## 3.6.- Órdenes de protección (server)----
-  
+  data5 <- reactive({
+    base_ordenes_clean %>% 
+      filter(
+        if(input$depen_check_5=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_5,
+        if(input$municipio_seleccionado_4=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_4),
+        fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
+        fecha_de_recepcion <= input$fecha_de_recepcion_final
+      )
+      
+  })
   
   ### a) Caja órdenes de protección (total) ----
   
   output$caja_ordenes_total <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_5)){
-      
-      p17 <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
-      
-    } else {
-      
-      p17 <- base_ordenes_clean
-      
-    }
-    
-    p17 <- p17 %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final) 
-    
-    
-    if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
-      
-      p17 <- p17 %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_5)){
+    #   
+    #   p17 <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    # } else {
+    #   
+    #   p17 <- base_ordenes_clean
+    #   
+    # }
+    # 
+    p17 <- data5() #%>% 
+    #   filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #            fecha_de_recepcion <= input$fecha_de_recepcion_final) 
+    # 
+    # 
+    # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
+    #   
+    #   p17 <- p17 %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+    # }
     
     valueBox(prettyNum(nrow(p17), big.mark = ","), 
              "Órdenes de protección registradas", 
@@ -5186,42 +5239,47 @@ server <- function(input, output) {
   
   output$caja_ordenes_porcentaje <- renderValueBox({
     
-    if(!grepl("Todas las dependencias", input$depen_check_5)){
+    # if(!grepl("Todas las dependencias", input$depen_check_5)){
+    #   
+    #   p17_2 <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    #   p17_aux <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    # } else {
       
-      p17_2 <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
+      p17_2 <- data5()
       
-      p17_aux <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
+      p17_aux <- base_casos_clean %>% 
+        filter(if(input$depen_check_5=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_5,
+               if(input$municipio_seleccionado_4=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_4,
+               fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
+                 fecha_de_recepcion <= input$fecha_de_recepcion_final
+               )
       
-    } else {
-      
-      p17_2 <- base_ordenes_clean
-      
-      p17_aux <- base_casos_clean
-      
-    }
+    # }
     
     
     
-    p17_2 <- p17_2 %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final) 
+    # p17_2 <- p17_2 %>% 
+    #   filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #            fecha_de_recepcion <= input$fecha_de_recepcion_final) 
+    # 
+    # p17_aux <- p17_aux %>% 
+    #   filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #            fecha_de_recepcion <= input$fecha_de_recepcion_final) 
     
-    p17_aux <- p17_aux %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final) 
-    
-    if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
-      
-      p17_2 <- p17_2 %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-      p17_aux <- p17_aux %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-    }
-    
+    # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
+    #   
+    #   p17_2 <- p17_2 %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+    #   p17_aux <- p17_aux %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+    # }
+    # 
     
     valueBox(scales::percent(nrow(p17_2)/nrow(p17_aux), accuracy = 0.1), 
              "Porcentaje de órdenes de protección por casos registrados", 
@@ -5237,37 +5295,37 @@ server <- function(input, output) {
   
   output$evolucion_ordenes_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_5)){
-      
-      p18 <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
-      
-    } else {
-      
-      p18 <- base_ordenes_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_5)){
+    #   
+    #   p18 <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    # } else {
+    #   
+    #   p18 <- base_ordenes_clean
+    #   
+    # }
+    # 
+    # p18 <- data5() #%>% 
+      # filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+      #          fecha_de_recepcion <= input$fecha_de_recepcion_final)
     
-    p18 <- p18 %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final)
-    
-    if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
-      
-      p18 <- p18 %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-      municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
-      
-    } else {
-      
-      municipio_ordenes <- "Todos los municipios de Jalisco"
-      
-      
-    }
+    # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
+    #   
+    #   p18 <- p18 %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    #   
+    # } else {
+    #   
+    #   municipio_ordenes <- "Todos los municipios de Jalisco"
+    #   
+    #   
+    # }
     
     
-    p18 <- p18 %>% 
+    p18 <- data5() %>% 
       mutate(mes_anio = as_date(paste0(format(fecha_de_recepcion, "%Y-%m"),"-01"))) %>% 
       group_by(mes_anio) %>% 
       summarise(cuenta = n()) %>% 
@@ -5308,38 +5366,38 @@ server <- function(input, output) {
   
   output$tipo_orden_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_5)){
-      
-      p19 <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
-      
-    } else {
-      
-      p19 <- base_ordenes_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_5)){
+    #   
+    #   p19 <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    # } else {
+    #   
+    #   p19 <- base_ordenes_clean
+    #   
+    # }
+    # 
+    # 
+    # 
+    # p19 <- p19 %>% 
+    #   filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #            fecha_de_recepcion <= input$fecha_de_recepcion_final)
+    # 
+    # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
+    #   
+    #   p19 <- p19 %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    #   
+    # } else {
+    #   
+    #   municipio_ordenes <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
     
-    
-    
-    p19 <- p19 %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final)
-    
-    if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
-      
-      p19 <- p19 %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-      municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
-      
-    } else {
-      
-      municipio_ordenes <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    
-    p19 <- p19 %>% 
+    p19 <- data5() %>% 
       group_by(desc_tipo_orden) %>% 
       summarise(cuenta = n()) %>% 
       ungroup() %>% 
@@ -5371,36 +5429,36 @@ server <- function(input, output) {
   
   output$entidad_emisora_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_5)){
-      
-      p20 <- base_ordenes_clean %>% 
-        filter(dep_exp %in% input$depen_check_5)
-      
-    } else {
-      
-      p20 <- base_ordenes_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_5)){
+    #   
+    #   p20 <- base_ordenes_clean %>% 
+    #     filter(dep_exp %in% input$depen_check_5)
+    #   
+    # } else {
+    #   
+    #   p20 <- base_ordenes_clean
+    #   
+    # }
+    # 
+    # p20 <- p20 %>% 
+    #   filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #            fecha_de_recepcion <= input$fecha_de_recepcion_final)
+    # 
+    # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
+    #   
+    #   p20 <- p20 %>%
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
+    #   
+       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    #   
+    # } else {
+    #   
+    #   municipio_ordenes <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
     
-    p20 <- p20 %>% 
-      filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-               fecha_de_recepcion <= input$fecha_de_recepcion_final)
-    
-    if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
-      
-      p20 <- p20 %>%
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
-      
-      municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
-      
-    } else {
-      
-      municipio_ordenes <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    
-    p20 <- p20 %>% 
+    p20 <- data5() %>% 
       mutate(auto_emisora_clean = case_when(
         grepl("MINISTERIO|^MP|M\\.P|PUBLICO|M\\. P|P$|M PCO|INISTERI|MO$|AGENCIA|MINES|M \\.P\\.|M,P,|P\\.$|PM$|M-P-", 
               autoridad_emisora) ~ "Ministerio Público",
@@ -5440,25 +5498,34 @@ server <- function(input, output) {
   })
   
   ## 3.7.- Servicios otorgados ----
-  
+  data6 <- reactive({
+    base_servicios_clean %>% 
+      filter(
+        if(input$depen_check_6=="Todas las dependencias") dependenciaquebrindoservicio!="" else dependenciaquebrindoservicio %in% input$depen_check_6,
+        if(input$municipio_seleccionado_5=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_5),
+        fecha_captura >= input$fecha_de_captura_inicial &
+          fecha_captura <= input$fecha_de_captura_final
+      )
+    
+  })
   ### a) Mapa----
   
   output$mapa_2 <- renderLeaflet({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      mapa_2p <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      mapa_2p <- base_servicios_clean
-      
-    }
-    
-    mapa_2p <- mapa_2p %>% 
-      filter(fecha_captura >= input$fecha_de_captura_inicial &
-               fecha_captura <= input$fecha_de_captura_final) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   mapa_2p <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   mapa_2p <- base_servicios_clean
+    #   
+    # }
+    # 
+    mapa_2p <- data6() %>% 
+      # filter(fecha_captura >= input$fecha_de_captura_inicial &
+      #          fecha_captura <= input$fecha_de_captura_final) %>%
       group_by(municipio_hecho_clean) %>% 
       filter(municipio_hecho_clean !=  "") %>% 
       summarise(cuenta = n()) %>% 
@@ -5531,32 +5598,32 @@ server <- function(input, output) {
   
   output$plot_evolucion_servicios <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p28 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p28 <- base_servicios_clean
-      
-    }
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p28 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p28 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p28 <- p28 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_serv_ev <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_serv_ev <- "Todos los municipios de Jalisco"
+    # }
     
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p28 <- p28 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_serv_ev <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_serv_ev <- "Todos los municipios de Jalisco"
-    }
-    
-    p28 <- p28 %>% 
-      filter(fecha_captura >= input$fecha_de_captura_inicial &
-               fecha_captura <= input$fecha_de_captura_final) %>%
+    p28 <- data6() %>% 
+      # filter(fecha_captura >= input$fecha_de_captura_inicial &
+      #          fecha_captura <= input$fecha_de_captura_final) %>%
       select(euv, 
              fecha_captura) %>% 
       mutate(ind_mujeres = gsub("-.*", "", euv))
@@ -5653,33 +5720,33 @@ server <- function(input, output) {
   
   output$tipo_servicio_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p29 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p29 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p29 <- p29 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_ser_tip <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_tip <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p29 <- p29 %>% 
-      filter(fecha_captura >= input$fecha_de_captura_inicial &
-               fecha_captura <= input$fecha_de_captura_final) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p29 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p29 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p29 <- p29 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_ser_tip <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_tip <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p29 <- data6() %>% 
+      # filter(fecha_captura >= input$fecha_de_captura_inicial &
+      #          fecha_captura <= input$fecha_de_captura_final) %>%
       select(serviciodetalle) 
     
     p29 <- p29 %>% 
@@ -5768,33 +5835,33 @@ server <- function(input, output) {
   
   output$servicios_edad_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p30 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p30 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p30 <- p30 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_ser_edad <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_edad <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p30 <- p30 %>% 
-      filter(fecha_captura >= input$fecha_de_captura_inicial &
-               fecha_captura <= input$fecha_de_captura_final) %>%
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p30 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p30 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p30 <- p30 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_ser_edad <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_edad <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p30 <- data6() %>% 
+      # filter(fecha_captura >= input$fecha_de_captura_inicial &
+      #          fecha_captura <= input$fecha_de_captura_final) %>%
       select(edad_vict) 
     
     p30 <- p30 %>% 
@@ -5882,31 +5949,31 @@ server <- function(input, output) {
   
   output$servicios_edocivil_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p31 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p31 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p31 <- p31 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_ser_edociv <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_edociv <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p31 <- p31 %>% 
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p31 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p31 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p31 <- p31 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_ser_edociv <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_edociv <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p31 <- data6() %>% 
       filter(fecha_captura >= input$fecha_de_captura_inicial &
                fecha_captura <= input$fecha_de_captura_final) %>%
       select(estado_civil_vict) 
@@ -5990,31 +6057,31 @@ server <- function(input, output) {
   
   output$servicios_dependencia_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p32 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p32 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p32 <- p32 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_ser_depen <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_depen <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p32 <- p32 %>% 
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p32 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p32 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p32 <- p32 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_ser_depen <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_depen <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p32 <- data6() %>% 
       filter(fecha_captura >= input$fecha_de_captura_inicial &
                fecha_captura <= input$fecha_de_captura_final) %>%
       select(dependenciaquebrindoservicio) 
@@ -6105,31 +6172,31 @@ server <- function(input, output) {
   
   output$servicios_usuarios_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p33 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p33 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p33 <- p33 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
-      municipio_seleccionado_ser_usu <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_usu <- "Todos los municipios de Jalisco"
-      
-    }
-    
-    p33 <- p33 %>% 
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p33 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p33 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p33 <- p33 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
+       municipio_seleccionado_ser_usu <- input$municipio_seleccionado_5
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_usu <- "Todos los municipios de Jalisco"
+    #   
+    # }
+    # 
+    p33 <- data6() %>% 
       filter(fecha_captura >= input$fecha_de_captura_inicial &
                fecha_captura <= input$fecha_de_captura_final) %>%
       select(ususervicio) 
@@ -6214,31 +6281,31 @@ server <- function(input, output) {
   
   output$servicios_categoria_plot <- renderPlotly({
     
-    if(!grepl("Todas las dependencias", input$depen_check_6)){
-      
-      p34 <- base_servicios_clean %>% 
-        filter(dependenciaquebrindoservicio %in% input$depen_check_6)
-      
-    } else {
-      
-      p34 <- base_servicios_clean
-      
-    }
-    
-    if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
-      
-      p34 <- p34 %>% 
-        filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
-      
+    # if(!grepl("Todas las dependencias", input$depen_check_6)){
+    #   
+    #   p34 <- base_servicios_clean %>% 
+    #     filter(dependenciaquebrindoservicio %in% input$depen_check_6)
+    #   
+    # } else {
+    #   
+    #   p34 <- base_servicios_clean
+    #   
+    # }
+    # 
+    # if(input$municipio_seleccionado_5 != "Todos los municipios de Jalisco"){
+    #   
+    #   p34 <- p34 %>% 
+    #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
+    #   
       municipio_seleccionado_ser_cate <- input$municipio_seleccionado_5
-      
-    } else {
-      
-      municipio_seleccionado_ser_cate <- "Todos los municipios de Jalisco"
-      
-    }
+    #   
+    # } else {
+    #   
+    #   municipio_seleccionado_ser_cate <- "Todos los municipios de Jalisco"
+    #   
+    # }
     
-    p34 <- p34 %>% 
+    p34 <- data6() %>% 
       filter(fecha_captura >= input$fecha_de_captura_inicial &
                fecha_captura <= input$fecha_de_captura_final) %>%
       select(tiposervicio, estatus) 
