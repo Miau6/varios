@@ -1381,32 +1381,40 @@ server <- function(input, output) {
         replace(is.na(.), 0) %>% 
         left_join(., jalisco_shape, by = c("municipio")) %>% 
         mutate(quantile = ntile(cuenta, 5)) 
+      # 
+      # quantiles <- data.frame(quantile = 1:5,
+      #                         upr = round(quantile(mapa_1p$cuenta, 
+      #                                              probs = seq(.2, 1, by = .2))),
+      #                         lwr = c(-1, 
+      #                                 round(quantile(mapa_1p$cuenta, 
+      #                                                probs = seq(.2, 1, by = .2))[1:4]))) %>% 
+      #   mutate(lwr = lwr + 1) %>% 
+      #   mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
+      #   mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
+      #   mutate(rango = paste0(lwr, "-", upr)) %>% 
+      #   select(quantile, rango) %>% 
+      #   arrange(-quantile)
       
-      quantiles <- data.frame(quantile = 1:5,
-                              upr = round(quantile(mapa_1p$cuenta, 
-                                                   probs = seq(.2, 1, by = .2))),
-                              lwr = c(-1, 
-                                      round(quantile(mapa_1p$cuenta, 
-                                                     probs = seq(.2, 1, by = .2))[1:4]))) %>% 
-        mutate(lwr = lwr + 1) %>% 
-        mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
-        mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
-        mutate(rango = paste0(lwr, "-", upr)) %>% 
-        select(quantile, rango) %>% 
-        arrange(-quantile)
+      # mapa_1p <- mapa_1p %>% 
+      #   left_join(., quantiles) %>% 
+      #   mutate(rango = factor(rango, 
+      #                         levels = quantiles$rango)) %>% 
+      #   st_as_sf()
       
-      mapa_1p <- mapa_1p %>% 
-        left_join(., quantiles) %>% 
-        mutate(rango = factor(rango, 
-                              levels = quantiles$rango)) %>% 
-        st_as_sf()
+      # pal1 <-  colorFactor(palette=c("#0f0a1f", 
+      #                                "#3c3065", 
+      #                                "#9784d7",
+      #                                "#cbc1eb",
+      #                                "#ffffff"),
+      #                      levels=sort(unique(mapa_1p$rango)))
       
-      pal1 <-  colorFactor(palette=c("#0f0a1f", 
-                                     "#3c3065", 
-                                     "#9784d7",
-                                     "#cbc1eb",
-                                     "#ffffff"),
-                           levels=sort(unique(mapa_1p$rango)))
+      pal1 <- colorNumeric(palette = c("#0f0a1f", 
+                                                "#3c3065", 
+                                                "#9784d7",
+                                                "#cbc1eb"), 
+                                                mapa_1p$cuenta, reverse = T
+                                                
+                           )
       
       labels_map <- sprintf(
         "<strong>%s</strong><br/>%s",
@@ -1414,16 +1422,17 @@ server <- function(input, output) {
         paste0("Número de casos: ", prettyNum(mapa_1p$cuenta, big.mark = ","))) %>%
         lapply(htmltools::HTML)
       
-      leaflet() %>%
+      mapa_1p %>% st_as_sf() %>% 
+        leaflet() %>%
         addProviderTiles(providers$CartoDB.Positron) %>% 
-        addPolygons(data =  mapa_1p,
+        addPolygons(#data =  mapa_1p,
                     color = "black",
                     weight=1,
                     fillOpacity = 0.8,
-                    fillColor  = ~pal1(rango),
+                    fillColor  = ~pal1(cuenta),
                     label=~labels_map) %>% 
         leaflet::addLegend(pal = pal1,
-                           values = sort(unique(mapa_1p$rango)),
+                           values = sort(unique(mapa_1p$cuenta)),
                            opacity = 0.75,
                            title = "Número de casos",
                            position = "bottomright")
@@ -1461,48 +1470,56 @@ server <- function(input, output) {
         left_join(., jalisco_shape, by = c("municipio")) %>% 
         mutate(quantile = ntile(tasa, 5)) 
       
-      quantiles <- data.frame(quantile = 1:5,
-                              upr = round(quantile(mapa_1p$tasa, 
-                                                   probs = seq(.2, 1, by = .2))),
-                              lwr = c(-1, 
-                                      round(quantile(mapa_1p$tasa, 
-                                                     probs = seq(.2, 1, by = .2))[1:4]))) %>% 
-        mutate(lwr = lwr + 1) %>% 
-        mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
-        mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
-        mutate(rango = paste0(lwr, "-", upr)) %>% 
-        select(quantile, rango) %>% 
-        arrange(-quantile)
+      # quantiles <- data.frame(quantile = 1:5,
+      #                         upr = round(quantile(mapa_1p$tasa, 
+      #                                              probs = seq(.2, 1, by = .2))),
+      #                         lwr = c(-1, 
+      #                                 round(quantile(mapa_1p$tasa, 
+      #                                                probs = seq(.2, 1, by = .2))[1:4]))) %>% 
+      #   mutate(lwr = lwr + 1) %>% 
+      #   mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
+      #   mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
+      #   mutate(rango = paste0(lwr, "-", upr)) %>% 
+      #   select(quantile, rango) %>% 
+      #   arrange(-quantile)
+      # 
+      # mapa_1p <- mapa_1p %>% 
+      #   left_join(., quantiles) %>% 
+      #   mutate(rango = factor(rango, 
+      #                         levels = quantiles$rango)) %>% 
+      #   st_as_sf()
+      # 
+      # pal1 <- colorFactor(palette=c("#0f0a1f", 
+      #                               "#3c3065", 
+      #                               "#9784d7",
+      #                               "#cbc1eb",
+      #                               "#ffffff"),
+      #                     levels=sort(unique(mapa_1p$rango)))
+      # 
       
-      mapa_1p <- mapa_1p %>% 
-        left_join(., quantiles) %>% 
-        mutate(rango = factor(rango, 
-                              levels = quantiles$rango)) %>% 
-        st_as_sf()
-      
-      pal1 <- colorFactor(palette=c("#0f0a1f", 
-                                    "#3c3065", 
-                                    "#9784d7",
-                                    "#cbc1eb",
-                                    "#ffffff"),
-                          levels=sort(unique(mapa_1p$rango)))
-      
+      pal1 <- colorNumeric(c("#0f0a1f", 
+                                                                    "#3c3065",
+                                                                    "#9784d7",
+                                                                    "#cbc1eb"), 
+                                      
+                           mapa_1p$cuenta, reverse = T)
+        
       labels_map <- sprintf(
         "<strong>%s</strong><br/>%s",
         mapa_1p$municipio_hecho_clean, 
         paste0("Tasa de casos por 100 mil mujeres: ", prettyNum(mapa_1p$tasa, big.mark = ","))) %>%
         lapply(htmltools::HTML)
       
-      leaflet() %>%
+      mapa_1p %>% st_as_sf() %>% leaflet() %>%
         addProviderTiles(providers$CartoDB.Positron) %>% 
-        addPolygons(data =  mapa_1p,
+        addPolygons(#data =  mapa_1p,
                     color = "black",
                     weight=1,
                     fillOpacity = 0.8,
-                    fillColor  = ~pal1(rango),
+                    fillColor  = ~pal1(cuenta),
                     label=~labels_map) %>% 
         leaflet::addLegend(pal = pal1,
-                           values = sort(unique(mapa_1p$rango)),
+                           values = sort(unique(mapa_1p$cuenta)),
                            opacity = 0.75,
                            title = "Tasa por 100 mil mujeres",
                            position = "bottomright")
@@ -5501,9 +5518,9 @@ server <- function(input, output) {
   data6 <- reactive({
     base_servicios_clean %>% 
       filter(
-        if(input$depen_check_6=="Todas las dependencias") dependenciaquebrindoservicio!="" else dependenciaquebrindoservicio %in% input$depen_check_6,
+        if(input$depen_check_6=="Todas las dependencias") dependenciaquebrindoservicio!="" else dependenciaquebrindoservicio %in% str_to_upper(input$depen_check_6),
         if(input$municipio_seleccionado_5=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_5),
-        fecha_captura >= input$fecha_de_captura_inicial &
+        fecha_captura >= input$fecha_de_captura_inicial, 
           fecha_captura <= input$fecha_de_captura_final
       )
     
@@ -5538,56 +5555,64 @@ server <- function(input, output) {
       mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
       filter(!is.na(municipio)) %>% 
       select(-dist) %>% 
-      replace(is.na(.), 0) %>% 
-      right_join(., jalisco_shape, by = c("municipio")) 
+      # replace(is.na(.), 0) %>% 
+      right_join(., jalisco_shape, by = c("municipio")) %>% 
+      ungroup() %>%  drop_na(cuenta) 
     
-    mapa_2p$cuenta[which(is.na(mapa_2p$cuenta))] <- 0
+    # mapa_2p$cuenta[which(is.na(mapa_2p$cuenta))] <- 0
     
-    mapa_2p <- mapa_2p  %>% 
-      mutate(quantile = ntile(cuenta, 5)) 
+    pal2 <- colorNumeric(c("#0f0a1f", 
+                                                                  "#3c3065",
+                                                                  "#9784d7",
+                                                                  "#cbc1eb"),
+                                    mapa_2p$cuenta, reverse = T)
     
-    quantiles_2 <- data.frame(quantile = 1:5,
-                              upr = round(quantile(mapa_2p$cuenta, 
-                                                   probs = seq(.2, 1, by = .2))),
-                              lwr = c(-1, 
-                                      round(quantile(mapa_2p$cuenta, 
-                                                     probs = seq(.2, 1, by = .2))[1:4]))) %>% 
-      mutate(lwr = lwr + 1) %>% 
-      mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
-      mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
-      mutate(rango = paste0(lwr, "-", upr)) %>% 
-      select(quantile, rango) %>% 
-      arrange(-quantile)
-    
-    mapa_2p <- mapa_2p %>% 
-      left_join(., quantiles_2) %>% 
-      mutate(rango = factor(rango, 
-                            levels = quantiles_2$rango)) %>% 
-      st_as_sf()
-    
-    pal2 <- colorFactor(palette=c("#0f0a1f", 
-                                  "#3c3065", 
-                                  "#9784d7",
-                                  "#cbc1eb",
-                                  "#ffffff"),
-                        levels=sort(unique(mapa_2p$rango)))
-    
+    # mapa_2p <- mapa_2p  %>% 
+    #   mutate(quantile = ntile(cuenta, 5)) 
+    # 
+    # quantiles_2 <- data.frame(quantile = 1:5,
+    #                           upr = round(quantile(mapa_2p$cuenta, 
+    #                                                probs = seq(.2, 1, by = .2))),
+    #                           lwr = c(-1, 
+    #                                   round(quantile(mapa_2p$cuenta, 
+    #                                                  probs = seq(.2, 1, by = .2))[1:4]))) %>% 
+    #   mutate(lwr = lwr + 1) %>% 
+    #   mutate(lwr = prettyNum(lwr, big.mark = ",")) %>% 
+    #   mutate(upr = prettyNum(upr, big.mark = ",")) %>% 
+    #   mutate(rango = paste0(lwr, "-", upr)) %>% 
+    #   select(quantile, rango) %>% 
+    #   arrange(-quantile)
+    # 
+    # mapa_2p <- mapa_2p %>% 
+    #   left_join(., quantiles_2) %>% 
+    #   mutate(rango = factor(rango, 
+    #                         levels = quantiles_2$rango)) %>% 
+    #   st_as_sf()
+    # 
+    # pal2 <- colorFactor(palette=c("#0f0a1f", 
+    #                               "#3c3065", 
+    #                               "#9784d7",
+    #                               "#cbc1eb",
+    #                               "#ffffff"),
+    #                     levels=sort(unique(mapa_2p$rango)))
+    # 
     labels_map_2 <- sprintf(
       "<strong>%s</strong><br/>%s",
       mapa_2p$municipio_hecho_clean, 
       paste0("Número de servicios: ", prettyNum(mapa_2p$cuenta, big.mark = ","))) %>%
       lapply(htmltools::HTML)
     
-    leaflet() %>%
+    mapa_2p %>% st_as_sf() %>% leaflet() %>%
       addProviderTiles(providers$CartoDB.Positron) %>% 
-      addPolygons(data =  mapa_2p,
+      addPolygons(#data =  mapa_2p,
                   color = "black",
                   weight=1,
                   fillOpacity = 0.8,
-                  fillColor  = ~pal2(rango),
+                  # fillColor  = ~pal2(rango),
+                  fillColor  = ~pal2(cuenta),
                   label=~labels_map_2)  %>% 
       leaflet::addLegend(pal = pal2,
-                         values = sort(unique(mapa_2p$rango)),
+                         values = sort(unique(mapa_2p$cuenta)),
                          opacity = 0.75,
                          title = "Número de servicios",
                          position = "bottomright")
