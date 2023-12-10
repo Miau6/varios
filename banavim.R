@@ -234,9 +234,10 @@ dropdownButton <- function(label = "", status = c("default", "primary", "success
 
 # Dependencias 
 dependencias_base_casos <- 
-  c("Todas las dependencias", 
-    unique(base_casos_clean$dep_exp)[order(unique(base_casos_clean$dep_exp))])
+  c(str_to_upper("Todas las dependencias"), 
+    str_to_upper(unique(base_casos_clean$dep_exp)[order(unique(base_casos_clean$dep_exp))]))
 
+# base_casos_clean$dep_exp[base_casos_clean$dep_exp=="Comisaria De Seguridad Pãºblica De Talpa De Allende"] <- "Comisaria De Seguridad Pública De Talpa De Allende"
 # Limpiar base de personas agresoras
 # base_agre_clean <- base_agre %>% 
 #   # Limpiar nombres
@@ -335,27 +336,40 @@ dependencias_base_casos <-
 #                                            !is.na(dist) ~ municipio_hecho_clean)) %>% 
 #   select(-variable, -dist, -valor)
 
+# base_servicios_clean$dependenciaquebrindoservicio[base_servicios_clean$dependenciaquebrindoservicio=="COMISIÃ³N EJECUTIVA ESTATAL DE COMISIÃ³N A VÃ­CTIMAS"] <- "COMISIÓN EJECUTIVA ESTATAL DE COMISIÓN A VÍCTIMAS"
+
 dependencias_base_servicios <- 
-  c("Todas las dependencias", 
+  str_to_upper(c("Todas las dependencias", 
     unique(base_servicios_clean$dependenciaquebrindoservicio)[
-      order(unique(base_servicios_clean$dependenciaquebrindoservicio))])
+      order(unique(base_servicios_clean$dependenciaquebrindoservicio))]))
 
 # Crear lista de municipios en base
-municipios_en_base <- c("Todos los municipios de Jalisco", 
-                        str_to_title(unique(base_casos_clean$municipio_hecho_clean)[
+municipios_en_base <- c(str_to_upper("Todos los municipios de Jalisco"), 
+                        str_to_upper(unique(base_casos_clean$municipio_hecho_clean)[
                           order(unique(base_casos_clean$municipio_hecho_clean))]))
 
 municipios_en_base <- municipios_en_base[c(-2)]
 
-municipios_en_base <- municipios_en_base[-which(grepl("Fuera ", municipios_en_base))]
+# municipios_en_base <- municipios_en_base[-which(grepl("Fuera ", municipios_en_base))]
 
-municipios_en_base <- c(municipios_en_base, "Municipios fuera de Jalisco")
+municipios_en_base <- c(municipios_en_base, str_to_upper("Municipios fuera de Jalisco"))
 
+# base_casos_clean$municipio_hecho_clean <- str_to_upper(base_casos_clean$municipio_hecho_clean)
+# base_agre_clean$municipio_hecho_clean <- str_to_upper(base_agre_clean$municipio_hecho_clean)
+# base_ordenes_clean$municipio_hecho_clean <- str_to_upper(base_ordenes_clean$municipio_hecho_clean)
+# base_servicios_clean$municipio_hecho_clean <- str_to_upper(base_servicios_clean$municipio_hecho_clean)
+# 
+# base_casos_clean$municipio_hecho_clean[base_casos_clean$municipio_hecho_clean=="SANTA MARÍ­A DE LOS Í\u0081NGELES"] <- "SANTA MARÍ­A DE LOS ÁNGELES"
+# base_agre_clean$municipio_hecho_clean[base_agre_clean$municipio_hecho_clean=="SANTA MARÍ­A DE LOS Í\u0081NGELES"] <- "SANTA MARÍ­A DE LOS ÁNGELES"
+# base_ordenes_clean$municipio_hecho_clean[base_ordenes_clean$municipio_hecho_clean=="SANTA MARÍ­A DE LOS Í\u0081NGELES"] <- "SANTA MARÍ­A DE LOS ÁNGELES"
+# base_servicios_clean$municipio_hecho_clean[base_servicios_clean$municipio_hecho_clean=="SANTA MARÍ­A DE LOS Í\u0081NGELES"] <- "SANTA MARÍ­A DE LOS ÁNGELES"
 
 # 2.- Definir UI ----
 ui <- dashboardPage(
   
+  
   # Estilos
+  
   
   # Título de la aplicación
   header = dashboardHeader(title = "Herramienta de análisis - BANAVIM",
@@ -558,6 +572,8 @@ ui <- dashboardPage(
                                  "Ingresa la fecha final:",
                                  language = "es", 
                                  value = as.Date("2023-09-30")))),
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output1")))), 
               
               ### d) Gráfica----
               fluidRow(align = "center",
@@ -658,6 +674,8 @@ ui <- dashboardPage(
                                                 "Últimos 60 días",
                                                 "Último año"),
                                     selected = "Últimos 14 días"))),
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output2")))), 
               
               ### d) Gráfica ----
               
@@ -766,6 +784,8 @@ ui <- dashboardPage(
                                    selected = "Todos los municipios de Jalisco"))),
               
               
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output3")))), 
               
               ### d) Primeras dos gráficas----
               
@@ -874,7 +894,8 @@ ui <- dashboardPage(
                                    "Ingresa el municipio:", 
                                    choices = municipios_en_base, 
                                    selected = "Todos los municipios de Jalisco"))),
-              
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output4")))), 
               
               ### d) Primeras seis gráficas----
               
@@ -1094,6 +1115,8 @@ ui <- dashboardPage(
                                    choices = municipios_en_base, 
                                    selected = "Todos los municipios de Jalisco"))),
               
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output5")))), 
               
               ### d) Plot de evolución de órdenes----
               
@@ -1195,7 +1218,10 @@ ui <- dashboardPage(
                                    "Ingresa el municipio:", 
                                    choices = municipios_en_base, 
                                    selected = "Todos los municipios de Jalisco"))),
-              ### d) Mapa ----
+             
+              #fila de leyenda si sale algo con los filtros o no
+              fluidRow(strong(h2(textOutput("output6")))), 
+               ### d) Mapa ----
               
               fluidRow(column(width = 12,
                               h1(""),
@@ -1358,7 +1384,7 @@ server <- function(input, output, session
   # Información general
   data1 <- reactive({
     base_casos_clean %>% 
-      filter(if(input$depen_check_1=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_1, 
+      filter(if(input$depen_check_1=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in% input$depen_check_1, 
              fecha_hechos >= input$fecha_hecho_inicio &
                fecha_hechos <= input$fecha_hecho_final
       )
@@ -2026,7 +2052,7 @@ server <- function(input, output, session
   
   data2 <- reactive({
     base_casos_clean %>% 
-      filter(if(input$depen_check_2=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_2, 
+      filter(if(input$depen_check_2=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in% input$depen_check_2, 
              fecha_hechos >= input$fecha_hecho_inicio_2 &
                fecha_hechos <= input$fecha_hecho_final_2
       )
@@ -2641,8 +2667,8 @@ server <- function(input, output, session
   data3 <- reactive({
     base_casos_clean %>% 
       filter(
-        if(input$depen_check_3=="Todas las dependencias") dep_exp!="" else dep_exp %in%input$depen_check_3,
-        if(input$municipio_seleccionado=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado),
+        if(input$depen_check_3=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in%input$depen_check_3,
+        if(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO") municipio_hecho_clean!="" else str_to_upper(municipio_hecho_clean) %in% str_to_upper(input$municipio_seleccionado),
         fecha_hechos >= input$fecha_hecho_inicio_3,
         fecha_hechos <= input$fecha_hecho_final_3
         
@@ -4052,8 +4078,8 @@ server <- function(input, output, session
   data4 <- reactive({
     base_agre_clean %>% 
       filter(
-        if(input$depen_check_4=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_4,
-        if(input$municipio_seleccionado_2=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_2,
+        if(input$depen_check_4=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in% input$depen_check_4,
+        if(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO") municipio_hecho_clean!="" else str_to_upper(municipio_hecho_clean) %in% input$municipio_seleccionado_2,
         fecha_hechos >= input$fecha_hecho_inicio_4,
         fecha_hechos <= input$fecha_hecho_final_4
       )
@@ -5870,8 +5896,8 @@ server <- function(input, output, session
   data5 <- reactive({
     base_ordenes_clean %>% 
       filter(
-        if(input$depen_check_5=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_5,
-        if(input$municipio_seleccionado_4=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_4),
+        if(input$depen_check_5=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in% input$depen_check_5,
+        if(input$municipio_seleccionado_4=="TODOS LOS MUNICIPIOS DE JALISCO") municipio_hecho_clean!="" else str_to_upper(municipio_hecho_clean) %in% str_to_upper(input$municipio_seleccionado_4),
         fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
         fecha_de_recepcion <= input$fecha_de_recepcion_final
       )
@@ -6205,8 +6231,8 @@ server <- function(input, output, session
   data6 <- reactive({
     base_servicios_clean %>% 
       filter(
-        if(input$depen_check_6=="Todas las dependencias") dependenciaquebrindoservicio!="" else dependenciaquebrindoservicio %in% str_to_upper(input$depen_check_6),
-        if(input$municipio_seleccionado_5=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_5),
+        if(input$depen_check_6=="TODAS LAS DEPENDENCIAS") dependenciaquebrindoservicio!="" else str_to_upper(dependenciaquebrindoservicio) %in% str_to_upper(input$depen_check_6),
+        if(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO") municipio_hecho_clean!="" else str_to_upper(municipio_hecho_clean) %in% str_to_upper(input$municipio_seleccionado_5),
         fecha_captura >= input$fecha_de_captura_inicial, 
         fecha_captura <= input$fecha_de_captura_final
       )
@@ -7299,10 +7325,71 @@ server <- function(input, output, session
     
   })
   
+  output$output1 <- renderText({
+    if(nrow(data1())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+  output$output2 <- renderText({
+    if(nrow(data2())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+  output$output3 <- renderText({
+    if(nrow(data3())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+  output$output4 <- renderText({
+    if(nrow(data4())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+  output$output5 <- renderText({
+    if(nrow(data5())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+  output$output6 <- renderText({
+    if(nrow(data6())>0) {
+      ""
+    } else {
+      "Los filtros seleccionados no arrojan ningún valor"
+    }
+    
+  })
+  
+
+
+  
+  
+  
   
   
   
 }
 
 # Ejecturas aplicación
+
+
 shinyApp(ui = ui, server = server)
