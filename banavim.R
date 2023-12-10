@@ -1039,7 +1039,7 @@ ui <- dashboardPage(
       #                       h6("Fuente: BANAVIM 2023.", align = "right"))))),
       
       
-       
+      
       # ## 2.6- Órdenes de protección (UI)----
       
       tabItem(tabName = "ordenes",
@@ -1330,7 +1330,27 @@ ui <- dashboardPage(
 
 
 # 3.- Definir server----
-server <- function(input, output) {
+server <- function(input, output, session
+                   ) {
+  
+  # Width
+  plotWidth <- reactive({session$clientData[["output_user-muni_graf_width"]]})
+  
+  # Height
+  plotHeight <- function(){
+    width <- plotWidth()
+    h <- ifelse(width > 425, width*0.54, width*0.75)
+    return(h)}
+  
+  # Font
+  fontbase <- 6
+  
+  textFunction <- function(){
+    width <- plotWidth()
+    textSize <- ifelse(width > 425, fontbase, 0.5*fontbase)
+    return(textSize)}
+  
+  
   
   ### Vamos a hacer las bases artificales que van a filtrar
   #se va hacer una base por cada pestaña
@@ -1341,13 +1361,13 @@ server <- function(input, output) {
       filter(if(input$depen_check_1=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_1, 
              fecha_hechos >= input$fecha_hecho_inicio &
                fecha_hechos <= input$fecha_hecho_final
-             )
+      )
   })
   
   ## 3.1.- Información general (Server) ----
   
   ### a) Mapa ----
-   
+  
   output$mapa_1 <- renderLeaflet({
     
     if(input$switch_tasa != T){
@@ -1409,12 +1429,12 @@ server <- function(input, output) {
       #                      levels=sort(unique(mapa_1p$rango)))
       
       pal1 <- colorNumeric(palette = c("#0f0a1f", 
-                                                "#3c3065", 
-                                                "#9784d7",
-                                                "#cbc1eb"), 
-                                                mapa_1p$cuenta, reverse = T
-                                                
-                           )
+                                       "#3c3065", 
+                                       "#9784d7",
+                                       "#cbc1eb"), 
+                           mapa_1p$cuenta, reverse = T
+                           
+      )
       
       labels_map <- sprintf(
         "<strong>%s</strong><br/>%s",
@@ -1426,11 +1446,11 @@ server <- function(input, output) {
         leaflet() %>%
         addProviderTiles(providers$CartoDB.Positron) %>% 
         addPolygons(#data =  mapa_1p,
-                    color = "black",
-                    weight=1,
-                    fillOpacity = 0.8,
-                    fillColor  = ~pal1(cuenta),
-                    label=~labels_map) %>% 
+          color = "black",
+          weight=1,
+          fillOpacity = 0.8,
+          fillColor  = ~pal1(cuenta),
+          label=~labels_map) %>% 
         leaflet::addLegend(pal = pal1,
                            values = sort(unique(mapa_1p$cuenta)),
                            opacity = 0.75,
@@ -1498,12 +1518,12 @@ server <- function(input, output) {
       # 
       
       pal1 <- colorNumeric(c("#0f0a1f", 
-                                                                    "#3c3065",
-                                                                    "#9784d7",
-                                                                    "#cbc1eb"), 
-                                      
+                             "#3c3065",
+                             "#9784d7",
+                             "#cbc1eb"), 
+                           
                            mapa_1p$cuenta, reverse = T)
-        
+      
       labels_map <- sprintf(
         "<strong>%s</strong><br/>%s",
         mapa_1p$municipio_hecho_clean, 
@@ -1513,11 +1533,11 @@ server <- function(input, output) {
       mapa_1p %>% st_as_sf() %>% leaflet() %>%
         addProviderTiles(providers$CartoDB.Positron) %>% 
         addPolygons(#data =  mapa_1p,
-                    color = "black",
-                    weight=1,
-                    fillOpacity = 0.8,
-                    fillColor  = ~pal1(cuenta),
-                    label=~labels_map) %>% 
+          color = "black",
+          weight=1,
+          fillOpacity = 0.8,
+          fillColor  = ~pal1(cuenta),
+          label=~labels_map) %>% 
         leaflet::addLegend(pal = pal1,
                            values = sort(unique(mapa_1p$cuenta)),
                            opacity = 0.75,
@@ -1546,8 +1566,8 @@ server <- function(input, output) {
     # }
     
     total_ind <- data1() #%>% 
-      # filter(fecha_hechos >= input$fecha_hecho_inicio &
-      #          fecha_hechos <= input$fecha_hecho_final) 
+    # filter(fecha_hechos >= input$fecha_hecho_inicio &
+    #          fecha_hechos <= input$fecha_hecho_final) 
     
     valueBox(prettyNum(nrow(total_ind), big.mark = ","), 
              "Número de casos recibidos", 
@@ -1572,8 +1592,8 @@ server <- function(input, output) {
     # }
     
     tasa_ind <- data1() #%>% 
-      # filter(fecha_hechos >= input$fecha_hecho_inicio &
-      #          fecha_hechos <= input$fecha_hecho_final) 
+    # filter(fecha_hechos >= input$fecha_hecho_inicio &
+    #          fecha_hechos <= input$fecha_hecho_final) 
     
     valor_tasa <- nrow(tasa_ind)/4249696*100000
     
@@ -1647,51 +1667,88 @@ server <- function(input, output) {
                               "</b>"))
       
       p1 <- p1 %>% 
-        mutate(municipio_hecho_clean = factor(municipio_hecho_clean,
-                                              levels = p1$municipio_hecho_clean))
+        slice_head(n = 10) %>% 
+        ggplot(aes(x=reorder(municipio_hecho_clean, -tasa),
+                   y=tasa, text=label))+
+        geom_col(fill = '#5F5CA8', alpha=0.8)+
+        # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+        #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+        geom_text(aes(label=scales::comma(tasa)), size=4, color="black", fontface = "bold")+
+        scale_y_continuous(labels = scales::comma) +
+        scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+        labs(x="", y="", fill="", color="", 
+             title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
+                            "(", 
+                            format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
+                            " al ", 
+                            format(input$fecha_hecho_final, "%d/%B/%Y"),
+                            ")")
+        )+
+        theme_minimal()+
+        theme(legend.position='none',
+              text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+              strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+              plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+              plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+              plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
       
-      
-      fig <- plot_ly(data = p1 %>% slice_head(n = 10),
-                     x = ~ reorder(
-                       str_wrap(municipio_hecho_clean, width=6), -tasa), 
-                     y = ~ tasa,
-                     type = "bar",
-                     marker = list(color = '#5F5CA8',
-                                   line = list(color = '#5e506d',
-                                               width = 1.5)),
-                     text = ~ label,
-                     hoverinfo = "text", 
-                     textfont = list(color = '#5F5CA8', 
-                                     size=0
-                     )
-      ) %>% 
-        # add_trace(textfont = list(color = '#5F5CA8'))
-        add_text(text = ~prettyNum(tasa, big.mark = ","),
-                 textposition = "top",
-                 hoverinfo="none") %>%
-        layout(
-          title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
-                         "(",
-                         format(input$fecha_hecho_inicio, "%d/%b/%y"),
-                         " al ",
-                         format(input$fecha_hecho_final, "%d/%b/%y"),
-                         ")"),
-          xaxis = list(
-            title = "Municipio",
-            zerolinecolor = '#ffff',
-            zerolinewidth = 2,
-            gridcolor = '#fff'),
-          yaxis = list(
-            title = "Tasa",
-            zerolinecolor = '#ffff',
-            zerolinewidth = 2,
-            gridcolor = '#fff'),
-          showlegend = FALSE,
-          layout.separators=",.",
-          hoverlabel=list(bgcolor="white")
-        ) 
-      
-      fig
+      ggplotly(p1, tooltip = "label")
+        
+        
+        
+        
+        
+      #   
+      #   
+      #   
+      #   
+      #   p1 %>% 
+      #   mutate(municipio_hecho_clean = factor(municipio_hecho_clean,
+      #                                         levels = p1$municipio_hecho_clean))
+      # 
+      # 
+      # fig <- plot_ly(data = p1 %>% slice_head(n = 10),
+      #                x = ~ reorder(
+      #                  str_wrap(municipio_hecho_clean, width=6), -tasa), 
+      #                y = ~ tasa,
+      #                type = "bar",
+      #                marker = list(color = '#5F5CA8',
+      #                              line = list(color = '#5e506d',
+      #                                          width = 1.5)),
+      #                text = ~ label,
+      #                hoverinfo = "text", 
+      #                textfont = list(color = '#5F5CA8', 
+      #                                size=0
+      #                )
+      # ) %>% 
+      #   # add_trace(textfont = list(color = '#5F5CA8'))
+      #   add_text(text = ~prettyNum(tasa, big.mark = ","),
+      #            textposition = "top",
+      #            hoverinfo="none") %>%
+      #   layout(
+      #     title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
+      #                    "(",
+      #                    format(input$fecha_hecho_inicio, "%d/%b/%y"),
+      #                    " al ",
+      #                    format(input$fecha_hecho_final, "%d/%b/%y"),
+      #                    ")"),
+      #     xaxis = list(
+      #       title = "Municipio",
+      #       zerolinecolor = '#ffff',
+      #       zerolinewidth = 2,
+      #       gridcolor = '#fff'),
+      #     yaxis = list(
+      #       title = "Tasa",
+      #       zerolinecolor = '#ffff',
+      #       zerolinewidth = 2,
+      #       gridcolor = '#fff'),
+      #     showlegend = FALSE,
+      #     layout.separators=",.",
+      #     hoverlabel=list(bgcolor="white")
+      #   ) 
+      # 
+      # fig
       
     } else { # Procesar total de casos
       
@@ -1723,47 +1780,78 @@ server <- function(input, output) {
                               prettyNum(cuenta, big.mark = ",")))
       
       p1_total <- p1_total %>% 
-        mutate(municipio_hecho_clean = factor(municipio_hecho_clean,
-                                              levels = p1_total$municipio_hecho_clean))
+        slice_head(n = 10) %>% 
+        ggplot(aes(x=reorder(municipio_hecho_clean, -cuenta),
+                   y=cuenta, text=label))+
+        geom_col(fill = '#5F5CA8', alpha=0.8)+
+        # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+        #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+        geom_text(aes(label=scales::comma(cuenta), accuracy = 1), size=4, color="black", fontface = "bold")+
+        scale_y_continuous(labels = scales::comma) +
+        scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+        labs(x="", y="", fill="", color="", 
+             title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
+                                                     "(", 
+                                                     format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
+                                                     " al ", 
+                                                     format(input$fecha_hecho_final, "%d/%B/%Y"),
+                                                     ")")
+        )+
+        theme_minimal()+
+        theme(legend.position='none',
+              text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+              strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+              plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+              plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+              plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+              axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
+
+      ggplotly(p1_total, tooltip = "label")
       
-      
-      fig1_total <- plot_ly(data = p1_total %>% slice_head(n = 10),
-                            x = ~ reorder(str_wrap(municipio_hecho_clean, width=6), -cuenta),
-                            y = ~ cuenta,
-                            type = "bar",
-                            marker = list(color = '#5F5CA8',
-                                          line = list(color = '#5e506d',
-                                                      width = 1.5)),
-                            text = ~ label,
-                            hoverinfo = ~ "text", 
-                            textfont = list(color = '#5F5CA8', 
-                                            size=0)
-      ) %>% 
-        add_text(text = ~prettyNum(cuenta, big.mark = ","),
-                 textposition = "top",
-                 hoverinfo="none") %>% 
-        layout(title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
-                              "(", 
-                              format(input$fecha_hecho_inicio, "%d/%b/%y"), 
-                              " al ", 
-                              format(input$fecha_hecho_final, "%d/%b/%y"),
-                              ")"),
-               xaxis = list(
-                 title = "Municipio",
-                 zerolinecolor = '#ffff',
-                 zerolinewidth = 2,
-                 gridcolor = '#fff'),
-               yaxis = list(
-                 title = "Número de casos",
-                 zerolinecolor = '#ffff',
-                 zerolinewidth = 2,
-                 tickformat=",d",
-                 gridcolor = '#fff'),
-               showlegend = FALSE,
-               hoverlabel=list(bgcolor="white")) 
-      
-      fig1_total
-      
+        
+      # 
+      # p1_total %>% 
+      #   mutate(municipio_hecho_clean = factor(municipio_hecho_clean,
+      #                                         levels = p1_total$municipio_hecho_clean))
+      # 
+      # 
+      # fig1_total <- plot_ly(data = p1_total %>% slice_head(n = 10),
+      #                       x = ~ reorder(str_wrap(municipio_hecho_clean, width=6), -cuenta),
+      #                       y = ~ cuenta,
+      #                       type = "bar",
+      #                       marker = list(color = '#5F5CA8',
+      #                                     line = list(color = '#5e506d',
+      #                                                 width = 1.5)),
+      #                       text = ~ label,
+      #                       hoverinfo = ~ "text", 
+      #                       textfont = list(color = '#5F5CA8', 
+      #                                       size=0)
+      # ) %>% 
+      #   add_text(text = ~prettyNum(cuenta, big.mark = ","),
+      #            textposition = "top",
+      #            hoverinfo="none") %>% 
+      #   layout(title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
+      #                         "(", 
+      #                         format(input$fecha_hecho_inicio, "%d/%b/%y"), 
+      #                         " al ", 
+      #                         format(input$fecha_hecho_final, "%d/%b/%y"),
+      #                         ")"),
+      #          xaxis = list(
+      #            title = "Municipio",
+      #            zerolinecolor = '#ffff',
+      #            zerolinewidth = 2,
+      #            gridcolor = '#fff'),
+      #          yaxis = list(
+      #            title = "Número de casos",
+      #            zerolinecolor = '#ffff',
+      #            zerolinewidth = 2,
+      #            tickformat=",d",
+      #            gridcolor = '#fff'),
+      #          showlegend = FALSE,
+      #          hoverlabel=list(bgcolor="white")) 
+      # 
+      # fig1_total
+      # 
       
     }
     
@@ -1830,8 +1918,34 @@ server <- function(input, output) {
       
       DT::datatable(t1,
                     options = list(scrollY = "300px",
-                                   "pageLength" = 10
-                    ))
+                                   "pageLength" = 10,
+                                   initComplete = JS(
+                                     "function(settings, json) {",
+                                     "$(this.api().table().header()).css({'font-size': '85%'});",
+                                     "}"),
+                                   language = list(
+                                     info = ' ',
+                                     paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+                                   columnDefs = list(list(className = 'dt-center', targets = 1:5)))) %>% 
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          fontSize = "80%",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )
       
     } else { # Analizar casos totales
       
@@ -1873,9 +1987,34 @@ server <- function(input, output) {
       
       DT::datatable(t1_total,
                     options = list(scrollY = "300px",
-                                   "pageLength" = 10
-                    )
-      )
+                                   "pageLength" = 10,
+                                   initComplete = JS(
+                                     "function(settings, json) {",
+                                     "$(this.api().table().header()).css({'font-size': '85%'});",
+                                     "}"),
+                                   language = list(
+                                     info = ' ',
+                                     paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+                                   columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+        formatStyle(
+          columns = c(1:3),
+          fontFamily = "Nutmeg-Light",
+          fontSize = "80%",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )
       
       
     }
@@ -1895,6 +2034,18 @@ server <- function(input, output) {
   })
   output$evolucion_plot <- renderPlotly({
     
+    l <- list(
+      font = list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction(),
+        color = "#000"),
+      borderwidth = 0,
+      x = 0.1, 
+      y = 0.9)
+    
+    tt <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
     # if(!grepl("Todas las dependencias", input$depen_check_2)){
     #   
     #   p2 <- base_casos_clean %>% 
@@ -1907,8 +2058,8 @@ server <- function(input, output) {
     # }
     
     p2 <- data2() #%>% 
-      # filter(fecha_hechos >= input$fecha_hecho_inicio_2 &
-      #          fecha_hechos <= input$fecha_hecho_final_2) 
+    # filter(fecha_hechos >= input$fecha_hecho_inicio_2 &
+    #          fecha_hechos <= input$fecha_hecho_final_2) 
     
     
     p2 <- p2 %>% 
@@ -1916,7 +2067,14 @@ server <- function(input, output) {
       summarise(cuenta = n()) %>% 
       filter(!is.na(fecha_hechos))
     
-    p2 <- p2 %>% 
+    t <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
+    tt <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
+    
+    p2 <- p2 %>% #COQUITA
       right_join(., data.frame(fecha_hechos = as.Date(
         as.numeric(min(p2$fecha_hechos, na.rm = T)):
           as.numeric(max(p2$fecha_hechos, na.rm = T))))) %>% 
@@ -1947,27 +2105,105 @@ server <- function(input, output) {
                 text = ~ label_plot_15,
                 hoverinfo = "text", 
                 hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
-      layout(title = paste0('Evolución del número de casos de violencia contra las mujeres\n',
+      layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
                             "(", 
                             format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
                             " al ", 
                             format(input$fecha_hecho_final_2, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Fecha de hechos",
-               zerolinecolor = '#ffff',
-               zerolinewidth = 2,
-               gridcolor = '#bcbcbc'),
-             yaxis = list(
-               title = "Promedio móvil diario",
-               zerolinecolor = '#ffff',
-               zerolinewidth = 2,
-               gridcolor = '#bcbcbc'),
-             legend = list(x = 0.1, y = 0.9)) %>% 
+                            ")"), font=t),
+              xaxis = list(title = '',
+                           zerolinecolor = '#ffff',zerolinewidth = 2,
+                           gridcolor = '#bcbcbc',
+                           tickangle=0, tickfont = list(family='Nutmeg-Light')),
+              
+              
+              # xaxis = list(title = list(text ="Fecha de captura",
+              #                           zerolinecolor = '#ffff',
+              #                           zerolinewidth = 2,
+              #                           gridcolor = '#bcbcbc',
+              #                           font=tt)),
+              yaxis = list(title = list(text ="Promedio móvil diario",
+                                        zerolinecolor = '#ffff',
+                                        zerolinewidth = 2,
+                                        gridcolor = '#bcbcbc', font=tt),
+                           tickangle=0, tickfont = list(family='Nutmeg-Light')),
+             
+             
+             
+             # xaxis = list(title = list(text ="Fecha de hechos",
+             #   zerolinecolor = '#ffff',
+             #   zerolinewidth = 2,
+             #   gridcolor = '#bcbcbc', font=t)),
+             # yaxis = list(title = list(text ="Promedio móvil diario",
+             #   zerolinecolor = '#ffff',
+             #   zerolinewidth = 2,
+             #   gridcolor = '#bcbcbc', font=t)),
+             legend = l) %>% 
       plotly::config(
         locale='es')
     
     fig2
+    
+    fig2 <- plot_ly(p2, 
+                    x = ~ fecha_hechos,
+                    y = ~ avg_30,
+                    type = 'scatter',
+                    mode = 'lines',
+                    name = "Promedio móvil (30 días)", 
+                    line = list(color = "#542344", 
+                                width = 4),
+                    text = ~ label_plot_30,
+                    hoverinfo = "text", 
+                    hoverlabel = list(bgcolor='#542344')) %>% 
+      add_trace(y = ~avg_15, 
+                name = 'Promedio móvil (15 días)', 
+                line = list(color = '#D1A0DA',
+                            width = 2, dash = 'dash'),
+                opacity = 0.7,
+                text = ~ label_plot_15,
+                hoverinfo = "text", 
+                hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
+      layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
+                            "(", 
+                            format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
+                            " al ", 
+                            format(input$fecha_hecho_final_2, "%d/%b/%y"),
+                            ")"), font=t),
+             # xaxis = list(title = list(text ="Fecha de hechos",
+             #   zerolinecolor = '#ffff',
+             #   zerolinewidth = 2,
+             #   gridcolor = '#bcbcbc', font=t)),
+             # yaxis = list(title = list(text ="Promedio móvil diario",
+             #   zerolinecolor = '#ffff',
+             #   zerolinewidth = 2,
+             #   gridcolor = '#bcbcbc', font=t)),
+             xaxis = list(title = '',
+                          zerolinecolor = '#ffff',zerolinewidth = 2,
+                          gridcolor = '#bcbcbc',
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
+             
+             
+             # xaxis = list(title = list(text ="Fecha de captura",
+             #                           zerolinecolor = '#ffff',
+             #                           zerolinewidth = 2,
+             #                           gridcolor = '#bcbcbc',
+             #                           font=tt)),
+             yaxis = list(title = list(text ="Promedio móvil diario",
+                                       zerolinecolor = '#ffff',
+                                       zerolinewidth = 2,
+                                       gridcolor = '#bcbcbc', font=tt),
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
+             
+             legend = l) %>% 
+      plotly::config(
+        locale='es')
+    
+    fig2
+    
+    ###############################################################################
+
+        ###############################################################################
+    
     
     
   })
@@ -2331,15 +2567,75 @@ server <- function(input, output) {
     }
     
     datatable(t2, options = list("pageLength" = 10,
-                                 columnDefs = list(list(targets = 6, visible = FALSE)))) %>% 
+                                 columnDefs = list(list(targets = 6, visible = FALSE,className = 'dt-center', targets = 1:5)),
+                                 initComplete = JS(
+                                   "function(settings, json) {",
+                                   "$(this.api().table().header()).css({'font-size': '75%'});",
+                                   "}"),
+                                 language = list(
+                                   info = ' ',
+                                   paginate = list(previous = 'Anterior', `next` = 'Siguiente'))
+                                 # columnDefs = list(list(className = 'dt-center', targets = 1:5))
+                                 )) %>% 
       formatStyle(
         "Municipio", "ind",
         backgroundColor = styleEqual(c(0, 1, -1), c('#73746D', '#6e4854', '#63917d'))) %>% 
       formatStyle(
         "Municipio", 
         fontWeight = "bold",
-        color = "white")
-    
+        color = "white") %>% 
+      formatStyle(
+        columns = c(1:5),
+        fontFamily = "Nutmeg-Light",
+        fontSize = "80%",
+        #color = '#008080',
+        fontWeight = 'plain',
+        #paddingRight = "0.5em",
+        borderRightWidth = "1px",
+        borderRightStyle = "solid",
+        borderRightColor = "white",
+        borderBottomColor = "#ffffff",
+        borderBottomStyle = "solid",
+        borderBottomWidth = "0.5px",
+        #borderCollapse = "collapse",
+        verticalAlign = "middle",
+        textAlign = "center",
+        wordWrap = "break-word"#,
+        #backgroundColor = '#e6e6e5'
+      )
+    # 
+    # 
+    # DT::datatable(t1_total,
+    #               options = list(scrollY = "300px",
+    #                              "pageLength" = 10,
+    #                              initComplete = JS(
+    #                                "function(settings, json) {",
+    #                                "$(this.api().table().header()).css({'font-size': '85%'});",
+    #                                "}"),
+    #                              language = list(
+    #                                info = ' ',
+    #                                paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+    #                              columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+    #   formatStyle(
+    #     columns = c(1:3),
+    #     fontFamily = "Nutmeg-Light",
+    #     fontSize = "80%",
+    #     #color = '#008080',
+    #     fontWeight = 'plain',
+    #     #paddingRight = "0.5em",
+    #     borderRightWidth = "1px",
+    #     borderRightStyle = "solid",
+    #     borderRightColor = "white",
+    #     borderBottomColor = "#ffffff",
+    #     borderBottomStyle = "solid",
+    #     borderBottomWidth = "0.5px",
+    #     #borderCollapse = "collapse",
+    #     verticalAlign = "middle",
+    #     textAlign = "center",
+    #     wordWrap = "break-word"#,
+    #     #backgroundColor = '#e6e6e5'
+    #   )
+    # 
   })
   
   data3 <- reactive({
@@ -2348,7 +2644,7 @@ server <- function(input, output) {
         if(input$depen_check_3=="Todas las dependencias") dep_exp!="" else dep_exp %in%input$depen_check_3,
         if(input$municipio_seleccionado=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado),
         fecha_hechos >= input$fecha_hecho_inicio_3,
-                 fecha_hechos <= input$fecha_hecho_final_3
+        fecha_hechos <= input$fecha_hecho_final_3
         
       )
   })
@@ -2358,6 +2654,9 @@ server <- function(input, output) {
   ### a) Tipo de violencia ----
   
   output$tipo_violencia_plot <- renderPlotly({
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height  
+    
     
     # p4 <- base_casos_clean
     # 
@@ -2376,9 +2675,9 @@ server <- function(input, output) {
     #   
     #   p4 <- p4 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
-      
-      municipio_seleccionado_tv <- input$municipio_seleccionado
-
+    
+    municipio_seleccionado_tv <- input$municipio_seleccionado
+    
     # } else {
     # 
     #   municipio_seleccionado_tv <- "Todos los municipios de Jalisco"
@@ -2446,39 +2745,60 @@ server <- function(input, output) {
     
     # Plot - tipo de violencia
     
-    fig_4 <- plot_ly(data = p4,
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#9c4068',
-                                   line = list(color = '#9c4068',
-                                               width = 1.5)),
-                     text = ~ label,
-                     hoverinfo = "text", 
-                     textfont=list(color='#9c4068', 
-                                   size=0)
-    ) %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_tv, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Tipo de violencia",
-               tickangle = 0), 
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
     
+    fig_4 <- p4 %>%  
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#9c4068', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_tv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
-    fig_4
+    ggplotly(fig_4, tooltip = "label")
+      
+      
+
+    #   plot_ly(data = p4,
+    #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                  y = ~ cuenta,
+    #                  type = "bar",
+    #                  marker = list(color = '#9c4068',
+    #                                line = list(color = '#9c4068',
+    #                                            width = 1.5)),
+    #                  text = ~ label,
+    #                  hoverinfo = "text", 
+    #                  textfont=list(color='#9c4068', 
+    #                                size=0)) %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_tv, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Tipo de violencia",
+    #            tickangle = 0), 
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
     
-    
+    # fig_4
     
     
   })
@@ -2505,7 +2825,7 @@ server <- function(input, output) {
     #   p5 <- p5 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-      municipio_seleccionado_tm <- input$municipio_seleccionado
+    municipio_seleccionado_tm <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -2570,36 +2890,66 @@ server <- function(input, output) {
     
     # Plot - modalidad de violencia
     
-    fig_5 <- plot_ly(data = p5,
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#40639c',
-                                   line = list(color = '#40639c',
-                                               width = 1.5)),
-                     text = ~ label,
-                     textfont=list(color='#40639c', 
-                                   size=0),
-                     hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_tm, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Tipo de modalidad",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_5 <- p5 %>%
+      filter(!is.na(name_clean)) %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#40639c', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_tm, "\n (", 
+                           format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                           " al ", 
+                           format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                           ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_5, tooltip = "label")
     
-    fig_5
+      
+      
+      
+    #   plot_ly(data = p5,
+    #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                  y = ~ cuenta,
+    #                  type = "bar",
+    #                  marker = list(color = '#40639c',
+    #                                line = list(color = '#40639c',
+    #                                            width = 1.5)),
+    #                  text = ~ label,
+    #                  textfont=list(color='#40639c', 
+    #                                size=0),
+    #                  hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_tm, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Tipo de modalidad",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_5
     
   })
   
@@ -2625,7 +2975,7 @@ server <- function(input, output) {
     #   p6 <- p6 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-       municipio_seleccionado_re <- input$municipio_seleccionado
+    municipio_seleccionado_re <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -2688,36 +3038,64 @@ server <- function(input, output) {
     
     # Plot - rango de edad
     
-    fig_6 <- plot_ly(data = p6,
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#ba5e36',
-                                   line = list(color = '#ba5e36',
-                                               width = 1.5)),
-                     text = ~ label,
-                     textfont=list(color='#ba5e36', 
-                                   size=0),
-                     hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_re, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Rango de edad",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_6 <- p6 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#ba5e36', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_re, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_6, tooltip = "label")
     
-    fig_6
+      
+      
+    #   plot_ly(data = p6,
+    #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                  y = ~ cuenta,
+    #                  type = "bar",
+    #                  marker = list(color = '#ba5e36',
+    #                                line = list(color = '#ba5e36',
+    #                                            width = 1.5)),
+    #                  text = ~ label,
+    #                  textfont=list(color='#ba5e36', 
+    #                                size=0),
+    #                  hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_re, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Rango de edad",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_6
     
   })
   
@@ -2743,7 +3121,7 @@ server <- function(input, output) {
     #   p7 <- p7 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-       municipio_seleccionado_vn <- input$municipio_seleccionado
+    municipio_seleccionado_vn <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -2835,37 +3213,67 @@ server <- function(input, output) {
     
     # Plot - vínculo
     
-    fig_7 <- plot_ly(data = p7 %>% slice_head(n = 8),
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#824470',
-                                   line = list(color = '#824470',
-                                               width = 1.5)),
-                     text = ~ label,
-                     textfont=list(color='#824470',
-                                   size=0),
-                     hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_vn, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Vínculo",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_7 <- p7 %>% 
+      slice_head(n = 8) %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#824470', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_vn, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
+    
+    ggplotly(fig_7, tooltip = "label")
     
     
-    fig_7
-    
+      
+    # 
+    #   plot_ly(data = p7 %>% slice_head(n = 8),
+    #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                  y = ~ cuenta,
+    #                  type = "bar",
+    #                  marker = list(color = '#824470',
+    #                                line = list(color = '#824470',
+    #                                            width = 1.5)),
+    #                  text = ~ label,
+    #                  textfont=list(color='#824470',
+    #                                size=0),
+    #                  hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_vn, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Vínculo",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_7
+    # 
   })
   
   
@@ -2894,7 +3302,7 @@ server <- function(input, output) {
     #   
     # } else {
     #   
-       municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
+    municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
     #   
     # }
     # 
@@ -2906,7 +3314,7 @@ server <- function(input, output) {
     
     p8 <- p8 %>% 
       mutate(name_clean = case_match(descripcion_del_lugar, 
-                                     "Casa habitaciÃ³n" ~ "Casa-habitación",
+                                     "Casa habitaciÃ³n" ~ "Casa - habitación",
                                      "Mercado" ~ "Mercado",
                                      "" ~ "Sin información",
                                      "Otro" ~ "Otro",
@@ -2971,35 +3379,66 @@ server <- function(input, output) {
     
     # Plot - lugar
     
-    fig_8 <- plot_ly(data = p8 %>% slice_head(n = 8),
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#447042',
-                                   line = list(color = '#447042',
-                                               width = 1.5)),
-                     text = ~ label,
-                     textfont= list(color='#447042', size=0),
-                     hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_lug, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Vínculo",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_8 <- p8 %>% 
+      slice_head(n = 8) %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#447042', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_lug, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_8, tooltip = "label")
     
-    fig_8
+      
+
+    #   
+    # 
+    # plot_ly(data = p8 %>% slice_head(n = 8),
+    #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                  y = ~ cuenta,
+    #                  type = "bar",
+    #                  marker = list(color = '#447042',
+    #                                line = list(color = '#447042',
+    #                                            width = 1.5)),
+    #                  text = ~ label,
+    #                  textfont= list(color='#447042', size=0),
+    #                  hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_lug, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Vínculo",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_8
     
   })
   
@@ -3025,7 +3464,7 @@ server <- function(input, output) {
     #   p9 <- p9 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-      municipio_seleccionado_ec <- input$municipio_seleccionado
+    municipio_seleccionado_ec <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -3094,35 +3533,64 @@ server <- function(input, output) {
     
     # Plot - edo civil
     
-    fig_9 <- plot_ly(data = p9 %>% slice_head(n = 8),
-                     x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                     y = ~ cuenta,
-                     type = "bar",
-                     marker = list(color = '#7356b0',
-                                   line = list(color = '#7356b0',
-                                               width = 1.5)),
-                     text = ~ label,
-                     textfont= list(color='#7356b0', size=0),
-                     hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_ec, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Estado civil",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_9 <-p9 %>% 
+      slice_head(n = 8) %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#7356b0', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ec, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
+    
+    ggplotly(fig_9, tooltip = "label")
+    
+      
+      
+      # plot_ly(data = p9 %>% slice_head(n = 8),
+      #                x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+      #                y = ~ cuenta,
+      #                type = "bar",
+      #                marker = list(color = '#7356b0',
+      #                              line = list(color = '#7356b0',
+      #                                          width = 1.5)),
+      #                text = ~ label,
+      #                textfont= list(color='#7356b0', size=0),
+      #                hoverinfo = "text") %>% 
+      # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+      #          textposition = "top",
+      #          hoverinfo="none") %>% 
+      # layout(title = paste0(municipio_seleccionado_ec, " (", 
+      #                       format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+      #                       " al ", 
+      #                       format(input$fecha_hecho_final_3, "%d/%b/%y"),
+      #                       ")"),
+      #        xaxis = list(
+      #          title = "Estado civil",
+      #          tickangle = 0),
+      #        yaxis = list(
+      #          title = "Número de casos"),
+      #        showlegend = FALSE,
+      #        layout.separators=",.",
+      #        hoverlabel=list(bgcolor="white")) 
     
     
-    fig_9
+    # fig_9
     
   })
   
@@ -3264,7 +3732,7 @@ server <- function(input, output) {
     #   p21 <- p21 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-       municipio_seleccionado_nh <- input$municipio_seleccionado
+    municipio_seleccionado_nh <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -3329,35 +3797,62 @@ server <- function(input, output) {
     
     # Plot - número de hijos
     
-    fig_21 <- plot_ly(data = p21,
-                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#ab673a',
-                                    line = list(color = '#ab673a',
-                                                width = 1.5)),
-                      textfont= list(color='#ab673a', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_nh, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Número de hijos",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_21 <- p21 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#ab673a', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_nh, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_21, tooltip = "label")
     
-    fig_21
+      
+      
+      
+    #   
+    #   
+    #   plot_ly(data = p21,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#ab673a',
+    #                                 line = list(color = '#ab673a',
+    #                                             width = 1.5)),
+    #                   textfont= list(color='#ab673a', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_nh, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Número de hijos",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_21
     
   })
   
@@ -3383,7 +3878,7 @@ server <- function(input, output) {
     #   p22 <- p22 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-       municipio_seleccionado_actv <- input$municipio_seleccionado
+    municipio_seleccionado_actv <- input$municipio_seleccionado
     #   
     # } else {
     #   
@@ -3404,10 +3899,10 @@ server <- function(input, output) {
                                      "vict_trabaja_f_hogar" ~ "Trabaja fuera",
                                      "vict_se_desconoce" ~ "Se desconoce",
                                      "vict_trabaja_hogar" ~ "Trabaja en el hogar",
-                                     "vict_jubilada_pensionada" ~ "Jubilada/pensionada",
+                                     "vict_jubilada_pensionada" ~ "Jubilada / pensionada",
                                      "vict_estudia" ~ "Estudia",
                                      "vict_otro" ~ "Otra actividad",
-                                     "vict_pensionada" ~ "Jubilada/pensionada",
+                                     "vict_pensionada" ~ "Jubilada / pensionada",
                                      "vict_act_ilicita" ~ "Actividad ilícita")) %>% 
       group_by(name_clean) %>% 
       summarise(cuenta = n()) %>% 
@@ -3453,36 +3948,59 @@ server <- function(input, output) {
     
     # Plot - número de hijos
     
-    fig_22 <- plot_ly(data = p22,
-                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#9c5286',
-                                    line = list(color = '#9c5286',
-                                                width = 1.5)),
-                      text = ~ label,
-                      textfont=list(color='#9c5286', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_actv, " (", 
-                            format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Actividad de la víctima",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_22 <-p22 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#9c5286', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_actv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_22, tooltip = "label")
     
-    fig_22
-    
+      
+    #   plot_ly(data = p22,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#9c5286',
+    #                                 line = list(color = '#9c5286',
+    #                                             width = 1.5)),
+    #                   text = ~ label,
+    #                   textfont=list(color='#9c5286', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_actv, " (", 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Actividad de la víctima",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_22
+    # 
   })
   
   ### i) Value Box - conocimiento autoridad ----
@@ -3537,7 +4055,7 @@ server <- function(input, output) {
         if(input$depen_check_4=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_4,
         if(input$municipio_seleccionado_2=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_2,
         fecha_hechos >= input$fecha_hecho_inicio_4,
-          fecha_hechos <= input$fecha_hecho_final_4
+        fecha_hechos <= input$fecha_hecho_final_4
       )
   })
   ### a) Edad----
@@ -3561,7 +4079,7 @@ server <- function(input, output) {
     #   p13 <- p13 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-      municipio_seleccionado_e_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_e_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -3645,36 +4163,59 @@ server <- function(input, output) {
     
     # Plot - rango edad agresor
     
-    fig_13 <- plot_ly(data = p13,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#58569c',
-                                    line = list(color = '#58569c',
-                                                width = 1.5)),
-                      textfont=list(color='#58569c', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_e_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Rango de edad",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_13 <- p13 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#58569c', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_e_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
+    
+    ggplotly(fig_13, tooltip = "label")
     
     
-    fig_13
+      # plot_ly(data = p13,
+      #                 x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+      #                 
+      #                 y = ~ cuenta,
+      #                 type = "bar",
+      #                 marker = list(color = '#58569c',
+      #                               line = list(color = '#58569c',
+      #                                           width = 1.5)),
+      #                 textfont=list(color='#58569c', size=0),
+      #                 text = ~ label,
+      #                 hoverinfo = "text") %>% 
+      # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+      #          textposition = "top",
+      #          hoverinfo="none") %>% 
+      # layout(title = paste0(municipio_seleccionado_e_ag, " (", 
+      #                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+      #                       " al ", 
+      #                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+      #                       ")"),
+      #        xaxis = list(
+      #          title = "Rango de edad",
+      #          tickangle = 0),
+      #        yaxis = list(
+      #          title = "Número de casos"),
+      #        showlegend = FALSE,
+      #        layout.separators=",.",
+      #        hoverlabel=list(bgcolor="white")) 
+      # 
+    # 
+    # fig_13
     
   })
   
@@ -3698,7 +4239,7 @@ server <- function(input, output) {
     #   p14 <- p14 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_es_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_es_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -3789,36 +4330,61 @@ server <- function(input, output) {
     
     # Plot - escolaridad agresor
     
-    fig_14 <- plot_ly(data = p14,
-                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#3d9970',
-                                    line = list(color = '#3d9970',
-                                                width = 1.5)),
-                      textfont=list(color='#3d9970', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_es_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Escolaridad",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_14 <- p14 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#3d9970', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_es_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_14, tooltip = "label")
     
-    fig_14
-    
+      
+      
+    #   
+    #   plot_ly(data = p14,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#3d9970',
+    #                                 line = list(color = '#3d9970',
+    #                                             width = 1.5)),
+    #                   textfont=list(color='#3d9970', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_es_ag, " (", 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Escolaridad",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_14
+    # 
   })
   
   ### c) Género del agresor----
@@ -3841,7 +4407,7 @@ server <- function(input, output) {
     #   p24 <- p24 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_gen_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_gen_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -3923,35 +4489,60 @@ server <- function(input, output) {
     
     # Plot - genero agresor
     
-    fig_24 <- plot_ly(data = p24,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#bf5841',
-                                    line = list(color = '#bf5841',
-                                                width = 1.5)),
-                      textfont= list(color='#bf5841', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_gen_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Género",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_24 <-p24 %>%
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#bf5841', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_gen_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_24, tooltip = "label")
     
-    fig_24
+      
+      
+      
+    #   plot_ly(data = p24,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#bf5841',
+    #                                 line = list(color = '#bf5841',
+    #                                             width = 1.5)),
+    #                   textfont= list(color='#bf5841', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_gen_ag, " (", 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Género",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_24
     
   })
   
@@ -3975,7 +4566,7 @@ server <- function(input, output) {
     #   p25 <- p25 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_act_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_act_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -4064,36 +4655,61 @@ server <- function(input, output) {
     
     # Plot - actividad agresor
     
-    fig_25 <- plot_ly(data = p25,
-                      x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#9e4767',
-                                    line = list(color = '#9e4767',
-                                                width = 1.5)),
-                      textfont=list(color='#9e4767', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_act_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Actividad principal",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_25 <- p25 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#9e4767', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_act_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_25, tooltip = "label")
     
-    fig_25
-    
+      
+      
+      
+    #   plot_ly(data = p25,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#9e4767',
+    #                                 line = list(color = '#9e4767',
+    #                                             width = 1.5)),
+    #                   textfont=list(color='#9e4767', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_act_ag, " (", 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Actividad principal",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_25
+    # 
   })
   
   ### e) Fuente de ingresos del agresor----
@@ -4116,7 +4732,7 @@ server <- function(input, output) {
     #   p26 <- p26 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_fte_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_fte_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -4204,37 +4820,60 @@ server <- function(input, output) {
     
     # Plot - actividad agresor
     
-    fig_26 <- plot_ly(data = p26,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#a6568b',
-                                    line = list(color = '#a6568b',
-                                                width = 1.5)
-                      ),
-                      text = ~ label,
-                      textfont=list(color='#a6568b', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_fte_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ",
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Fuente de ingreso",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_26 <- p26 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#a6568b', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_fte_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_26, tooltip = "label")
     
-    fig_26
-    
+      
+    #   plot_ly(data = p26,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#a6568b',
+    #                                 line = list(color = '#a6568b',
+    #                                             width = 1.5)
+    #                   ),
+    #                   text = ~ label,
+    #                   textfont=list(color='#a6568b', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_fte_ag, " (", 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         " al ",
+    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Fuente de ingreso",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_26
+    # 
   })
   
   ### f) Uso de drogas o alcohol del agresor----
@@ -4257,7 +4896,7 @@ server <- function(input, output) {
     #   p27 <- p27 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_drog_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_drog_ag <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -4272,8 +4911,8 @@ server <- function(input, output) {
     
     p27 <- p27 %>% 
       mutate(name_clean = case_match(droga_alcohol, 
-                                     1 ~ "Sí drogas/alcohol",
-                                     0 ~ "No drogas/alcohol"
+                                     1 ~ "Sí drogas / alcohol",
+                                     0 ~ "No drogas / alcohol"
       ))  %>% 
       group_by(name_clean) %>% 
       summarise(cuenta = n()) %>% 
@@ -4322,35 +4961,59 @@ server <- function(input, output) {
     
     # Plot - drogas agresor
     
-    fig_27 <- plot_ly(data = p27,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#4a8594',
-                                    line = list(color = '#4a8594',
-                                                width = 1.5)),
-                      textfont=list(color='#4a8594', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_drog_ag, " (", 
-                            format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Uso de drogas",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de casos"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_27 <- p27 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#4a8594', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_drog_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_27, tooltip = "label")
     
-    fig_27
+      
+      
+    #   plot_ly(data = p27,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#4a8594',
+    #                                 line = list(color = '#4a8594',
+    #                                             width = 1.5)),
+    #                   textfont=list(color='#4a8594', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_drog_ag, " (", 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Uso de drogas",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de casos"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_27
     
   })
   
@@ -4380,7 +5043,7 @@ server <- function(input, output) {
     #   p15 <- p15 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-       municipio_seleccionado_arma <- input$municipio_seleccionado_2
+    municipio_seleccionado_arma <- input$municipio_seleccionado_2
     #   
     # } else {
     #   
@@ -5212,7 +5875,7 @@ server <- function(input, output) {
         fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
         fecha_de_recepcion <= input$fecha_de_recepcion_final
       )
-      
+    
   })
   
   ### a) Caja órdenes de protección (total) ----
@@ -5265,16 +5928,16 @@ server <- function(input, output) {
     #     filter(dep_exp %in% input$depen_check_5)
     #   
     # } else {
-      
-      p17_2 <- data5()
-      
-      p17_aux <- base_casos_clean %>% 
-        filter(if(input$depen_check_5=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_5,
-               if(input$municipio_seleccionado_4=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_4,
-               fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
-                 fecha_de_recepcion <= input$fecha_de_recepcion_final
-               )
-      
+    
+    p17_2 <- data5()
+    
+    p17_aux <- base_casos_clean %>% 
+      filter(if(input$depen_check_5=="Todas las dependencias") dep_exp!="" else dep_exp %in% input$depen_check_5,
+             if(input$municipio_seleccionado_4=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% input$municipio_seleccionado_4,
+             fecha_de_recepcion >= input$fecha_de_recepcion_inicial,
+             fecha_de_recepcion <= input$fecha_de_recepcion_final
+      )
+    
     # }
     
     
@@ -5324,15 +5987,15 @@ server <- function(input, output) {
     # }
     # 
     # p18 <- data5() #%>% 
-      # filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
-      #          fecha_de_recepcion <= input$fecha_de_recepcion_final)
+    # filter(fecha_de_recepcion >= input$fecha_de_recepcion_inicial &
+    #          fecha_de_recepcion <= input$fecha_de_recepcion_final)
     
     # if(input$municipio_seleccionado_4 != "Todos los municipios de Jalisco"){
     #   
     #   p18 <- p18 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
     #   
     # } else {
     #   
@@ -5353,26 +6016,50 @@ server <- function(input, output) {
                             "\n",
                             prettyNum(cuenta, big.mark = ",")))
     
-    fig_20 <-  plot_ly(data = p18, 
-                       x = ~ mes_anio,
-                       y = ~ cuenta, 
-                       text = ~label, 
-                       marker = list(color = "#58569c"), #cocca
-                       hoverinfo = "text", 
-                       type = "bar") %>% 
-      layout(yaxis = list(title = "Número de casos"),
-             xaxis = list(title = "Mes"),
-             title = paste0(municipio_ordenes,
-                            " (",
-                            format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
-                            " al ",
-                            format(input$fecha_de_recepcion_final, "%d/%b/%y"),
-                            ")")) %>%
-      plotly::config(
-        locale='es')
+    fig_20 <-  p18 %>% 
+      ggplot(aes(x=mes_anio,
+                 y=cuenta, text=label))+
+      geom_col(fill = '#58569c', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=2, color="black", fontface = "bold", angle=90)+
+      scale_y_continuous(labels = scales::comma) +
+      # scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_ordenes, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
-    fig_20
+    ggplotly(fig_20, tooltip = "label")
     
+    
+
+    # plot_ly(data = p18, 
+    #                    x = ~ mes_anio,
+    #                    y = ~ cuenta, 
+    #                    text = ~label, 
+    #                    marker = list(color = "#58569c"), #cocca
+    #                    hoverinfo = "text", 
+    #                    type = "bar") %>% 
+    #   layout(yaxis = list(title = "Número de casos"),
+    #          xaxis = list(title = "Mes"),
+    #          title = paste0(municipio_ordenes,
+    #                         " (",
+    #                         format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+    #                         " al ",
+    #                         format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+    #                         ")")) %>%
+    #   plotly::config(
+    #     locale='es')
+    # 
+    # fig_20
+    # 
     
   })
   
@@ -5405,7 +6092,7 @@ server <- function(input, output) {
     #   p19 <- p19 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
     #   
     # } else {
     #   
@@ -5466,7 +6153,7 @@ server <- function(input, output) {
     #   p20 <- p20 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-       municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
     #   
     # } else {
     #   
@@ -5521,7 +6208,7 @@ server <- function(input, output) {
         if(input$depen_check_6=="Todas las dependencias") dependenciaquebrindoservicio!="" else dependenciaquebrindoservicio %in% str_to_upper(input$depen_check_6),
         if(input$municipio_seleccionado_5=="Todos los municipios de Jalisco") municipio_hecho_clean!="" else municipio_hecho_clean %in% str_to_upper(input$municipio_seleccionado_5),
         fecha_captura >= input$fecha_de_captura_inicial, 
-          fecha_captura <= input$fecha_de_captura_final
+        fecha_captura <= input$fecha_de_captura_final
       )
     
   })
@@ -5562,10 +6249,10 @@ server <- function(input, output) {
     # mapa_2p$cuenta[which(is.na(mapa_2p$cuenta))] <- 0
     
     pal2 <- colorNumeric(c("#0f0a1f", 
-                                                                  "#3c3065",
-                                                                  "#9784d7",
-                                                                  "#cbc1eb"),
-                                    mapa_2p$cuenta, reverse = T)
+                           "#3c3065",
+                           "#9784d7",
+                           "#cbc1eb"),
+                         mapa_2p$cuenta, reverse = T)
     
     # mapa_2p <- mapa_2p  %>% 
     #   mutate(quantile = ntile(cuenta, 5)) 
@@ -5605,12 +6292,12 @@ server <- function(input, output) {
     mapa_2p %>% st_as_sf() %>% leaflet() %>%
       addProviderTiles(providers$CartoDB.Positron) %>% 
       addPolygons(#data =  mapa_2p,
-                  color = "black",
-                  weight=1,
-                  fillOpacity = 0.8,
-                  # fillColor  = ~pal2(rango),
-                  fillColor  = ~pal2(cuenta),
-                  label=~labels_map_2)  %>% 
+        color = "black",
+        weight=1,
+        fillOpacity = 0.8,
+        # fillColor  = ~pal2(rango),
+        fillColor  = ~pal2(cuenta),
+        label=~labels_map_2)  %>% 
       leaflet::addLegend(pal = pal2,
                          values = sort(unique(mapa_2p$cuenta)),
                          opacity = 0.75,
@@ -5622,7 +6309,8 @@ server <- function(input, output) {
   ### b) Plot de evolución y vb total de servicios y mujeres atendidas ----
   
   output$plot_evolucion_servicios <- renderPlotly({
-    
+  
+      
     # if(!grepl("Todas las dependencias", input$depen_check_6)){
     #   
     #   p28 <- base_servicios_clean %>% 
@@ -5639,7 +6327,7 @@ server <- function(input, output) {
     #   p28 <- p28 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_serv_ev <- input$municipio_seleccionado_5
+    municipio_seleccionado_serv_ev <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -5696,9 +6384,27 @@ server <- function(input, output) {
       mutate(label_plot_15 = paste0(format(fecha_captura, "%d/%B/%y"),"\nPromedio últimos 15 días: ", round(avg_15, 2)),
              label_plot_30 = paste0(format(fecha_captura, "%d/%B/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
     
-    fig_28 <- plot_ly(p28_aux, 
+    # ------------------------------------------
+    
+    
+    l <- list(
+      font = list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction(),
+        color = "#000"),
+      borderwidth = 0,
+      x = 0.1, 
+      y = 0.9)
+    
+    tt <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
+    
+    
+    fig_28 <- plot_ly(p28_aux, #cocca
                       x = ~ fecha_captura,
                       y = ~ avg_30,
+                      font=tt,
                       type = 'scatter',
                       mode = 'lines',
                       name = "Promedio móvil (30 días)", 
@@ -5715,26 +6421,33 @@ server <- function(input, output) {
                 text = ~ label_plot_15,
                 hoverinfo = "text", 
                 hoverlabel = list(bgcolor='#d34736'))  %>% 
-      layout(title = paste0(municipio_seleccionado_serv_ev,
-                            " ",
-                            "(", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Fecha de captura",
-               zerolinecolor = '#ffff',
-               zerolinewidth = 2,
-               gridcolor = '#bcbcbc'),
-             yaxis = list(
-               title = "Promedio móvil diario",
-               zerolinecolor = '#ffff',
-               zerolinewidth = 2,
-               gridcolor = '#bcbcbc'),
-             legend = list(x = 0.1, y = 0.9)) %>% 
+      layout(title= list(text = paste0(municipio_seleccionado_serv_ev,
+                                      " ",
+                                      "(", 
+                                      format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+                                      " al ", 
+                                      format(input$fecha_de_captura_final, "%d/%b/%y"),
+                                      ")"), font=tt),
+             xaxis = list(title = '',
+                          zerolinecolor = '#ffff',zerolinewidth = 2,
+                           gridcolor = '#bcbcbc',
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
+    
+            
+             # xaxis = list(title = list(text ="Fecha de captura",
+             #                           zerolinecolor = '#ffff',
+             #                           zerolinewidth = 2,
+             #                           gridcolor = '#bcbcbc',
+             #                           font=tt)),
+             yaxis = list(title = list(text ="Promedio móvil diario",
+                                       zerolinecolor = '#ffff',
+                                       zerolinewidth = 2,
+                                       gridcolor = '#bcbcbc', font=tt),
+             tickangle=0, tickfont = list(family='Nutmeg-Light')),
+             legend = l) %>%  #list(x = 0.1, y = 0.9)) %>% 
       plotly::config(
         locale='es')
+    
     
     fig_28
     
@@ -5761,7 +6474,7 @@ server <- function(input, output) {
     #   p29 <- p29 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_ser_tip <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_tip <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -5821,38 +6534,65 @@ server <- function(input, output) {
     })
     
     # Plot - rango edad agresor
-    
-    fig_29 <- plot_ly(data = p29,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#58569c',
-                                    line = list(color = '#58569c',
-                                                width = 1.5)),
-                      text = ~ label,
-                      textfont=list(color='#58569c', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0("Top 5 servicios en\n", 
-                            municipio_seleccionado_ser_tip, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Tipo de servicio",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de servicios"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+ 
     
     
-    fig_29
+    fig_29 <- p29 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#58569c', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=2.5, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_tip, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_29, tooltip = "label")
+    
+      
+    #   plot_ly(data = p29,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#58569c',
+    #                                 line = list(color = '#58569c',
+    #                                             width = 1.5)),
+    #                   text = ~ label,
+    #                   textfont=list(color='#58569c', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = list(text=paste0("Top 5 servicios en\n", 
+    #                         municipio_seleccionado_ser_tip, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"), font=t),
+    #          xaxis = list(title = list(text ="Tipo de servicio",
+    #            tickangle = 0), font=t),
+    #          yaxis = list(title = list(text ="Número de servicios"), font=t),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_29
+    # 
   })
   
   
@@ -5876,7 +6616,7 @@ server <- function(input, output) {
     #   p30 <- p30 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_ser_edad <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_edad <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -5938,35 +6678,62 @@ server <- function(input, output) {
     
     # Plot - rango edad persona atendida
     
-    fig_30 <- plot_ly(data = p30,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#5d9970',
-                                    line = list(color = '#5d9970',
-                                                width = 1.5)),
-                      text = ~ label,
-                      textfont=list(color='#5d9970', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_ser_edad, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Rango de edad",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de servicios"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_30 <- p30 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#5d9970', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=2.5, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_edad, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
-    
-    fig_30
+    ggplotly(fig_30, tooltip = "label")
+      
+      
+    #   plot_ly(data = p30,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#5d9970',
+    #                                 line = list(color = '#5d9970',
+    #                                             width = 1.5)),
+    #                   text = ~ label,
+    #                   textfont=list(color='#5d9970', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_ser_edad, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Rango de edad",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de servicios"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_30
     
   })
   
@@ -5990,7 +6757,7 @@ server <- function(input, output) {
     #   p31 <- p31 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_ser_edociv <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_edociv <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -6046,35 +6813,62 @@ server <- function(input, output) {
     
     # Plot - estado civil edad persona atendida
     
-    fig_31 <- plot_ly(data = p31,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#8a4960',
-                                    line = list(color = '#8a4960',
-                                                width = 1.5)),
-                      textfont=list(color='#8a4960', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_ser_edociv, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Estado civil",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de servicios"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_31 <- p31 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#8a4960', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=2.5, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_edociv, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_31, tooltip = "label")
     
-    fig_31
+      
+    #   plot_ly(data = p31,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#8a4960',
+    #                                 line = list(color = '#8a4960',
+    #                                             width = 1.5)),
+    #                   textfont=list(color='#8a4960', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_ser_edociv, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Estado civil",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de servicios"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_31
     
   })
   
@@ -6098,7 +6892,7 @@ server <- function(input, output) {
     #   p32 <- p32 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_ser_depen <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_depen <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -6161,35 +6955,63 @@ server <- function(input, output) {
     
     # Plot - dependencia más común
     
-    fig_32 <- plot_ly(data = p32,
-                      x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#46648f',
-                                    line = list(color = '#46648f',
-                                                width = 0)),
-                      text = ~ label,
-                      textfont=list(color='#46648f', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>%
-      layout(title = paste0(municipio_seleccionado_ser_depen, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Número de servicios",
-               tickangle = 0),
-             yaxis = list(
-               title = "Dependencia"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
-
+    fig_32 <- p32 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#46648f', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_depen, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
-    fig_32
+    ggplotly(fig_32, tooltip = "label")
+    
+      
+    #   
+    #   plot_ly(data = p32,
+    #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#46648f',
+    #                                 line = list(color = '#46648f',
+    #                                             width = 0)),
+    #                   text = ~ label,
+    #                   textfont=list(color='#46648f', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>%
+    #   layout(title = paste0(municipio_seleccionado_ser_depen, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Número de servicios",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Dependencia"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_32
     
   })
   
@@ -6213,7 +7035,7 @@ server <- function(input, output) {
     #   p33 <- p33 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-       municipio_seleccionado_ser_usu <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_usu <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -6270,35 +7092,61 @@ server <- function(input, output) {
     
     # Plot - dependencia más común
     
-    fig_33 <- plot_ly(data = p33,
-                      x = ~ name_clean, 
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#d81b60',
-                                    line = list(color = '#d81b60',
-                                                width = 1.5)),
-                      textfont=list(color='#d81b60', size=0),
-                      text = ~ label,
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_ser_usu, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Usuario",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número de servicio"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_33 <- p33 %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#d81b60', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_usu, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
+    ggplotly(fig_33, tooltip = "label")
     
-    fig_33
+    # plot_ly(data = p33,
+    #                   x = ~ name_clean, 
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#d81b60',
+    #                                 line = list(color = '#d81b60',
+    #                                             width = 1.5)),
+    #                   textfont=list(color='#d81b60', size=0),
+    #                   text = ~ label,
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_ser_usu, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Usuario",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número de servicio"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    
+    # fig_33
     
   })
   
@@ -6322,7 +7170,7 @@ server <- function(input, output) {
     #   p34 <- p34 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-      municipio_seleccionado_ser_cate <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_cate <- input$municipio_seleccionado_5
     #   
     # } else {
     #   
@@ -6391,35 +7239,63 @@ server <- function(input, output) {
     
     # Plot - dependencia más común
     
-    fig_34 <- plot_ly(data = p34_aux,
-                      x = ~ name_clean, 
-                      y = ~ cuenta,
-                      type = "bar",
-                      marker = list(color = '#bf8037',
-                                    line = list(color = '#bf8037',
-                                                width = 1.5)),
-                      text = ~ label,
-                      textfont=list(color='#bf8037', size=0),
-                      hoverinfo = "text") %>% 
-      add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-               textposition = "top",
-               hoverinfo="none") %>% 
-      layout(title = paste0(municipio_seleccionado_ser_cate, " (", 
-                            format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_de_captura_final, "%d/%b/%y"),
-                            ")"),
-             xaxis = list(
-               title = "Categoría de servicio",
-               tickangle = 0),
-             yaxis = list(
-               title = "Número"),
-             showlegend = FALSE,
-             layout.separators=",.",
-             hoverlabel=list(bgcolor="white")) 
+    fig_34 <- p34_aux %>% 
+      ggplot(aes(x=reorder(name_clean, cuenta),
+                 y=cuenta, text=label))+
+      geom_col(fill = '#bf8037', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta)), size=4, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0(municipio_seleccionado_ser_cate, "\n (", 
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
-    
-    fig_34
+    ggplotly(fig_34, tooltip = "label")
+      
+      
+      
+    #   plot_ly(data = p34_aux,
+    #                   x = ~ name_clean, 
+    #                   y = ~ cuenta,
+    #                   type = "bar",
+    #                   marker = list(color = '#bf8037',
+    #                                 line = list(color = '#bf8037',
+    #                                             width = 1.5)),
+    #                   text = ~ label,
+    #                   textfont=list(color='#bf8037', size=0),
+    #                   hoverinfo = "text") %>% 
+    #   add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #            textposition = "top",
+    #            hoverinfo="none") %>% 
+    #   layout(title = paste0(municipio_seleccionado_ser_cate, " (", 
+    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         " al ", 
+    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         ")"),
+    #          xaxis = list(
+    #            title = "Categoría de servicio",
+    #            tickangle = 0),
+    #          yaxis = list(
+    #            title = "Número"),
+    #          showlegend = FALSE,
+    #          layout.separators=",.",
+    #          hoverlabel=list(bgcolor="white")) 
+    # 
+    # 
+    # fig_34
     
   })
   
@@ -6430,7 +7306,3 @@ server <- function(input, output) {
 
 # Ejecturas aplicación
 shinyApp(ui = ui, server = server)
-
-
-
-
