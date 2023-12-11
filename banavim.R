@@ -340,8 +340,8 @@ dependencias_base_casos <-
 
 dependencias_base_servicios <- 
   str_to_upper(c("Todas las dependencias", 
-    unique(base_servicios_clean$dependenciaquebrindoservicio)[
-      order(unique(base_servicios_clean$dependenciaquebrindoservicio))]))
+                 unique(base_servicios_clean$dependenciaquebrindoservicio)[
+                   order(unique(base_servicios_clean$dependenciaquebrindoservicio))]))
 
 # Crear lista de municipios en base
 municipios_en_base <- c(str_to_upper("Todos los municipios de Jalisco"), 
@@ -1218,10 +1218,10 @@ ui <- dashboardPage(
                                    "Ingresa el municipio:", 
                                    choices = municipios_en_base, 
                                    selected = "Todos los municipios de Jalisco"))),
-             
+              
               #fila de leyenda si sale algo con los filtros o no
               fluidRow(strong(h2(textOutput("output6")))), 
-               ### d) Mapa ----
+              ### d) Mapa ----
               
               fluidRow(column(width = 12,
                               h1(""),
@@ -1357,7 +1357,7 @@ ui <- dashboardPage(
 
 # 3.- Definir server----
 server <- function(input, output, session
-                   ) {
+) {
   
   # Width
   plotWidth <- reactive({session$clientData[["output_user-muni_graf_width"]]})
@@ -1720,11 +1720,11 @@ server <- function(input, output, session
               axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
       
       ggplotly(p1, tooltip = "label")
-        
-        
-        
-        
-        
+      
+      
+      
+      
+      
       #   
       #   
       #   
@@ -1817,11 +1817,11 @@ server <- function(input, output, session
         scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
         labs(x="", y="", fill="", color="", 
              title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
-                                                     "(", 
-                                                     format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
-                                                     " al ", 
-                                                     format(input$fecha_hecho_final, "%d/%B/%Y"),
-                                                     ")")
+                            "(", 
+                            format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
+                            " al ", 
+                            format(input$fecha_hecho_final, "%d/%B/%Y"),
+                            ")")
         )+
         theme_minimal()+
         theme(legend.position='none',
@@ -1831,10 +1831,10 @@ server <- function(input, output, session
               plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
               plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
               axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
-
+      
       ggplotly(p1_total, tooltip = "label")
       
-        
+      
       # 
       # p1_total %>% 
       #   mutate(municipio_hecho_clean = factor(municipio_hecho_clean,
@@ -2132,27 +2132,27 @@ server <- function(input, output, session
                 hoverinfo = "text", 
                 hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
       layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
-                            "(", 
-                            format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_2, "%d/%b/%y"),
-                            ")"), font=t),
-              xaxis = list(title = '',
-                           zerolinecolor = '#ffff',zerolinewidth = 2,
-                           gridcolor = '#bcbcbc',
-                           tickangle=0, tickfont = list(family='Nutmeg-Light')),
-              
-              
-              # xaxis = list(title = list(text ="Fecha de captura",
-              #                           zerolinecolor = '#ffff',
-              #                           zerolinewidth = 2,
-              #                           gridcolor = '#bcbcbc',
-              #                           font=tt)),
-              yaxis = list(title = list(text ="Promedio móvil diario",
-                                        zerolinecolor = '#ffff',
-                                        zerolinewidth = 2,
-                                        gridcolor = '#bcbcbc', font=tt),
-                           tickangle=0, tickfont = list(family='Nutmeg-Light')),
+                                      "(", 
+                                      format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
+                                      " al ", 
+                                      format(input$fecha_hecho_final_2, "%d/%b/%y"),
+                                      ")"), font=t),
+             xaxis = list(title = '',
+                          zerolinecolor = '#ffff',zerolinewidth = 2,
+                          gridcolor = '#bcbcbc',
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
+             
+             
+             # xaxis = list(title = list(text ="Fecha de captura",
+             #                           zerolinecolor = '#ffff',
+             #                           zerolinewidth = 2,
+             #                           gridcolor = '#bcbcbc',
+             #                           font=tt)),
+             yaxis = list(title = list(text ="Promedio móvil diario",
+                                       zerolinecolor = '#ffff',
+                                       zerolinewidth = 2,
+                                       gridcolor = '#bcbcbc', font=tt),
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
              
              
              
@@ -2190,11 +2190,11 @@ server <- function(input, output, session
                 hoverinfo = "text", 
                 hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
       layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
-                            "(", 
-                            format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
-                            " al ", 
-                            format(input$fecha_hecho_final_2, "%d/%b/%y"),
-                            ")"), font=t),
+                                      "(", 
+                                      format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
+                                      " al ", 
+                                      format(input$fecha_hecho_final_2, "%d/%b/%y"),
+                                      ")"), font=t),
              # xaxis = list(title = list(text ="Fecha de hechos",
              #   zerolinecolor = '#ffff',
              #   zerolinewidth = 2,
@@ -2227,8 +2227,8 @@ server <- function(input, output, session
     fig2
     
     ###############################################################################
-
-        ###############################################################################
+    
+    ###############################################################################
     
     
     
@@ -2602,7 +2602,7 @@ server <- function(input, output, session
                                    info = ' ',
                                    paginate = list(previous = 'Anterior', `next` = 'Siguiente'))
                                  # columnDefs = list(list(className = 'dt-center', targets = 1:5))
-                                 )) %>% 
+    )) %>% 
       formatStyle(
         "Municipio", "ind",
         backgroundColor = styleEqual(c(0, 1, -1), c('#73746D', '#6e4854', '#63917d'))) %>% 
@@ -2793,9 +2793,9 @@ server <- function(input, output, session
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))
     
     ggplotly(fig_4, tooltip = "label")
-      
-      
-
+    
+    
+    
     #   plot_ly(data = p4,
     #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
     #                  y = ~ cuenta,
@@ -2928,10 +2928,10 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_tm, "\n (", 
-                           format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-                           " al ", 
-                           format(input$fecha_hecho_final_3, "%d/%b/%y"),
-                           ")"))+
+                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          " al ", 
+                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          ")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -2943,9 +2943,9 @@ server <- function(input, output, session
     
     ggplotly(fig_5, tooltip = "label")
     
-      
-      
-      
+    
+    
+    
     #   plot_ly(data = p5,
     #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
     #                  y = ~ cuenta,
@@ -3090,8 +3090,8 @@ server <- function(input, output, session
     
     ggplotly(fig_6, tooltip = "label")
     
-      
-      
+    
+    
     #   plot_ly(data = p6,
     #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
     #                  y = ~ cuenta,
@@ -3267,7 +3267,7 @@ server <- function(input, output, session
     ggplotly(fig_7, tooltip = "label")
     
     
-      
+    
     # 
     #   plot_ly(data = p7 %>% slice_head(n = 8),
     #                  x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
@@ -3324,11 +3324,11 @@ server <- function(input, output, session
     #   p8 <- p8 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    #   municipio_seleccionado_lug <- input$municipio_seleccionado
+    municipio_seleccionado_lug <- input$municipio_seleccionado
     #   
     # } else {
     #   
-    municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
+    # municipio_seleccionado_lug <- "Todos los municipios de Jalisco"
     #   
     # }
     # 
@@ -3432,8 +3432,8 @@ server <- function(input, output, session
     
     ggplotly(fig_8, tooltip = "label")
     
-      
-
+    
+    
     #   
     # 
     # plot_ly(data = p8 %>% slice_head(n = 8),
@@ -3586,34 +3586,34 @@ server <- function(input, output, session
     
     ggplotly(fig_9, tooltip = "label")
     
-      
-      
-      # plot_ly(data = p9 %>% slice_head(n = 8),
-      #                x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
-      #                y = ~ cuenta,
-      #                type = "bar",
-      #                marker = list(color = '#7356b0',
-      #                              line = list(color = '#7356b0',
-      #                                          width = 1.5)),
-      #                text = ~ label,
-      #                textfont= list(color='#7356b0', size=0),
-      #                hoverinfo = "text") %>% 
-      # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-      #          textposition = "top",
-      #          hoverinfo="none") %>% 
-      # layout(title = paste0(municipio_seleccionado_ec, " (", 
-      #                       format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
-      #                       " al ", 
-      #                       format(input$fecha_hecho_final_3, "%d/%b/%y"),
-      #                       ")"),
-      #        xaxis = list(
-      #          title = "Estado civil",
-      #          tickangle = 0),
-      #        yaxis = list(
-      #          title = "Número de casos"),
-      #        showlegend = FALSE,
-      #        layout.separators=",.",
-      #        hoverlabel=list(bgcolor="white")) 
+    
+    
+    # plot_ly(data = p9 %>% slice_head(n = 8),
+    #                x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
+    #                y = ~ cuenta,
+    #                type = "bar",
+    #                marker = list(color = '#7356b0',
+    #                              line = list(color = '#7356b0',
+    #                                          width = 1.5)),
+    #                text = ~ label,
+    #                textfont= list(color='#7356b0', size=0),
+    #                hoverinfo = "text") %>% 
+    # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #          textposition = "top",
+    #          hoverinfo="none") %>% 
+    # layout(title = paste0(municipio_seleccionado_ec, " (", 
+    #                       format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                       " al ", 
+    #                       format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                       ")"),
+    #        xaxis = list(
+    #          title = "Estado civil",
+    #          tickangle = 0),
+    #        yaxis = list(
+    #          title = "Número de casos"),
+    #        showlegend = FALSE,
+    #        layout.separators=",.",
+    #        hoverlabel=list(bgcolor="white")) 
     
     
     # fig_9
@@ -3845,9 +3845,9 @@ server <- function(input, output, session
     
     ggplotly(fig_21, tooltip = "label")
     
-      
-      
-      
+    
+    
+    
     #   
     #   
     #   plot_ly(data = p21,
@@ -3996,7 +3996,7 @@ server <- function(input, output, session
     
     ggplotly(fig_22, tooltip = "label")
     
-      
+    
     #   plot_ly(data = p22,
     #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
     #                   y = ~ cuenta,
@@ -4212,34 +4212,34 @@ server <- function(input, output, session
     ggplotly(fig_13, tooltip = "label")
     
     
-      # plot_ly(data = p13,
-      #                 x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
-      #                 
-      #                 y = ~ cuenta,
-      #                 type = "bar",
-      #                 marker = list(color = '#58569c',
-      #                               line = list(color = '#58569c',
-      #                                           width = 1.5)),
-      #                 textfont=list(color='#58569c', size=0),
-      #                 text = ~ label,
-      #                 hoverinfo = "text") %>% 
-      # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
-      #          textposition = "top",
-      #          hoverinfo="none") %>% 
-      # layout(title = paste0(municipio_seleccionado_e_ag, " (", 
-      #                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-      #                       " al ", 
-      #                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
-      #                       ")"),
-      #        xaxis = list(
-      #          title = "Rango de edad",
-      #          tickangle = 0),
-      #        yaxis = list(
-      #          title = "Número de casos"),
-      #        showlegend = FALSE,
-      #        layout.separators=",.",
-      #        hoverlabel=list(bgcolor="white")) 
-      # 
+    # plot_ly(data = p13,
+    #                 x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
+    #                 
+    #                 y = ~ cuenta,
+    #                 type = "bar",
+    #                 marker = list(color = '#58569c',
+    #                               line = list(color = '#58569c',
+    #                                           width = 1.5)),
+    #                 textfont=list(color='#58569c', size=0),
+    #                 text = ~ label,
+    #                 hoverinfo = "text") %>% 
+    # add_text(text = ~ prettyNum(cuenta, big.mark = ","),
+    #          textposition = "top",
+    #          hoverinfo="none") %>% 
+    # layout(title = paste0(municipio_seleccionado_e_ag, " (", 
+    #                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                       " al ", 
+    #                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                       ")"),
+    #        xaxis = list(
+    #          title = "Rango de edad",
+    #          tickangle = 0),
+    #        yaxis = list(
+    #          title = "Número de casos"),
+    #        showlegend = FALSE,
+    #        layout.separators=",.",
+    #        hoverlabel=list(bgcolor="white")) 
+    # 
     # 
     # fig_13
     
@@ -4378,8 +4378,8 @@ server <- function(input, output, session
     
     ggplotly(fig_14, tooltip = "label")
     
-      
-      
+    
+    
     #   
     #   plot_ly(data = p14,
     #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
@@ -4537,9 +4537,9 @@ server <- function(input, output, session
     
     ggplotly(fig_24, tooltip = "label")
     
-      
-      
-      
+    
+    
+    
     #   plot_ly(data = p24,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -4703,9 +4703,9 @@ server <- function(input, output, session
     
     ggplotly(fig_25, tooltip = "label")
     
-      
-      
-      
+    
+    
+    
     #   plot_ly(data = p25,
     #                   x = ~ reorder(str_wrap(name_clean, width = 6), cuenta),
     #                   y = ~ cuenta,
@@ -4868,7 +4868,7 @@ server <- function(input, output, session
     
     ggplotly(fig_26, tooltip = "label")
     
-      
+    
     #   plot_ly(data = p26,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -5009,8 +5009,8 @@ server <- function(input, output, session
     
     ggplotly(fig_27, tooltip = "label")
     
-      
-      
+    
+    
     #   plot_ly(data = p27,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -5077,9 +5077,22 @@ server <- function(input, output, session
     #   
     # }
     # 
-    #### i) Plot tipo de arma ----
+    #### i) Plot tipo de arma ---- BROWNY
     
     output$tipo_arma_plot <- renderPlotly({
+      
+      l <- list(
+        font = list(
+          family = "Nutmeg-Light",
+          size = 10*textFunction(),
+          color = "#000"),
+        borderwidth = 0,
+        x = 0.1, 
+        y = 0.9)
+      
+      tt <- list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction())
       
       p15_1 <- data4() %>% 
         select(chacos, 
@@ -5122,12 +5135,32 @@ server <- function(input, output, session
                         parents = c(""),
                         type = "treemap",
                         hoverinfo= ~"label") %>% 
-        layout(title = paste0(municipio_seleccionado_arma, 
-                              " (", 
+        layout(title= list(text = paste0(municipio_seleccionado_arma, 
+                              " \n (", 
                               format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
                               " al ", 
                               format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                              ")"))
+                              ")"), font=tt),
+               xaxis = list(title = '',
+                            zerolinecolor = '#ffff',zerolinewidth = 2,
+                            gridcolor = '#bcbcbc',
+                            tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                            uniformtext=list(minsize=10, mode='hide'), font=tt),
+               
+               
+               # xaxis = list(title = list(text ="Fecha de captura",
+               #                           zerolinecolor = '#ffff',
+               #                           zerolinewidth = 2,
+               #                           gridcolor = '#bcbcbc',
+               #                           font=tt)),
+               yaxis = list(title = list(text ="",
+                                         zerolinecolor = '#ffff',
+                                         zerolinewidth = 2,
+                                         gridcolor = '#bcbcbc', font=tt),
+                            tickangle=0, tickfont = list(family='Nutmeg-Light')),
+               legend = l) %>%  #list(x = 0.1, y = 0.9)) %>% 
+        plotly::config(
+          locale='es')
       
       fig_15
       
@@ -5138,6 +5171,19 @@ server <- function(input, output, session
     #### ii) Rango de edad arma ----
     
     output$edad_agresor_arma_plot <- renderPlotly({
+      
+      l <- list(
+        font = list(
+          family = "Nutmeg-Light",
+          size = 10*textFunction(),
+          color = "#000"),
+        borderwidth = 0,
+        x = 0.1, 
+        y = 0.9)
+      
+      tt <- list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction())
       
       p15_2 <- data4() %>% 
         select(edad) %>% 
@@ -5168,12 +5214,20 @@ server <- function(input, output, session
                         parents = c(""),
                         type = "treemap",
                         hoverinfo= ~"label") %>% 
-        layout(title = paste0(municipio_seleccionado_arma, 
-                              " (", 
-                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                              " al ", 
-                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                              ")"))
+
+      layout(title= list(text = paste0(municipio_seleccionado_arma, 
+                                       " \n (", 
+                                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                       " al ", 
+                                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                       ")"), font=tt),
+             xaxis = list(title = '',
+                          zerolinecolor = '#ffff',zerolinewidth = 2,
+                          gridcolor = '#bcbcbc',
+                          tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                          uniformtext=list(minsize=10, mode='hide'), font=tt))
+             
+             
       
       fig_16
       
@@ -5183,6 +5237,20 @@ server <- function(input, output, session
     #### iii) Lugar arma----
     
     output$lugar_arma_plot <- renderPlotly({
+      
+      l <- list(
+        font = list(
+          family = "Nutmeg-Light",
+          size = 10*textFunction(),
+          color = "#000"),
+        borderwidth = 0,
+        x = 0.1, 
+        y = 0.9)
+      
+      tt <- list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction())
+      
       
       p15_3 <- data4() %>% 
         select(lugar_hechos)  %>% 
@@ -5210,12 +5278,17 @@ server <- function(input, output, session
                          parents = c(""),
                          type = "treemap",
                          hoverinfo= ~"label")  %>% 
-        layout(title = paste0(municipio_seleccionado_arma, 
-                              " (", 
-                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                              " al ", 
-                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                              ")"))
+        layout(title= list(text = paste0(municipio_seleccionado_arma, 
+                                       "\n (", 
+                                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                       " al ", 
+                                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                       ")"), font=tt),
+             xaxis = list(title = '',
+                          zerolinecolor = '#ffff',zerolinewidth = 2,
+                          gridcolor = '#bcbcbc',
+                          tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                          uniformtext=list(minsize=10, mode='hide'), font=tt))
       
       fig_17
       
@@ -5225,6 +5298,20 @@ server <- function(input, output, session
     #### iv) Vínculo arma----
     
     output$vinculo_arma_plot <- renderPlotly({
+      
+      l <- list(
+        font = list(
+          family = "Nutmeg-Light",
+          size = 10*textFunction(),
+          color = "#000"),
+        borderwidth = 0,
+        x = 0.1, 
+        y = 0.9)
+      
+      tt <- list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction())
+      
       
       p15_4 <- data4() %>% 
         select(vinculo_con_va_ctima)  %>% 
@@ -5268,12 +5355,17 @@ server <- function(input, output, session
                         parents = c(""),
                         type = "treemap",
                         hoverinfo= ~"label")   %>% 
-        layout(title = paste0(municipio_seleccionado_arma, 
-                              " (", 
-                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
-                              " al ", 
-                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
-                              ")"))
+        layout(title= list(text = paste0(municipio_seleccionado_arma, 
+                                         "\n (", 
+                                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                         " al ", 
+                                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                         ")"), font=tt),
+               xaxis = list(title = '',
+                            zerolinecolor = '#ffff',zerolinewidth = 2,
+                            gridcolor = '#bcbcbc',
+                            tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                            uniformtext=list(minsize=10, mode='hide'), font=tt))
       
       fig_18
       
@@ -6065,7 +6157,7 @@ server <- function(input, output, session
     ggplotly(fig_20, tooltip = "label")
     
     
-
+    
     # plot_ly(data = p18, 
     #                    x = ~ mes_anio,
     #                    y = ~ cuenta, 
@@ -6135,6 +6227,18 @@ server <- function(input, output, session
       mutate(porcentaje = cuenta/total) %>% 
       mutate(label = scales::percent(cuenta/total))
     
+    l <- list(
+      font = list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction(),
+        color = "#000"),
+      borderwidth = 0,
+      x = 0.1, 
+      y = 0.9)
+    
+    tt <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
     
     fig_21 <-  plot_ly(data = p19, 
                        values = ~ porcentaje, 
@@ -6142,12 +6246,23 @@ server <- function(input, output, session
                        parents = c(""),
                        type = "treemap",
                        hoverinfo = ~ "label")  %>% 
-      layout(title = paste0(municipio_ordenes,
-                            " (",
-                            format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
-                            " al ",
-                            format(input$fecha_de_recepcion_final, "%d/%b/%y"),
-                            ")"))
+      # layout(title = paste0(municipio_ordenes,
+      #                       " (",
+      #                       format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+      #                       " al ",
+      #                       format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+      #                       ")")
+             layout(title= list(text = paste0(municipio_ordenes, 
+                                              " \n (", 
+                                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                              " al ", 
+                                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                              ")"), font=tt),
+                    xaxis = list(title = '',
+                                 zerolinecolor = '#ffff',zerolinewidth = 2,
+                                 gridcolor = '#bcbcbc',
+                                 tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                                 uniformtext=list(minsize=10, mode='hide'), font=tt))
     
     
     fig_21
@@ -6206,6 +6321,18 @@ server <- function(input, output, session
       mutate(porcentaje = cuenta/total) %>% 
       mutate(label = scales::percent(cuenta/total))
     
+    l <- list(
+      font = list(
+        family = "Nutmeg-Light",
+        size = 10*textFunction(),
+        color = "#000"),
+      borderwidth = 0,
+      x = 0.1, 
+      y = 0.9)
+    
+    tt <- list(
+      family = "Nutmeg-Light",
+      size = 10*textFunction())
     
     fig_22 <-  plot_ly(data = p20, 
                        values = ~ porcentaje, 
@@ -6213,13 +6340,23 @@ server <- function(input, output, session
                        parents = c(""),
                        type = "treemap",
                        hoverinfo = ~ "label")  %>% 
-      layout(title = paste0(municipio_ordenes,
-                            " (",
-                            format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
-                            " al ",
-                            format(input$fecha_de_recepcion_final, "%d/%b/%y"),
-                            ")"))
-    
+      # layout(title = paste0(municipio_ordenes,
+      #                       " (",
+      #                       format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+      #                       " al ",
+      #                       format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+      #                       ")"))
+    layout(title= list(text = paste0(municipio_ordenes, 
+                                     " \n (", 
+                                     format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                     " al ", 
+                                     format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                     ")"), font=tt),
+           xaxis = list(title = '',
+                        zerolinecolor = '#ffff',zerolinewidth = 2,
+                        gridcolor = '#bcbcbc',
+                        tickangle=0, tickfont = list(family='Nutmeg-Light'),
+                        uniformtext=list(minsize=10, mode='hide'), font=tt))
     
     fig_22
     
@@ -6335,8 +6472,8 @@ server <- function(input, output, session
   ### b) Plot de evolución y vb total de servicios y mujeres atendidas ----
   
   output$plot_evolucion_servicios <- renderPlotly({
-  
-      
+    
+    
     # if(!grepl("Todas las dependencias", input$depen_check_6)){
     #   
     #   p28 <- base_servicios_clean %>% 
@@ -6448,18 +6585,18 @@ server <- function(input, output, session
                 hoverinfo = "text", 
                 hoverlabel = list(bgcolor='#d34736'))  %>% 
       layout(title= list(text = paste0(municipio_seleccionado_serv_ev,
-                                      " ",
-                                      "(", 
-                                      format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
-                                      " al ", 
-                                      format(input$fecha_de_captura_final, "%d/%b/%y"),
-                                      ")"), font=tt),
+                                       " ",
+                                       "(", 
+                                       format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+                                       " al ", 
+                                       format(input$fecha_de_captura_final, "%d/%b/%y"),
+                                       ")"), font=tt),
              xaxis = list(title = '',
                           zerolinecolor = '#ffff',zerolinewidth = 2,
-                           gridcolor = '#bcbcbc',
+                          gridcolor = '#bcbcbc',
                           tickangle=0, tickfont = list(family='Nutmeg-Light')),
-    
-            
+             
+             
              # xaxis = list(title = list(text ="Fecha de captura",
              #                           zerolinecolor = '#ffff',
              #                           zerolinewidth = 2,
@@ -6469,7 +6606,7 @@ server <- function(input, output, session
                                        zerolinecolor = '#ffff',
                                        zerolinewidth = 2,
                                        gridcolor = '#bcbcbc', font=tt),
-             tickangle=0, tickfont = list(family='Nutmeg-Light')),
+                          tickangle=0, tickfont = list(family='Nutmeg-Light')),
              legend = l) %>%  #list(x = 0.1, y = 0.9)) %>% 
       plotly::config(
         locale='es')
@@ -6560,7 +6697,7 @@ server <- function(input, output, session
     })
     
     # Plot - rango edad agresor
- 
+    
     
     
     fig_29 <- p29 %>% 
@@ -6589,7 +6726,7 @@ server <- function(input, output, session
     
     ggplotly(fig_29, tooltip = "label")
     
-      
+    
     #   plot_ly(data = p29,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -6729,8 +6866,8 @@ server <- function(input, output, session
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
     ggplotly(fig_30, tooltip = "label")
-      
-      
+    
+    
     #   plot_ly(data = p30,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -6865,7 +7002,7 @@ server <- function(input, output, session
     
     ggplotly(fig_31, tooltip = "label")
     
-      
+    
     #   plot_ly(data = p31,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
     #                   y = ~ cuenta,
@@ -7007,7 +7144,7 @@ server <- function(input, output, session
     
     ggplotly(fig_32, tooltip = "label")
     
-      
+    
     #   
     #   plot_ly(data = p32,
     #                   x = ~ reorder(str_wrap(name_clean, width = 8), cuenta),
@@ -7290,9 +7427,9 @@ server <- function(input, output, session
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
     
     ggplotly(fig_34, tooltip = "label")
-      
-      
-      
+    
+    
+    
     #   plot_ly(data = p34_aux,
     #                   x = ~ name_clean, 
     #                   y = ~ cuenta,
@@ -7379,8 +7516,8 @@ server <- function(input, output, session
     
   })
   
-
-
+  
+  
   
   
   
