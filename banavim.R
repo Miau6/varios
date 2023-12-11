@@ -112,9 +112,34 @@ base_agre_clean <- data$base_agre_clean
 base_casos_clean <- data$base_casos_clean
 base_ordenes_clean <- data$base_ordenes_clean
 base_servicios_clean <- data$base_servicios_clean
+
+# base_casos_clean <- base_casos_clean %>% 
+#   mutate(nom_mun=str_to_title(municipio_hecho_clean))
+# 
+# base_casos_clean$nom_mun <- str_replace(base_casos_clean$nom_mun, " De ", " de ") 
+# base_casos_clean$nom_mun <- str_replace(base_casos_clean$nom_mun, " Del ", " del ") 
+# base_casos_clean$nom_mun <- str_replace(base_casos_clean$nom_mun, " El ", " el ") 
+# base_casos_clean$nom_mun <- str_replace(base_casos_clean$nom_mun, " Los ", " los ") 
+# base_casos_clean$nom_mun <- str_replace(base_casos_clean$nom_mun, " La ", " la ") 
+# 
+# tabla_nom_mun <- tibble(municipio_hecho_clean=unique(base_casos_clean$municipio_hecho_clean), 
+#                         nom_mun=unique(base_casos_clean$nom_mun))
+# base_agre_clean <- base_agre_clean %>% left_join(tabla_nom_mun) 
+# base_ordenes_clean <- base_ordenes_clean %>% left_join(tabla_nom_mun) 
+# base_servicios_clean <- base_servicios_clean %>% left_join(tabla_nom_mun)
 ### v) Base de población
-poblacion <- data.table::fread("pob_mun_jalisco.csv") %>% 
-  filter(variable == "pob_muj") 
+# poblacion <- data.table::fread("pob_mun_jalisco.csv") %>% 
+#   filter(variable == "pob_muj") 
+
+poblacion <- read_rds("pob_mun_jalisco.rds")
+
+# poblacion <- poblacion %>% mutate(nom_mun=str_to_title(municipio))
+# 
+# poblacion$nom_mun <- str_replace(poblacion$nom_mun, " De ", " de ")
+# poblacion$nom_mun <- str_replace(poblacion$nom_mun, " Del ", " del ")
+# poblacion$nom_mun <- str_replace(poblacion$nom_mun, " El ", " el ")
+# poblacion$nom_mun <- str_replace(poblacion$nom_mun, " Los ", " los ")
+
 
 ### vi) Mapa
 # jalisco_shape <- read_sf("Municipios/Municipios.shp") %>% 
@@ -1421,7 +1446,7 @@ server <- function(input, output, session
                         method = "jw", 
                         max_dist=.08, 
                         distance_col='dist') %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        mutate(municipio_hecho_clean = nom_mun) %>% 
         filter(!is.na(municipio)) %>% 
         select(-dist) %>% 
         replace(is.na(.), 0) %>% 
@@ -1496,9 +1521,9 @@ server <- function(input, output, session
       #   
       # }
       # 
-      mapa_1p <- data1() %>% 
-        filter(fecha_hechos >= input$fecha_hecho_inicio &
-                 fecha_hechos <= input$fecha_hecho_final) %>%
+      mapa_1p <- data1() %>% #mutate(municipio_hecho_clean=nom_mun) %>% 
+        # filter(fecha_hechos >= input$fecha_hecho_inicio &
+        #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
@@ -1508,7 +1533,7 @@ server <- function(input, output, session
                         method = "jw", 
                         max_dist=.08, 
                         distance_col='dist') %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+      mutate(municipio_hecho_clean = nom_mun) %>% 
         filter(!is.na(municipio)) %>% 
         select(-dist) %>% 
         mutate(tasa = round(cuenta/valor * 100000)) %>% 
@@ -1665,7 +1690,7 @@ server <- function(input, output, session
                         method = "jw", 
                         max_dist=.08, 
                         distance_col='dist') %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        mutate(municipio_hecho_clean = nom_mun) %>% 
         filter(!is.na(municipio)) %>% 
         select(-dist) %>% 
         replace(is.na(.), 0) %>% 
@@ -1789,13 +1814,13 @@ server <- function(input, output, session
       #   
       # }
       
-      p1_total <- data1() %>% 
+      p1_total <- data1() %>% mutate(municipio_hecho_clean=nom_mun) %>% 
         # filter(fecha_hechos >= input$fecha_hecho_inicio &
         #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        # mutate(municipio_hecho_clean = nom_mun) %>% 
         arrange(-cuenta) %>% 
         mutate(label = paste0("<b>",
                               municipio_hecho_clean,
@@ -1913,7 +1938,7 @@ server <- function(input, output, session
                         method = "jw", 
                         max_dist=.08, 
                         distance_col='dist') %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        mutate(municipio_hecho_clean = nom_mun) %>% 
         filter(!is.na(municipio)) %>% 
         select(-dist) %>% 
         replace(is.na(.), 0) %>% 
@@ -1986,13 +2011,13 @@ server <- function(input, output, session
       #   
       # }
       
-      t1_total <- data1() %>% 
+      t1_total <- data1() %>% mutate(municipio_hecho_clean=nom_mun) %>% 
         # filter(fecha_hechos >= input$fecha_hecho_inicio &
         #          fecha_hechos <= input$fecha_hecho_final) %>%
         group_by(municipio_hecho_clean) %>% 
         filter(municipio_hecho_clean !=  "") %>% 
         summarise(cuenta = n()) %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        # mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         arrange(-cuenta)
       
       t1_total <- t1_total[c(11:125),]
@@ -2253,6 +2278,7 @@ server <- function(input, output, session
       # filter(fecha_hechos <=input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-6 ~ "ultima_semana",
                                  fecha_hechos < input$fecha_hecho_final_2-6 ~ "semana_anterior")) %>% 
+      mutate(municipio_hecho_clean=nom_mun) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
       summarise(cuenta = n()) %>% 
       pivot_wider(names_from = periodo,
@@ -2280,6 +2306,7 @@ server <- function(input, output, session
       # filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-29 ~ "ultimo_mes",
                                  fecha_hechos < input$fecha_hecho_final_2-29 ~ "mes_anterior")) %>% 
+      mutate(municipio_hecho_clean=nom_mun) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
       summarise(cuenta = n()) %>% 
       pivot_wider(names_from = periodo,
@@ -2307,6 +2334,7 @@ server <- function(input, output, session
       # filter(fecha_hechos <= input$fecha_hecho_final_2) %>% 
       mutate(periodo = case_when(fecha_hechos >= input$fecha_hecho_final_2-182 ~ "ultimo_anio",
                                  fecha_hechos < input$fecha_hecho_final_2-182 ~ "anio_anterior")) %>% 
+      mutate(municipio_hecho_clean=nom_mun) %>% 
       group_by(municipio_hecho_clean, periodo) %>% 
       summarise(cuenta = n()) %>% 
       pivot_wider(names_from = periodo,
@@ -2531,7 +2559,7 @@ server <- function(input, output, session
     if(input$tempo_analisis == "Últimos 14 días" ){ 
       
       t2 <- p2_sem %>% relocate(ultima_semana, .before = semana_anterior) %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        # mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         mutate(cambio_semana_por = scales::percent(cambio_semana_por, accuracy = 0.1)) %>% 
         select(-frase_1, -signo, - label_semana) %>% 
         mutate(ind = case_when(cambio_semana > 0 ~ 1,
@@ -2553,7 +2581,7 @@ server <- function(input, output, session
     if(input$tempo_analisis == "Últimos 60 días" ){ 
       
       t2 <- p2_mes %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        # mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         mutate(cambio_mes_por = scales::percent(cambio_mes_por, accuracy = 0.1)) %>% 
         select(-frase_1, -signo, - label_mes) %>% 
         mutate(ind = case_when(cambio_mes > 0 ~ 1,
@@ -2573,7 +2601,7 @@ server <- function(input, output, session
     if(input$tempo_analisis == "Último año" ){ 
       
       t2 <- p2_anios %>% relocate(ultimo_anio, .before = anio_anterior) %>% 
-        mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+        # mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
         mutate(cambio_anio_por = scales::percent(cambio_anio_por, accuracy = 0.1)) %>% 
         select(-frase_1, -signo, - label_anio) %>% 
         mutate(ind = case_when(cambio_anio > 0 ~ 1,
@@ -2702,7 +2730,10 @@ server <- function(input, output, session
     #   p4 <- p4 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     
-    municipio_seleccionado_tv <- input$municipio_seleccionado
+    municipio_seleccionado_tv <-  ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                         "Todos los municipios de Jalisco", 
+                                         unique(data3()$nom_mun)
+                                         ) 
     
     # } else {
     # 
@@ -2851,7 +2882,10 @@ server <- function(input, output, session
     #   p5 <- p5 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_tm <- input$municipio_seleccionado
+    municipio_seleccionado_tm <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                        "Todos los municipios de Jalisco", 
+                                        unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3001,7 +3035,10 @@ server <- function(input, output, session
     #   p6 <- p6 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_re <- input$municipio_seleccionado
+    municipio_seleccionado_re <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                        "Todos los municipios de Jalisco", 
+                                        unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3147,7 +3184,10 @@ server <- function(input, output, session
     #   p7 <- p7 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_vn <- input$municipio_seleccionado
+    municipio_seleccionado_vn <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                        "Todos los municipios de Jalisco", 
+                                        unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3324,7 +3364,10 @@ server <- function(input, output, session
     #   p8 <- p8 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_lug <- input$municipio_seleccionado
+    municipio_seleccionado_lug <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                         "Todos los municipios de Jalisco", 
+                                         unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3490,7 +3533,10 @@ server <- function(input, output, session
     #   p9 <- p9 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_ec <- input$municipio_seleccionado
+    municipio_seleccionado_ec <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                        "Todos los municipios de Jalisco", 
+                                        unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3758,7 +3804,10 @@ server <- function(input, output, session
     #   p21 <- p21 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_nh <- input$municipio_seleccionado
+    municipio_seleccionado_nh <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                        "Todos los municipios de Jalisco", 
+                                        unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -3904,7 +3953,10 @@ server <- function(input, output, session
     #   p22 <- p22 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado))
     #   
-    municipio_seleccionado_actv <- input$municipio_seleccionado
+    municipio_seleccionado_actv <- ifelse(input$municipio_seleccionado=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                          "Todos los municipios de Jalisco", 
+                                          unique(data3()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4105,7 +4157,10 @@ server <- function(input, output, session
     #   p13 <- p13 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_e_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_e_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                          "Todos los municipios de Jalisco", 
+                                          unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4265,7 +4320,10 @@ server <- function(input, output, session
     #   p14 <- p14 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_es_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_es_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                           "Todos los municipios de Jalisco", 
+                                           unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4433,7 +4491,10 @@ server <- function(input, output, session
     #   p24 <- p24 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_gen_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_gen_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                            "Todos los municipios de Jalisco", 
+                                            unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4592,7 +4653,10 @@ server <- function(input, output, session
     #   p25 <- p25 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_act_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_act_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                            "Todos los municipios de Jalisco", 
+                                            unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4758,7 +4822,10 @@ server <- function(input, output, session
     #   p26 <- p26 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_fte_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_fte_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                            "Todos los municipios de Jalisco", 
+                                            unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -4922,7 +4989,10 @@ server <- function(input, output, session
     #   p27 <- p27 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_drog_ag <- input$municipio_seleccionado_2
+    municipio_seleccionado_drog_ag <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                             "Todos los municipios de Jalisco", 
+                                             unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -5069,7 +5139,10 @@ server <- function(input, output, session
     #   p15 <- p15 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_2))
     #   
-    municipio_seleccionado_arma <- input$municipio_seleccionado_2
+    municipio_seleccionado_arma <- ifelse(input$municipio_seleccionado_2=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                          "Todos los municipios de Jalisco", 
+                                          unique(data4()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6113,7 +6186,10 @@ server <- function(input, output, session
     #   p18 <- p18 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- ifelse(input$municipio_seleccionado_4=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                "Todos los municipios de Jalisco", 
+                                unique(data5()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6210,7 +6286,10 @@ server <- function(input, output, session
     #   p19 <- p19 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- ifelse(input$municipio_seleccionado_4=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                "Todos los municipios de Jalisco", 
+                                unique(data5()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6294,7 +6373,10 @@ server <- function(input, output, session
     #   p20 <- p20 %>%
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_4))
     #   
-    municipio_ordenes <- str_to_title(input$municipio_seleccionado_4)
+    municipio_ordenes <- ifelse(input$municipio_seleccionado_4=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                "Todos los municipios de Jalisco", 
+                                unique(data5()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6390,7 +6472,7 @@ server <- function(input, output, session
     #   
     # }
     # 
-    mapa_2p <- data6() %>% 
+    mapa_2p <- data6() %>% #mutate(municipio_hecho_clean=nom_mun) %>% 
       # filter(fecha_captura >= input$fecha_de_captura_inicial &
       #          fecha_captura <= input$fecha_de_captura_final) %>%
       group_by(municipio_hecho_clean) %>% 
@@ -6402,7 +6484,7 @@ server <- function(input, output, session
                       method = "jw", 
                       max_dist=.08, 
                       distance_col='dist') %>% 
-      mutate(municipio_hecho_clean = str_to_title(municipio_hecho_clean)) %>% 
+      mutate(municipio_hecho_clean = nom_mun) %>% 
       filter(!is.na(municipio)) %>% 
       select(-dist) %>% 
       # replace(is.na(.), 0) %>% 
@@ -6490,7 +6572,10 @@ server <- function(input, output, session
     #   p28 <- p28 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_serv_ev <- input$municipio_seleccionado_5
+    municipio_seleccionado_serv_ev <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                             "Todos los municipios de Jalisco", 
+                                             unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6637,7 +6722,10 @@ server <- function(input, output, session
     #   p29 <- p29 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_tip <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_tip <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                             "Todos los municipios de Jalisco", 
+                                             unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6779,7 +6867,10 @@ server <- function(input, output, session
     #   p30 <- p30 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_edad <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_edad <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                              "Todos los municipios de Jalisco", 
+                                              unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -6920,7 +7011,10 @@ server <- function(input, output, session
     #   p31 <- p31 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_edociv <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_edociv <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                                "Todos los municipios de Jalisco", 
+                                                unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -7055,7 +7149,10 @@ server <- function(input, output, session
     #   p32 <- p32 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_depen <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_depen <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                               "Todos los municipios de Jalisco", 
+                                               unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -7198,7 +7295,10 @@ server <- function(input, output, session
     #   p33 <- p33 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_usu <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_usu <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                             "Todos los municipios de Jalisco", 
+                                             unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
@@ -7333,7 +7433,10 @@ server <- function(input, output, session
     #   p34 <- p34 %>% 
     #     filter(municipio_hecho_clean == toupper(input$municipio_seleccionado_5))
     #   
-    municipio_seleccionado_ser_cate <- input$municipio_seleccionado_5
+    municipio_seleccionado_ser_cate <- ifelse(input$municipio_seleccionado_5=="TODOS LOS MUNICIPIOS DE JALISCO", 
+                                              "Todos los municipios de Jalisco", 
+                                              unique(data6()$nom_mun)
+    )
     #   
     # } else {
     #   
