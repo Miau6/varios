@@ -106,12 +106,26 @@ Sys.setlocale(locale="es_ES.UTF-8")
 #                                     encoding = "UTF-8")
 # 
 
-data <- read_rds("data_banavim.rds")
+data <- read_rds("data_banavim_301123.rds")
 
 base_agre_clean <- data$base_agre_clean
 base_casos_clean <- data$base_casos_clean
 base_ordenes_clean <- data$base_ordenes_clean
 base_servicios_clean <- data$base_servicios_clean
+
+fecha_lim <- "2023-11-30"
+
+base_agre_clean <- base_agre_clean %>% 
+  filter(fecha_hechos<=fecha_lim)
+
+base_casos_clean <- base_casos_clean %>% 
+  filter(fecha_hechos<=fecha_lim)
+
+base_ordenes_clean <- base_ordenes_clean %>% 
+  filter(fecha_de_recepcion<=fecha_lim)
+
+base_servicios_clean <- base_servicios_clean %>% 
+  filter(fecha_captura<=fecha_lim)
 
 # base_casos_clean <- base_casos_clean %>% 
 #   mutate(nom_mun=str_to_title(municipio_hecho_clean))
@@ -415,6 +429,7 @@ ui <- dashboardPage(
     
     # Pestañas laterales
     sidebarMenu(
+      menuItem("Información inicial", tabName = "info_inicial"),
       menuItem("Información general", tabName = "info_general"),
       menuItem("Evolución en el tiempo", tabName = "evolucion"),
       menuItem("Características de los casos", tabName = "variables"),
@@ -553,6 +568,54 @@ ui <- dashboardPage(
     
     tabItems(
       
+      # 1.1 Información inicial ---
+      tabItem(tabName = "info_inicial",
+              
+            fluidRow(align = "center", #filtro para gráfico de casos
+                       h1("Casos de Violencia contra las Mujeres"),
+                       column(width = 2,
+                              align = "center",
+                              pickerInput(
+                                inputId = "depen_check_0",
+                                label = "Lista de dependencias",
+                                selected = c("Todas las dependencias"),
+                                multiple = F,
+                                width = 190,
+                                choices = dependencias_base_casos)),
+                       column(width = 10, 
+                              box(width = 12,
+                                  align = "center",
+                                  h1(""),
+                                  plotlyOutput("historico_anual_plot"), #gráfico de casos anuales
+                                  h1(""),
+                                  h6("Se filtró a partir del año 2017", align = "right"),
+                                  h6("Fuente: BANAVIM 2023", align = "right")))
+                       
+              ), 
+            fluidRow(align = "center", #filtro para gráfico de servicios
+                     h1("Servicios otorgados"),
+                     column(width = 2,
+                            align = "center",
+                            pickerInput(
+                              inputId = "depen_check_0_1",
+                              label = "Lista de dependencias",
+                              selected = c("Todas las dependencias"),
+                              multiple = F,
+                              width = 190,
+                              choices = dependencias_base_servicios)),
+                     column(width = 10, 
+                            box(width = 12,
+                                align = "center",
+                                h1(""),
+                                plotlyOutput("historico_anual_plot_servicios"), #gráfico de casos anuales
+                                h1(""),
+                                h6("Se filtró a partir del año 2019", align = "right"),
+                                h6("Fuente: BANAVIM 2023", align = "right")))
+                     
+            )
+              
+      ),
+      
       ## 2.1.- Información general (UI)----
       tabItem(tabName = "info_general", 
               
@@ -574,7 +637,7 @@ ui <- dashboardPage(
               ### c) Filtros de fecha y depdendencia----
               
               fluidRow( 
-                h3("Municipios con mayor incidencia (top 10)", align = "center"),
+                # h3("Municipios con mayor incidencia (top 10)", align = "center"),
                 
                 column(width = 4,
                        align = "center",
@@ -596,7 +659,7 @@ ui <- dashboardPage(
                        dateInput("fecha_hecho_final",
                                  "Ingresa la fecha final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30")))),
+                                 value = max(base_casos_clean$fecha_hechos, na.rm = T)))),
               #fila de leyenda si sale algo con los filtros o no
               fluidRow(strong(h2(textOutput("output1")))), 
               
@@ -617,6 +680,13 @@ ui <- dashboardPage(
                              status = "primary",
                              width = "800px"
                            ))),
+                       # column(width = 12,
+                       #        box(width = 12,
+                       #            align = "center",
+                       #            h1(""),
+                       #            plotlyOutput("historico_anual_plot"),
+                       #            h1(""),
+                       #            h6("Fuente: BANAVIM 2023", align = "right"))),
                        column(width = 12,
                               box(width = 12,
                                   align = "center",
@@ -689,7 +759,7 @@ ui <- dashboardPage(
                        dateInput("fecha_hecho_final_2",
                                  "Ingresa la fecha final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30"))),
+                                 value = max(base_casos_clean$fecha_hechos, na.rm = T))),
                 
                 column(width = 3,
                        align = "center",
@@ -799,7 +869,7 @@ ui <- dashboardPage(
                        dateInput("fecha_hecho_final_3",
                                  "Ingresa la fecha final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30"))),
+                                 value = max(base_casos_clean$fecha_hechos, na.rm = T))),
                 
                 column(width = 3,
                        align = "center",
@@ -911,7 +981,7 @@ ui <- dashboardPage(
                        dateInput("fecha_hecho_final_4",
                                  "Ingresa la fecha final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30"))),
+                                 value = max(base_casos_clean$fecha_hechos, na.rm = T))),
                 
                 column(width = 3,
                        align = "center",
@@ -1131,7 +1201,7 @@ ui <- dashboardPage(
                        dateInput("fecha_de_recepcion_final",
                                  "Ingresa la fecha de recepción final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30"))),
+                                 value = max(base_ordenes_clean$fecha_de_recepcion, na.rm = T))),
                 
                 column(width = 3,
                        align = "center",
@@ -1235,7 +1305,7 @@ ui <- dashboardPage(
                        dateInput("fecha_de_captura_final",
                                  "Ingresa la fecha de captura final:",
                                  language = "es", 
-                                 value = as.Date("2023-09-30"))),
+                                 value = max(base_servicios_clean$fecha_captura, na.rm = T))),
                 
                 column(width = 3,
                        align = "center",
@@ -1658,6 +1728,117 @@ server <- function(input, output, session
     
   })
   
+  # 0. anual historico plot
+  
+  #0.1 historico de casos
+  
+  output$historico_anual_plot <- renderPlotly({
+    
+    p1_total <- base_casos_clean %>%  
+      filter(if(input$depen_check_0=="TODAS LAS DEPENDENCIAS") dep_exp!="" else str_to_upper(dep_exp) %in% input$depen_check_0
+             
+      ) %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio &
+      #          fecha_hechos <= input$fecha_hecho_final) %>%
+      filter(fecha_hechos>="2017-01-01") %>% 
+      group_by(ao=year(fecha_hechos)) %>% 
+      summarise(cuenta = n()) %>% 
+      # mutate(municipio_hecho_clean = nom_mun) %>% 
+      arrange(-cuenta) %>% 
+      mutate(label = paste0("<b>",
+                            ao,
+                            "</b>",
+                            "\n",
+                            "Número de casos de violencia en el año: ", 
+                            "<b>",
+                            prettyNum(cuenta, big.mark = ",")))
+    
+    p1_total <- p1_total %>% 
+      # slice_head(n = 10) %>% 
+      ggplot(aes(x=ao,
+                 y=cuenta, text=label))+
+      # geom_point(size=2, color='#5F5CA8', alpha=0.8) +
+      # geom_line(color='#5F5CA8', size=1.2) +
+      geom_col(fill = '#5F5CA8', alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta, accuracy = 1), y=cuenta*1.03), size=5, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      # scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0('Casos de violencia por año\n',
+                          "(", 
+                          format(as_date("2017-01-01"), "%d/%m/%Y"), 
+                          " al ", 
+                          format(max(base_casos_clean$fecha_hechos, na.rm = T), "%d/%m/%Y"),
+                          ")")
+      )+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
+    
+    ggplotly(p1_total, tooltip = "label")
+  })
+  
+  #0.2 historico de servicios otorgados
+  output$historico_anual_plot_servicios <- renderPlotly({
+    
+    p1_total <- base_servicios_clean %>%  
+      filter(if(input$depen_check_0_1=="TODAS LAS DEPENDENCIAS") dependenciaquebrindoservicio!="" else str_to_upper(dependenciaquebrindoservicio) %in% input$depen_check_0_1
+             
+      ) %>% 
+      # filter(fecha_hechos >= input$fecha_hecho_inicio &
+      #          fecha_hechos <= input$fecha_hecho_final) %>%
+      filter(fecha_captura>="2019-01-01") %>% 
+      group_by(ao=year(fecha_captura)) %>% 
+      summarise(cuenta = n()) %>% 
+      # mutate(municipio_hecho_clean = nom_mun) %>% 
+      arrange(-cuenta) %>% 
+      mutate(label = paste0("<b>",
+                            ao,
+                            "</b>",
+                            "\n",
+                            "Número de casos de violencia en el año: ", 
+                            "<b>",
+                            prettyNum(cuenta, big.mark = ",")))
+    
+    p1_total <- p1_total %>% 
+      # slice_head(n = 10) %>% 
+      ggplot(aes(x=ao,
+                 y=cuenta, text=label))+
+      # geom_point(size=2, color='#5F5CA8', alpha=0.8) +
+      # geom_line(color='#5F5CA8', size=1.2) +
+      geom_col(fill = "maroon", alpha=0.8)+
+      # geom_label(aes(x = name_clean, y = cuenta, label=cuenta, size=13),
+      #            size=3, alpha=1, colour="#0f3776",   label.size = 0.25,  fontface = "bold")+
+      geom_text(aes(label=scales::comma(cuenta, accuracy = 1), y=cuenta*1.03), size=5, color="black", fontface = "bold")+
+      scale_y_continuous(labels = scales::comma) +
+      # scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
+      labs(x="", y="", fill="", color="", 
+           title = paste0('Servicios otorgados por año\n',
+                          "(", 
+                          format(as_date("2019-01-01"), "%d/%m/%Y"), 
+                          " al ", 
+                          format(max(base_casos_clean$fecha_hechos, na.rm = T), "%d/%m/%Y"),
+                          ")")
+      )+
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
+            strip.text.x = element_text(size = 7*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 7L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 7L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 7L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=9*textFunction()))
+    
+    ggplotly(p1_total, tooltip = "label")
+  })
+  
   # 1.- Municipios plot
   
   output$municipios_plot <- renderPlotly({
@@ -1730,9 +1911,9 @@ server <- function(input, output, session
         labs(x="", y="", fill="", color="", 
              title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
                             "(", 
-                            format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
+                            format(input$fecha_hecho_inicio, "%d/%m/%Y"), 
                             " al ", 
-                            format(input$fecha_hecho_final, "%d/%B/%Y"),
+                            format(input$fecha_hecho_final, "%d/%m/%Y"),
                             ")")
         )+
         theme_minimal()+
@@ -1780,9 +1961,9 @@ server <- function(input, output, session
       #   layout(
       #     title = paste0('Top 10 municipios con mayor tasa de casos de violencia por 100,000 mujeres\n',
       #                    "(",
-      #                    format(input$fecha_hecho_inicio, "%d/%b/%y"),
+      #                    format(input$fecha_hecho_inicio, "%d/%m/%y"),
       #                    " al ",
-      #                    format(input$fecha_hecho_final, "%d/%b/%y"),
+      #                    format(input$fecha_hecho_final, "%d/%m/%y"),
       #                    ")"),
       #     xaxis = list(
       #       title = "Municipio",
@@ -1843,9 +2024,9 @@ server <- function(input, output, session
         labs(x="", y="", fill="", color="", 
              title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
                             "(", 
-                            format(input$fecha_hecho_inicio, "%d/%B/%Y"), 
+                            format(input$fecha_hecho_inicio, "%d/%m/%Y"), 
                             " al ", 
-                            format(input$fecha_hecho_final, "%d/%B/%Y"),
+                            format(input$fecha_hecho_final, "%d/%m/%Y"),
                             ")")
         )+
         theme_minimal()+
@@ -1883,9 +2064,9 @@ server <- function(input, output, session
       #            hoverinfo="none") %>% 
       #   layout(title = paste0('Top 10 municipios con mayor número de casos de violencia\n',
       #                         "(", 
-      #                         format(input$fecha_hecho_inicio, "%d/%b/%y"), 
+      #                         format(input$fecha_hecho_inicio, "%d/%m/%y"), 
       #                         " al ", 
-      #                         format(input$fecha_hecho_final, "%d/%b/%y"),
+      #                         format(input$fecha_hecho_final, "%d/%m/%y"),
       #                         ")"),
       #          xaxis = list(
       #            title = "Municipio",
@@ -2134,8 +2315,8 @@ server <- function(input, output, session
       mutate(avg_7 = rollmean(cuenta, k = 7, fill = NA)) %>% 
       mutate(avg_15 = rollmean(cuenta, k = 15, fill = NA)) %>% 
       mutate(avg_30 = rollmean(cuenta, k = 30, fill = NA)) %>% 
-      mutate(label_plot_15 = paste0(format(fecha_hechos, "%d/%B/%y"),"\nPromedio últimos 15 días: ", round(avg_15, 2)),
-             label_plot_30 = paste0(format(fecha_hechos, "%d/%B/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
+      mutate(label_plot_15 = paste0(format(fecha_hechos, "%d/%m/%y"),"\nPromedio últimos 15 días: ", round(avg_15, 2)),
+             label_plot_30 = paste0(format(fecha_hechos, "%d/%m/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
     
     fig2 <- plot_ly(p2, 
                     x = ~ fecha_hechos,
@@ -2158,9 +2339,9 @@ server <- function(input, output, session
                 hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
       layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
                                       "(", 
-                                      format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
+                                      format(input$fecha_hecho_inicio_2, "%d/%/m%y"), 
                                       " al ", 
-                                      format(input$fecha_hecho_final_2, "%d/%b/%y"),
+                                      format(input$fecha_hecho_final_2, "%d/%m/%y"),
                                       ")"), font=t),
              xaxis = list(title = '',
                           zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -2216,9 +2397,9 @@ server <- function(input, output, session
                 hoverlabel = list(bgcolor='#D1A0DA'))  %>% 
       layout(title = list(text=paste0('Evolución del número de casos de violencia contra las mujeres\n',
                                       "(", 
-                                      format(input$fecha_hecho_inicio_2, "%d/%b/%y"), 
+                                      format(input$fecha_hecho_inicio_2, "%d/%m/%y"), 
                                       " al ", 
-                                      format(input$fecha_hecho_final_2, "%d/%b/%y"),
+                                      format(input$fecha_hecho_final_2, "%d/%m/%y"),
                                       ")"), font=t),
              # xaxis = list(title = list(text ="Fecha de hechos",
              #   zerolinecolor = '#ffff',
@@ -2813,7 +2994,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_tv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_tv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -2842,9 +3023,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_tv, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Tipo de violencia",
@@ -2962,9 +3143,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_tm, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -2995,9 +3176,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_tm, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Tipo de modalidad",
@@ -3112,9 +3293,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_re, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -3144,9 +3325,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_re, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Rango de edad",
@@ -3291,9 +3472,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_vn, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -3324,9 +3505,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_vn, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Vínculo",
@@ -3460,9 +3641,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_lug, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -3493,9 +3674,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_lug, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Vínculo",
@@ -3617,9 +3798,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ec, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -3648,9 +3829,9 @@ server <- function(input, output, session
     #          textposition = "top",
     #          hoverinfo="none") %>% 
     # layout(title = paste0(municipio_seleccionado_ec, " (", 
-    #                       format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                       format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                       " al ", 
-    #                       format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                       format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                       ")"),
     #        xaxis = list(
     #          title = "Estado civil",
@@ -3882,7 +4063,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_nh, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_nh, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -3913,9 +4094,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_nh, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Número de hijos",
@@ -4036,7 +4217,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_actv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_actv, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4063,9 +4244,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_actv, " (", 
-    #                         format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_3, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_3, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Actividad de la víctima",
@@ -4254,7 +4435,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_e_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_e_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4282,9 +4463,9 @@ server <- function(input, output, session
     #          textposition = "top",
     #          hoverinfo="none") %>% 
     # layout(title = paste0(municipio_seleccionado_e_ag, " (", 
-    #                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                       format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                       " al ", 
-    #                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                       format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                       ")"),
     #        xaxis = list(
     #          title = "Rango de edad",
@@ -4424,7 +4605,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_es_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_es_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4453,9 +4634,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_es_ag, " (", 
-    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Escolaridad",
@@ -4586,7 +4767,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_gen_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_gen_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4615,9 +4796,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_gen_ag, " (", 
-    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Género",
@@ -4755,7 +4936,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_act_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_act_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4784,9 +4965,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_act_ag, " (", 
-    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Actividad principal",
@@ -4923,7 +5104,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_fte_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_fte_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -4951,9 +5132,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_fte_ag, " (", 
-    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                         " al ",
-    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Fuente de ingreso",
@@ -5067,7 +5248,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_seleccionado_drog_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_seleccionado_drog_ag, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -5095,9 +5276,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_drog_ag, " (", 
-    #                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+    #                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+    #                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Uso de drogas",
@@ -5210,9 +5391,9 @@ server <- function(input, output, session
                         hoverinfo= ~"label") %>% 
         layout(title= list(text = paste0(municipio_seleccionado_arma, 
                               " \n (", 
-                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                              format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                               " al ", 
-                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                              format(input$fecha_hecho_final_4, "%d/%m/%y"),
                               ")"), font=tt),
                xaxis = list(title = '',
                             zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -5290,9 +5471,9 @@ server <- function(input, output, session
 
       layout(title= list(text = paste0(municipio_seleccionado_arma, 
                                        " \n (", 
-                                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                       format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                                        " al ", 
-                                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                       format(input$fecha_hecho_final_4, "%d/%m/%y"),
                                        ")"), font=tt),
              xaxis = list(title = '',
                           zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -5353,9 +5534,9 @@ server <- function(input, output, session
                          hoverinfo= ~"label")  %>% 
         layout(title= list(text = paste0(municipio_seleccionado_arma, 
                                        "\n (", 
-                                       format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                       format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                                        " al ", 
-                                       format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                       format(input$fecha_hecho_final_4, "%d/%m/%y"),
                                        ")"), font=tt),
              xaxis = list(title = '',
                           zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -5430,9 +5611,9 @@ server <- function(input, output, session
                         hoverinfo= ~"label")   %>% 
         layout(title= list(text = paste0(municipio_seleccionado_arma, 
                                          "\n (", 
-                                         format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                         format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                                          " al ", 
-                                         format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                         format(input$fecha_hecho_final_4, "%d/%m/%y"),
                                          ")"), font=tt),
                xaxis = list(title = '',
                             zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -5818,9 +5999,9 @@ server <- function(input, output, session
                                 gsub("_", " ", tolower(input$eje_y)))),
                title = paste0(municipio_seleccionado_interac, 
                               " (", 
-                              format(input$fecha_hecho_inicio_5, "%d/%b/%y"), 
+                              format(input$fecha_hecho_inicio_5, "%d/%m/%y"), 
                               " al ", 
-                              format(input$fecha_hecho_final_5, "%d/%b/%y"),
+                              format(input$fecha_hecho_final_5, "%d/%m/%y"),
                               ")"))
       
     }
@@ -6040,9 +6221,9 @@ server <- function(input, output, session
                xaxis = list(title = "Mes"), 
                title = paste0(municipio_seleccionado_interac, 
                               " (", 
-                              format(input$fecha_hecho_inicio_5, "%d/%b/%y"), 
+                              format(input$fecha_hecho_inicio_5, "%d/%m/%y"), 
                               " al ", 
-                              format(input$fecha_hecho_final_5, "%d/%b/%y"),
+                              format(input$fecha_hecho_final_5, "%d/%m/%y"),
                               ")")) %>% 
         plotly::config(
           locale='es')
@@ -6220,7 +6401,7 @@ server <- function(input, output, session
       scale_y_continuous(labels = scales::comma) +
       # scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
-           title = paste0(municipio_ordenes, "\n (",format(input$fecha_hecho_inicio_3, "%d/%b/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%b/%y"),")"))+
+           title = paste0(municipio_ordenes, "\n (",format(input$fecha_hecho_inicio_3, "%d/%m/%y"), " al ", format(input$fecha_hecho_final_3, "%d/%m/%y"),")"))+
       theme_minimal()+
       theme(legend.position='none',
             text=element_text(family="Nutmeg-Light", size = 8*textFunction()),
@@ -6245,9 +6426,9 @@ server <- function(input, output, session
     #          xaxis = list(title = "Mes"),
     #          title = paste0(municipio_ordenes,
     #                         " (",
-    #                         format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+    #                         format(input$fecha_de_recepcion_inicial, "%d/%m/%y"),
     #                         " al ",
-    #                         format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_recepcion_final, "%d/%m/%y"),
     #                         ")")) %>%
     #   plotly::config(
     #     locale='es')
@@ -6327,15 +6508,15 @@ server <- function(input, output, session
                        hoverinfo = ~ "label")  %>% 
       # layout(title = paste0(municipio_ordenes,
       #                       " (",
-      #                       format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+      #                       format(input$fecha_de_recepcion_inicial, "%d/%m/%y"),
       #                       " al ",
-      #                       format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+      #                       format(input$fecha_de_recepcion_final, "%d/%m/%y"),
       #                       ")")
              layout(title= list(text = paste0(municipio_ordenes, 
                                               " \n (", 
-                                              format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                              format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                                               " al ", 
-                                              format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                              format(input$fecha_hecho_final_4, "%d/%m/%y"),
                                               ")"), font=tt),
                     xaxis = list(title = '',
                                  zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -6424,15 +6605,15 @@ server <- function(input, output, session
                        hoverinfo = ~ "label")  %>% 
       # layout(title = paste0(municipio_ordenes,
       #                       " (",
-      #                       format(input$fecha_de_recepcion_inicial, "%d/%b/%y"),
+      #                       format(input$fecha_de_recepcion_inicial, "%d/%m/%y"),
       #                       " al ",
-      #                       format(input$fecha_de_recepcion_final, "%d/%b/%y"),
+      #                       format(input$fecha_de_recepcion_final, "%d/%m/%y"),
       #                       ")"))
     layout(title= list(text = paste0(municipio_ordenes, 
                                      " \n (", 
-                                     format(input$fecha_hecho_inicio_4, "%d/%b/%y"), 
+                                     format(input$fecha_hecho_inicio_4, "%d/%m/%y"), 
                                      " al ", 
-                                     format(input$fecha_hecho_final_4, "%d/%b/%y"),
+                                     format(input$fecha_hecho_final_4, "%d/%m/%y"),
                                      ")"), font=tt),
            xaxis = list(title = '',
                         zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -6629,8 +6810,8 @@ server <- function(input, output, session
       replace(is.na(.), 0) %>% 
       mutate(avg_15 = rollmean(cuenta, k = 15, fill = NA)) %>% 
       mutate(avg_30 = rollmean(cuenta, k = 30, fill = NA)) %>% 
-      mutate(label_plot_15 = paste0(format(fecha_captura, "%d/%B/%y"),"\nPromedio últimos 15 días: ", round(avg_15, 2)),
-             label_plot_30 = paste0(format(fecha_captura, "%d/%B/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
+      mutate(label_plot_15 = paste0(format(fecha_captura, "%d/%m/%y"),"\nPromedio últimos 15 días: ", round(avg_15, 2)),
+             label_plot_30 = paste0(format(fecha_captura, "%d/%m/%y"),"\nPromedio últimos 30 días: ", round(avg_30, 2)))
     
     # ------------------------------------------
     
@@ -6672,9 +6853,9 @@ server <- function(input, output, session
       layout(title= list(text = paste0(municipio_seleccionado_serv_ev,
                                        " ",
                                        "(", 
-                                       format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+                                       format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
                                        " al ", 
-                                       format(input$fecha_de_captura_final, "%d/%b/%y"),
+                                       format(input$fecha_de_captura_final, "%d/%m/%y"),
                                        ")"), font=tt),
              xaxis = list(title = '',
                           zerolinecolor = '#ffff',zerolinewidth = 2,
@@ -6799,9 +6980,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_tip, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -6830,9 +7011,9 @@ server <- function(input, output, session
     #            hoverinfo="none") %>% 
     #   layout(title = list(text=paste0("Top 5 servicios en\n", 
     #                         municipio_seleccionado_ser_tip, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"), font=t),
     #          xaxis = list(title = list(text ="Tipo de servicio",
     #            tickangle = 0), font=t),
@@ -6943,9 +7124,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_edad, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -6973,9 +7154,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_ser_edad, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Rango de edad",
@@ -7081,9 +7262,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_edociv, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -7111,9 +7292,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_ser_edociv, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Estado civil",
@@ -7226,9 +7407,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_depen, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -7257,9 +7438,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>%
     #   layout(title = paste0(municipio_seleccionado_ser_depen, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Número de servicios",
@@ -7366,9 +7547,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_usu, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -7395,9 +7576,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_ser_usu, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Usuario",
@@ -7516,9 +7697,9 @@ server <- function(input, output, session
       scale_x_discrete(labels = function(x) str_wrap(x, width = 7)) +
       labs(x="", y="", fill="", color="", 
            title = paste0(municipio_seleccionado_ser_cate, "\n (", 
-                          format(input$fecha_hecho_inicio_3, "%d/%b/%y"), 
+                          format(input$fecha_hecho_inicio_3, "%d/%m/%y"), 
                           " al ", 
-                          format(input$fecha_hecho_final_3, "%d/%b/%y"),
+                          format(input$fecha_hecho_final_3, "%d/%m/%y"),
                           ")"))+
       theme_minimal()+
       theme(legend.position='none',
@@ -7547,9 +7728,9 @@ server <- function(input, output, session
     #            textposition = "top",
     #            hoverinfo="none") %>% 
     #   layout(title = paste0(municipio_seleccionado_ser_cate, " (", 
-    #                         format(input$fecha_de_captura_inicial, "%d/%b/%y"), 
+    #                         format(input$fecha_de_captura_inicial, "%d/%m/%y"), 
     #                         " al ", 
-    #                         format(input$fecha_de_captura_final, "%d/%b/%y"),
+    #                         format(input$fecha_de_captura_final, "%d/%m/%y"),
     #                         ")"),
     #          xaxis = list(
     #            title = "Categoría de servicio",
