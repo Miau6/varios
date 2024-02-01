@@ -70,7 +70,7 @@ library(shinyjs)
 library(leaflet)
 library(mxmaps)
 library(shinyWidgets)
-
+library(openxlsx)
 # Idioma #
 Sys.setlocale(locale="es_ES.UTF-8")
 
@@ -106,14 +106,14 @@ Sys.setlocale(locale="es_ES.UTF-8")
 #                                     encoding = "UTF-8")
 # 
 
-data <- read_rds("data_banavim_301123.rds")
+data <- read_rds("data_banavim_301223.rds")
 
 base_agre_clean <- data$base_agre_clean
 base_casos_clean <- data$base_casos_clean
 base_ordenes_clean <- data$base_ordenes_clean
 base_servicios_clean <- data$base_servicios_clean
 
-fecha_lim <- "2023-11-30"
+fecha_lim <- "2023-12-30"
 
 base_agre_clean <- base_agre_clean %>% 
   filter(fecha_hechos<=fecha_lim)
@@ -570,7 +570,10 @@ ui <- dashboardPage(
       
       # 1.1 Información inicial ---
       tabItem(tabName = "info_inicial",
-              
+              fluidRow(
+                align="right", 
+                downloadButton("download", "Descargar datos")
+              ),
             fluidRow(align = "center", #filtro para gráfico de casos
                        h1("Casos de Violencia contra las Mujeres"),
                        column(width = 2,
@@ -613,6 +616,9 @@ ui <- dashboardPage(
                                 h6("Fuente: BANAVIM 2023", align = "right")))
                      
             )
+
+            # )
+            
               
       ),
       
@@ -7799,6 +7805,31 @@ server <- function(input, output, session
     }
     
   })
+  
+  wb <- createWorkbook()
+  
+  addWorksheet(wb, "casos")
+  addWorksheet(wb, "agresiones")
+  addWorksheet(wb, "ordenes")
+  addWorksheet(wb, "servicios")
+  
+  writeData(wb, "casos", base_casos_clean)
+  writeData(wb, "agresiones", base_agre_clean)
+  writeData(wb, "ordenes", base_ordenes_clean)
+  writeData(wb, "servicios", base_servicios_clean)
+  
+  
+  
+  output$download <- downloadHandler(
+    filename = function() {
+      paste0("corte al ", fecha_lim, ".xlsx")
+    },
+    content = function(file) {
+      saveWorkbook(wb, file = file, overwrite = TRUE)
+    }
+  )
+
+
   
   
   
