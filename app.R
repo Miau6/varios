@@ -13,7 +13,6 @@ library(lubridate)
 library(RColorBrewer) 
 library(janitor)
 library(mxmaps)
-library(stringr)
 library(wordcloud2)
 library(RColorBrewer)
 library(shinydashboard)
@@ -120,7 +119,8 @@ bupu_2 <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols_2)
 # write.csv(reportes_llamadas, "reportes_llamadas_2.csv")
 
 
-reportes_llamadas<- read.csv("reportes_llamadas_2.csv")
+reportes_llamadas<- read.csv("reportes_llamadas_2.csv") %>% 
+  filter(!duplicated(id))
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - #
@@ -392,14 +392,39 @@ reportes_llamadas<- read.csv("reportes_llamadas_2.csv")
 # write.csv(reportes_llamadas, "reportes_llamadas_2.csv")
 
 
-reportes_llamadas<- read.csv("reportes_llamadas_2.csv") %>% 
-  mutate(
+# reportes_llamadas_19_22 <- read.csv("reportes_llamadas_2.csv") %>% 
+#   mutate(fecha=as_date(fecha)) %>%
+#   filter(fecha<="2022-12-31") %>% 
+#   filter(!duplicated(id, incomparables = NA)) %>% 
+#   mutate(
+#     month=factor(
+#       month,levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                      "Septiembre", "Octubre","Noviembre", "Diciembre"))) 
+
+reportes_llamadas_19_22 <- read_rds("llamadas_19_22.rds")
+
+reportes_llamadas_23 <- read_rds("llamadas_23.rds") %>% 
+  filter(year(fecha)>2022) %>% 
+  # mutate(fecha=as_date(fecha), 
+  #        año=year(fecha), 
+  #        mes=paste(año, "-", month(fecha)), 
+  #        month=lubridate::month(fecha, label=T,abbr=F), 
+  #        hora=as.character(hora)) %>%
+  # filter(!duplicated(id, incomparables = NA)) %>% 
+  mutate(clasificación=str_to_sentence(clasificación), 
+         clasificación=case_when(
+           clasificación=="Violencia contra la mujer" ~ "Violencia contra las mujeres", 
+           T ~clasificación
+           
+         ), 
+    month=str_to_title(month), 
     month=factor(
       month,levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                     "Septiembre", "Octubre","Noviembre", "Diciembre")))
+                     "Septiembre", "Octubre","Noviembre", "Diciembre"))) 
 
-
-
+reportes_llamadas <- bind_rows(reportes_llamadas_19_22, 
+                               reportes_llamadas_23) %>% 
+  mutate(municipio=str_to_upper(municipio))
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - #
 
@@ -479,9 +504,13 @@ medidas_ordenes_municipal <- read_excel("medidas_ordenes.xlsx", sheet = "municip
     mes=factor(mes,
                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio",
                         "Julio", "Agosto", "Septiembre", "Octubre","Noviembre", "Diciembre")))
-#metemos la base de aborto
-aborto <- readxl::read_excel("AbortoLimpio.xlsx") %>% 
+
+
+# metemos la base de aborto -----------------------------------------------------
+
+aborto <- readxl::read_excel("AbortoLimpio_311223.xlsx") %>% 
   clean_names()
+
 aborto <- aborto %>% 
   mutate(metodo_planificacion_familiar=case_when(
     metodo_planificacion_familiar=="Pend" ~ "PEND", 
@@ -490,11 +519,11 @@ aborto <- aborto %>%
     T ~ str_to_title(metodo_planificacion_familiar)
   ), 
   hospital=case_when(
-    hospital=="HGO" ~ "Hospital General de Occidente", 
-    hospital=="HMIELM" ~ "Hospital Materno Infantil ELM", 
-    hospital=="HMIESnMF"~"Hospital Materno Infantil San Martín de las Flores", 
-    T ~ hospital
-  ), 
+    hospital %in% c("HGO", "Hospital General de Occidente") ~ "Hospital General de Occidente", 
+    hospital %in% c("HMIELM") ~ "Hospital Materno Infantil ELM", 
+    hospital=="HMIESnMF"~"Hospital Materno Infantil San Martín de las Flores",
+    hospital %in% c("El Colli", "La Barca", "Otra Instancia particular") ~ "Otro",
+    T ~ hospital ), 
   rango_edad=case_when(
     edad<15 ~ "Menor a 15 años", 
     edad>=15 & edad<18~ "15 a 17", 
@@ -502,16 +531,16 @@ aborto <- aborto %>%
     # edad>=30 & edad<45 ~ "30 a 44", 
     # edad>=45 ~ "+45",
     # T ~ "Desconocido"
-    ), 
-    rango_edad=factor(rango_edad, 
-                      levels=c("Menor a 15 años", 
-                               "15 a 17", "+18"#, 
-                               # "30 a 44", "+45", 
-                               #"Desconocido"
-                               )
-                      )
-    
-    
+  ), 
+  rango_edad=factor(rango_edad, 
+                    levels=c("Menor a 15 años", 
+                             "15 a 17", "+18"#, 
+                             # "30 a 44", "+45", 
+                             #"Desconocido"
+                    )
+  )
+  
+  
   ) %>% 
   replace_na(list(procedimiento="Sin información", 
                   metodo_planificacion_familiar="Sin información", 
@@ -533,11 +562,11 @@ aborto_causal <- aborto %>% tabyl(causal) %>% arrange(desc(n))
 
 coord_hospital <- tibble(
   hospital=c("Cd Guzmán", "Colotlán",
-            "Hospital General de Occidente", 
-            "Hospital Materno Infantil ELM", 
-            "Hospital Materno Infantil San Martín de las Flores", 
-            "Pto Vallarta", 
-            "Tepatitlán"), 
+             "Hospital General de Occidente", 
+             "Hospital Materno Infantil ELM", 
+             "Hospital Materno Infantil San Martín de las Flores", 
+             "Pto Vallarta", 
+             "Tepatitlán"), 
   x=c(-103.47863, -103.27124, -103.36893, -103.35142, 
       -103.27774, -105.21027, -102.77926), 
   y=c(19.69772, 22.09913, 20.71708, 20.66281, 
@@ -771,7 +800,7 @@ Regiones %>%
   mutate(text = paste("Año: ", Año,
                       "\nPeriodo: ",  format(as_date(Periodo), "%B de %Y"),
                       "\nTotal de carpetas: ", scales::comma(Total), sep="")) %>% 
-  filter(Periodo <= "2023-06-01")->Regiones #actualizar
+  filter(Periodo <= "2024-01-01")->Regiones #actualizar
 
 #Regiones$Periodo<-substr(Regiones$Periodo, start = 1, stop = 7)
 
@@ -895,7 +924,7 @@ pivot_longer(cols = ene:dic,
   # mutate(text = paste("Año: ", Año,
   #                     "\nPeriodo: ",  format(as_date(Periodo), "%B de %Y"),
   #                     "\nTotal de carpetas: ", scales::comma(total), sep="")) %>% 
-  filter(Periodo <= "2023-06-01") #actualizar
+  filter(Periodo <= "2024-01-01") #actualizar
 
 
 
@@ -946,13 +975,13 @@ atenciones <- atenciones %>%
     Fecha = ymd(paste0(Año, "-", Month, "-01")))
 
 
-datos_victimas<-read.csv("bases_publicas/incidencia_jalisco_victimas.csv",check.names = T, encoding = "latin-1")
-datos_incidencia_mun<-read_excel("bases_publicas/incidencia_municipal.xlsx")
-datos_incidencia_regional<-read_excel("bases_publicas/incidencia_regional.xlsx")
-medidas_y_ordenes <- read_excel("bases_publicas/medidas_ordenes.xlsx")
-llamadas_911<-read_excel("bases_publicas/reportes_llamadas_911.xlsx")
-violencia_familiar <- read_excel("bases_publicas/violencia_familiar_diario.xlsx")
-base_atenciones <- read_excel("bases_publicas/base_atenciones.xlsx")
+datos_victimas            <-read_excel("bases_publicas/incidencia_jalisco_victimas.xlsx")
+datos_incidencia_mun      <-read_excel("bases_publicas/incidencia_municipal.xlsx")
+datos_incidencia_regional <-read_excel("bases_publicas/incidencia_regional.xlsx")
+medidas_y_ordenes         <-read_excel("bases_publicas/medidas_ordenes.xlsx")
+llamadas_911              <-read_excel("bases_publicas/reportes_llamadas_911.xlsx")
+violencia_familiar        <- read_excel("bases_publicas/violencia_familiar_diario.xlsx")
+base_atenciones           <- read_excel("bases_publicas/base_atenciones.xlsx")
 
 
 
@@ -1067,7 +1096,7 @@ ui <- shinyUI(
       
       add_busy_spinner(onstart = F, spin = "fading-circle", color = "#E34F70"),
       
-      navbarPage(title = "DATOS ABIERTOS", 
+      navbarPage(#title = "DATOS ABIERTOS", 
                  header=
                    busy_start_up(
                      loader = spin_epic("flower", color = "#8F5199"),
@@ -1076,15 +1105,30 @@ ui <- shinyUI(
                      color = "#8F5199",
                      background = " white"),
                  useShinydashboard(),
+                 tabPanel(title="",
+                          icon = icon("home"),
+                          htmlOutput("filecontainer")),
+                          # includeHTML("Page-3.html"),
+                          # includeCSS("Page-3.css", height = "auto", width = "auto"),
+                          # includeCSS("Post-Template.css", height = "auto", width = "auto"),
+                          # includeCSS("nicepage.css", height = "auto", width = "auto"),
+                          # includeHTML("index.html"),
+                 #          
+                 #          # includeHTML("nicepage.js"),
+                 #          # includeHTML("thank-you-page.html"),
+                 #          # includeHTML("Thank-You-Template.css"),
+                 #          
+                 #          
+                 #          br()),
                  
                  navbarMenu(title = "CÓDIGO VIOLETA", #icon = icon("dot-circle"),
                             tabPanel(title = "Reportes 911", class="p-2",
                                      #tabsetPanel(
                                      box(width=12,  
                                          div(class="row d-flex", #Replicar
-                                             valueBox("En promedio", "se atienden 6,697 llamadas al mes relacionadas a violencias por razón de género y 223  al día.",icon=icon("chart-area"),color="fuchsia"),
+                                             valueBox("En promedio", "se atienden 6,840 llamadas al mes relacionadas a violencias por razón de género y 224  al día.",icon=icon("chart-area"),color="fuchsia"),
                                              valueBox("Máximo histórico", "marzo es el mes con mayor registro de llamadas: 8,986 y 8,714 en 2021 y 2022 respectivamente.", icon=icon("equals"), color="purple"),
-                                             valueBox("354,963 llamadas al 911", "por razón de género desde 2019 a mayo 2023, siendo el principal motivo (44%) por violencia familiar.", icon=icon("wave-square"), color="maroon")),
+                                             valueBox("410,412 llamadas al 911", "por razón de género desde 2019 a 2023, siendo el principal motivo (43%) por violencia familiar.", icon=icon("wave-square"), color="maroon")),
                                          
                                          sidebarLayout(
                                            sidebarPanel("Seleccione algunas características", class=".mb-2",
@@ -1163,6 +1207,9 @@ ui <- shinyUI(
                                        ),
                                        mainPanel(h3("Total de denuncias por violencia familiar", align="center"),
                                                  plotlyOutput("grafico_violencia_familiar",  height = "auto", width = "auto"),
+                                                 h6("Fuente: Elaborado con datos de la Fiscalía Estatal."),
+                                                 
+                                                 plotlyOutput("grafico_violencia_familiar_mes",  height = "auto", width = "auto"),
                                                  h6("Fuente: Elaborado con datos de la Fiscalía Estatal.")))
                                      #)
                             ),
@@ -1177,7 +1224,7 @@ ui <- shinyUI(
                                        width=12, 
                                        div(class="row d-flex", #Replicar
                                            
-                                           valueBox("2023", "De enero a junio se otorgaron 16,568, 23% más con respecto al mismo período del año 2022",icon=icon("chart-area"),color="fuchsia", width = 3),
+                                           valueBox("2023", "Se otorgaron 33,111 medidas de protección. Un aumento del 21% en comparación con el año anterior",icon=icon("chart-area"),color="fuchsia", width = 3),
                                            valueBox("2022", "Se otorgaron 27,376 medidas de protección. Un aumento del 26% en comparación con el año anterior", icon=icon("equals"), color="purple", width = 3),
                                            valueBox("2021", "Se otorgaron 21,644 medidas de protección. Un aumento del 24% en comparación con el año anterior", icon=icon("wave-square"), color="maroon", width = 3),
                                            valueBox("2020", "Se otorgaron 17,473 medidas de protección. Una disminución del 4% con respecto al año anterior.", icon=icon("signal"), color="light-blue", width = 3))),
@@ -1209,7 +1256,9 @@ ui <- shinyUI(
                                                 ),
                                                 mainPanel(h3("Total de medidas de protección emitidas", align="center"),
                                                           plotlyOutput("grafico_medidas", height = "auto", width = "auto"),
-                                                          h6("Fuente: Elaborado con datos de la Fiscalía Estatal a junio 2023."))),
+                                                          br(), br(), 
+                                                          plotlyOutput("grafico_medidas_anual", height = "auto", width = "auto"),
+                                                          h6("Fuente: Elaborado con datos de la Fiscalía Estatal a diciembre 2023."))),
                                        tabPanel("Mapa de medidas de protección", class="p-2",
                                                 column(12, align="center",
                                                        h2(""),
@@ -1225,12 +1274,12 @@ ui <- shinyUI(
                                                        #           '<br>','<sup>',
                                                        #           'Datos de la Fiscalía del Estado de Jalisco ', align = "left")),
                                                        fluidRow(
-                                                       splitLayout(cellWidths = c("50%", "50%"),
-                                                                   dataTableOutput("table_medidas"),
-                                                                   plotlyOutput("mapa_1",height = "auto", width = "auto")
-                                                       
-                                                       
-                                                       )),
+                                                         splitLayout(cellWidths = c("50%", "50%"),
+                                                                     dataTableOutput("table_medidas"),
+                                                                     plotlyOutput("mapa_1",height = "auto", width = "auto")
+                                                                     
+                                                                     
+                                                         )),
                                                        
                                                        h5("Datos de la Fiscalía del Estado de Jalisco", align="left"),
                                                        h5("*La etiqueta del mapa 'value' hace referencia al valor total de medidas de protección.", 
@@ -1249,7 +1298,7 @@ ui <- shinyUI(
                                      box(
                                        width=12,  
                                        div(class="row d-flex", #Replicar
-                                           valueBox("2023", "De enero a junio de 2023, se otorgaron 170 órdenes de medidas, 42% más con respecto al mismo período del año 2022.",icon=icon("chart-area"),color="fuchsia", width = 3),
+                                           valueBox("2023", "Se otorgaron 436 órdenes de protección, una aumento del 78% con respecto al año anterior.", icon=icon("equals"), color="fuchsia", width = 3),
                                            valueBox("2022", "Se otorgaron 245 órdenes de protección, una reducción del 32% con respecto al año anterior.", icon=icon("equals"), color="purple", width = 3),
                                            valueBox("2021", "Se otorgaron 359 órdenes de protección, un aumento del 81% con respecto al año anterior.", icon=icon("wave-square"), color="maroon", width = 3),
                                            valueBox("2020", "Se otorgaron 198 órdenes de protección, un aumento del 607% con respecto al año anterior.", icon=icon("signal"), color="light-blue", width = 3))),
@@ -1281,7 +1330,9 @@ ui <- shinyUI(
                                                              downloadButton("downloadData_ordenes", "Descarga (.csv)")),
                                                 mainPanel(h3("Total de órdenes de protección emitidas", align="center"),
                                                           plotlyOutput("grafico_ordenes", height = "auto", width = "auto"),
-                                                          h6("Fuente: Elaborado con datos de la Fiscalía Estatal a junio 2023."))),
+                                                          br(), br(), 
+                                                          plotlyOutput("grafico_ordenes_anual", height = "auto", width = "auto"),
+                                                          h6("Fuente: Elaborado con datos de la Fiscalía Estatal a diciembre 2023."))),
                                        tabPanel("Mapa de órdenes de protección", class="p-2",
                                                 #tags$br(),
                                                 column(12, align="center",
@@ -1302,8 +1353,8 @@ ui <- shinyUI(
                                                          splitLayout(cellWidths = c("50%", "50%"),
                                                                      dataTableOutput("table_ordenes"),
                                                                      plotlyOutput("mapa_2",height = "auto", width = "auto")
-                                                                     )),
-                                                                     
+                                                         )),
+                                                       
                                                        h5("Datos de la Fiscalía del Estado de Jalisco", align="left"),
                                                        h5("*La etiqueta del mapa 'value' hace referencia al valor total de órdenes de protección.", 
                                                           align="left", face="italic")))
@@ -1318,7 +1369,7 @@ ui <- shinyUI(
                                      box(
                                        width=12,  
                                        div(class="row d-flex", #Replicar
-                                           valueBox("2023 (mayo)", "Se contabilizan 86 muertes violentas de mujeres, 73 homicidios dolosos y 13 feminicidios.",icon=icon("chart-area"),color="fuchsia", width = 4), #Actualizar
+                                           valueBox("2024 (enero)", "Se contabilizan 11 muertes violentas de mujeres, 10 homicidios dolosos y 1 feminicidios.",icon=icon("chart-area"),color="fuchsia", width = 4), #Actualizar
                                            valueBox("Máximo histórico", "2019 es el año con mayor número de muertes violentas con 285: homicidios dolosos 218 y feminicidios 67.", icon=icon("equals"), color="purple", width = 4),
                                            valueBox("Crecimiento anual", "La mayor variación anual se presenta en 2018 al aumentar en 70.5% con respecto a 2017.", icon=icon("wave-square"), color="maroon", width = 4))),
                                      
@@ -1368,11 +1419,11 @@ ui <- shinyUI(
                                      box(
                                        width=12, 
                                        div(class="row d-flex", #Replicar
-                                           valueBox("Junio 2023", "se registran 2,226 carpetas iniciadas 
+                                           valueBox("En enero 2024", "se registran 1,660 carpetas iniciadas 
                                                 por incidencia delicitva por razón de género.",icon=icon("chart-area"),color="fuchsia"),#actualizar cada día 20
-                                           valueBox("De 2015 a 2016", "se presenta la variación anual más grande del histórico con 37%, al pasar de 10,704 a 14,634.", icon=icon("equals"), color="purple"),#actualizar cada día 20
-                                           valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 86%, 
-                                                seguido de abuso sexual (22%) y violación con 2%.", icon=icon("wave-square"), color="maroon"))),#actualizar cada día 20
+                                           valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 71.8% en lo que va del año 2024, 
+                                                seguido de abuso sexual (24..2%) y violación con 2.3%.", icon=icon("wave-square"), color="purple"),
+                                           valueBox("De 2015 a 2016", "se presenta la variación anual más grande del histórico con 37%, al pasar de 10,704 a 14,634.", icon=icon("equals"), color="maroon"))),#actualizar cada día 20
                                      
                                      sidebarLayout(
                                        sidebarPanel("\nSeleccione algunas características",
@@ -1414,14 +1465,14 @@ ui <- shinyUI(
                                        mainPanel(h4(align="center","Total de carpetas de investigación"),
                                                  plotlyOutput("grafico_municipal_periodo"),
                                                  h6("Fuente: Datos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública (SESNSP)."),
-                                                 h6("Datos a junio de 2023"),#actualizar cada día 20
+                                                 h6("Datos a enero de 2024"),#actualizar cada día 20
                                                  h6("En este apartado sólo se muestran los delitos que se consideran estar relacionados a una razón de género: acoso sexual,
                                                     abuso sexual, feminicidio, hostigamiento sexual, violación y violencia familiar."),
                                                  br(),
                                                  h4(align="center","Total de carpetas de investigación"),
                                                  plotlyOutput("grafico_municipal"),
                                                  h6("Fuente: Datos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública (SESNSP)."),
-                                                 h6("Datos a junio de 2023"),#actualizar cada día 20
+                                                 h6("Datos a enero de 2024"),#actualizar cada día 20
                                                  h6("En este apartado sólo se muestran los delitos que se consideran estar relacionados a una razón de género: acoso sexual,
                                                     abuso sexual, feminicidio, hostigamiento sexual, violación y violencia familiar."))
                                      ))),
@@ -1434,11 +1485,11 @@ ui <- shinyUI(
                                      box(
                                        width=12, 
                                        div(class="row d-flex", #Replicar
-                                           valueBox("Junio 2023", "se registran 2,226 carpetas iniciadas 
+                                           valueBox("En enero 2024", "se registran 1,660 carpetas iniciadas 
                                                 por incidencia delicitva por razón de género.",icon=icon("chart-area"),color="fuchsia"),#actualizar cada día 20
-                                           valueBox("De 2015 a 2016", "se presenta la variación anual más grande del histórico con 37%, al pasar de 10,704 a 14,634.", icon=icon("equals"), color="purple"),#actualizar cada día 20
-                                           valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 86%, 
-                                                seguido de abuso sexual (22%) y violación con 2%.", icon=icon("wave-square"), color="maroon"))),#actualizar cada día 20
+                                           valueBox("Violencia familiar", "es el delito con mayor número de carpetas al concentrar el 71.8% en lo que va del año 2024, 
+                                                seguido de abuso sexual (24..2%) y violación con 2.3%.", icon=icon("wave-square"), color="purple"),
+                                           valueBox("De 2015 a 2016", "se presenta la variación anual más grande del histórico con 37%, al pasar de 10,704 a 14,634.", icon=icon("equals"), color="maroon"))),#actualizar cada día 20
                                      
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
@@ -1475,11 +1526,11 @@ ui <- shinyUI(
                                        mainPanel(h4(align="center","Total de carpetas de investigación"),
                                                  plotlyOutput("grafico_Regional"),
                                                  h6("Fuente: Datos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública (SESNSP)."),
-                                                 h6("Datos a junio de 2023"),
+                                                 h6("Datos a enero de 2024"),
                                                  h4(align="center","Total de carpetas de investigación"),
                                                  plotlyOutput("regional_anual",height = "auto", width = "auto"),
                                                  h6("Fuente: Datos del Secretariado Ejecutivo del Sistema Nacional de Seguridad Pública (SESNSP)."),
-                                                 h6("Datos a junio de 2023"),
+                                                 h6("Datos a enero de 2024"),
                                                  h6("En este apartado sólo se muestran los delitos que se consideran estar relacionados a una razón de género: acoso sexual,
                                                     abuso sexual, feminicidio, hostigamiento sexual, violación y violencia familiar."))
                                      )))
@@ -1494,9 +1545,9 @@ ui <- shinyUI(
                                      box(
                                        width=12, 
                                        div(class="row d-flex", #Replicar
-                                           valueBox("Mayo 2023", "se han brindado 2,412 servicios por violencia en razón de género en el mes y durante el año 2022 fueron 23,514.", icon=icon("wave-square"), color="fuchsia", width = 4),
-                                           valueBox("En promedio", "se realizan 80 servicios por violencia al día en lo que va de 2023.",icon=icon("chart-area"),color="purple", width = 4),
-                                           valueBox("El 51% de los servicios", "se realizaron en la Unidad Metropolitana de Atención Integral (UMEA), seguido de Zapotlán el Grande con 11%.", icon=icon("equals"), color="maroon", width = 4))),
+                                           valueBox("En enero 2024", "se han brindado 1,896 servicios por violencia en razón de género.", icon=icon("wave-square"), color="fuchsia", width = 4),
+                                           valueBox("En promedio", "se realizan 61 servicios por violencia al día en lo que va de 2023.",icon=icon("chart-area"),color="purple", width = 4),
+                                           valueBox("El 58% de los servicios", "se realizaron en la Unidad Metropolitana de Atención Integral (UMEA).", icon=icon("equals"), color="maroon", width = 4))),
                                      
                                      #h3(align="center", "Total de atenciones realizadas en las módulos de atención."),
                                      #h5(align="center", "Los datos son proporcionados mensualmente por el registro interno a cada usuaria que solicita atención en cualquiera de las unidades de atención."),
@@ -1540,9 +1591,9 @@ ui <- shinyUI(
                                      box(
                                        width=12,  
                                        div(class="row d-flex", #Replicar
-                                           valueBox("Mayo 2023", "la violencia más atendida es violencia psicológica con 33%, seguido de violencia económica con 20%.", icon=icon("wave-square"), color="fuchsia", width = 4),
-                                           valueBox("En el año 2023", "las violencias más atendidas son: violencia psicológica (61%), económica (34%) y física (33%).",icon=icon("chart-area"),color="purple", width = 4),
-                                           valueBox("Aumentó en 51%", "el total de servicios brindados en el mes de mayo 2023 con respecto el año anterior, al pasar  de 1,596 (2022) a 2,412 (2023).", icon=icon("equals"), color="maroon", width = 4))),
+                                           valueBox("Enero 2024", "la violencia más atendida es violencia psicológica con 43%, seguido de violencia económica con 23%.", icon=icon("wave-square"), color="fuchsia", width = 4),
+                                           valueBox("Al cierre del 2023", "las violencias más atendidas son: violencia psicológica (33%), económica (19%) y física (18%).",icon=icon("chart-area"),color="purple", width = 4),
+                                           valueBox("Disminuyó en 5%", "el total de servicios brindados en el mes de enero 2024 con respecto el año anterior, al pasar  de 862 (2023) a 817 (2024).", icon=icon("equals"), color="maroon", width = 4))),                                     
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
                                                     selectInput(
@@ -1550,7 +1601,7 @@ ui <- shinyUI(
                                                       label = "Año",
                                                       choices = sort(unique(atenciones$Año)),
                                                       multiple = F,
-                                                      selected = 2023
+                                                      selected = 2024
                                                     ),
                                                     selectInput(
                                                       inputId = "atencion_mes2",
@@ -1585,10 +1636,9 @@ ui <- shinyUI(
                                      box(
                                        width=12, 
                                        div(class="row d-flex", #Replicar
-                                           valueBox("Mayo 2023", "la violencia más atendida es violencia psicológica con 33%, seguido de violencia económica con 20%.", icon=icon("wave-square"), color="fuchsia", width = 4),
-                                           valueBox("En el año 2023", "las violencias más atendidas son: violencia psicológica (61%), económica (34%) y física (33%).",icon=icon("chart-area"),color="purple", width = 4),
-                                           valueBox("Aumentó en 51%", "el total de servicios brindados en el mes de mayo 2023 con respecto el año anterior, al pasar  de 1,596 (2022) a 2,412 (2023).", icon=icon("equals"), color="maroon", width = 4))),
-                                     
+                                           valueBox("Enero 2024", "la violencia más atendida es violencia psicológica con 43%, seguido de violencia económica con 23%.", icon=icon("wave-square"), color="fuchsia", width = 4),
+                                           valueBox("Al cierre del 2023", "las violencias más atendidas son: violencia psicológica (33%), económica (19%) y física (18%).",icon=icon("chart-area"),color="purple", width = 4),
+                                           valueBox("Disminuyó en 5%", "el total de servicios brindados en el mes de enero 2024 con respecto el año anterior, al pasar  de 862 (2023) a 817 (2024).", icon=icon("equals"), color="maroon", width = 4))),                                     
                                      sidebarLayout(
                                        sidebarPanel("Seleccione algunas características",
                                                     selectInput(
@@ -1596,7 +1646,7 @@ ui <- shinyUI(
                                                       label = "Año",
                                                       choices = sort(unique(atenciones$Año)),
                                                       multiple = F,
-                                                      selected = 2023
+                                                      selected = 2024
                                                     ),
                                                     selectInput(
                                                       inputId = "atencion_mes3",
@@ -1641,16 +1691,16 @@ ui <- shinyUI(
                                              value = paste0("En el año ", max(total_aborto$ao)),
                                              subtitle =  paste0("Se registran ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)])), 
                                                                 " iles mientras que en ",  max(total_aborto$ao)-1,
-                                             " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
+                                                                " se registraron ", comma(sum(total_aborto$Total[total_aborto$ao==max(total_aborto$ao)-1]))
                                                                 
                                              ),icon=icon("chart-area"),color="purple", width = 4),
                                            valueBox(
                                              value = "La causal principal es",
                                              subtitle =  paste0(aborto_causal$causal[1], " con ", percent(aborto_causal$percent[1], .1), 
-                                             " (año ",  max(total_aborto$ao), ")", " mientras que ", 
-                                             aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
+                                                                " (año ",  max(total_aborto$ao), ")", " mientras que ", 
+                                                                aborto_causal$causal[2], " tiene ", percent(aborto_causal$percent[2], .1)
                                              ), icon=icon("equals"), color="maroon", width = 4))
-                                       ), 
+                                     ), 
                                      tabsetPanel(
                                        tabPanel(title = "Mensual",
                                                 sidebarLayout(
@@ -1730,65 +1780,65 @@ ui <- shinyUI(
                                                 #
                                                 #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
                                                 #   ),
-                                                  mainPanel(h3(align="center","Total de interrupciones legales del embarazo"), width = 12,
-                                                            plotlyOutput("aborto_ts_anual"),
-                                                            h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
-                                                            # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
-                                                            #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
-                                                            # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
-                                                            #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
-                                                  )
+                                                mainPanel(h3(align="center","Total de interrupciones legales del embarazo"), width = 12,
+                                                          plotlyOutput("aborto_ts_anual"),
+                                                          h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                                                          # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                                                          #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                                                          # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                                                          #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
                                                 )
-                                       
-
                                        )
                                        
-
-
-                                     ),
-                                     # sidebarLayout(
-                                     #   sidebarPanel("Seleccione algunas características",
-                                     #                dateRangeInput(
-                                     #                  inputId = "date_aborto",
-                                     #                  label = "Rango de fechas",
-                                     #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
-                                     #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
-                                     #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
-                                     #                  separator = "-"
-                                     #                ),
-                                     #                selectInput(
-                                     #                  inputId = "causal_aborto",
-                                     #                  label = "Causales",
-                                     #                  choices = sort(unique(aborto$causal)),
-                                     #                  multiple = T
-                                     #                ),
-                                     #                selectInput(
-                                     #                  inputId = "hospital_aborto",
-                                     #                  label = "Hospital",
-                                     #                  choices = sort(unique(aborto$hospital)),
-                                     #                  multiple = T
-                                     #                ),
-                                     #                selectInput(
-                                     #                  inputId = "redad_aborto",
-                                     #                  label = "Rango de edad",
-                                     #                  choices = c("Menor a 15 años", "15 a 17", "+18", 
-                                     #                              "Desconocido"),
-                                     #                  multiple = T,
-                                     #                ),
-                                     #                
-                                     #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
-                                     #   ),
-                                     #   mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
-                                     #             plotlyOutput("aborto_ts"),
-                                     #             h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
-                                     #             # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
-                                     #             #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
-                                     #             # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
-                                     #             #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
-                                     #   )
-                                     # )
+                                       
+                                     )
                                      
+                                     
+                                     
+                            ),
+                            # sidebarLayout(
+                            #   sidebarPanel("Seleccione algunas características",
+                            #                dateRangeInput(
+                            #                  inputId = "date_aborto",
+                            #                  label = "Rango de fechas",
+                            #                  start = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                            #                  min = floor_date(min(aborto$fecha, na.rm = T), "month"),
+                            #                  max = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1,
+                            #                  end = ceiling_date(max(aborto$fecha, na.rm = T), "month")-1, language = "es", 
+                            #                  separator = "-"
+                            #                ),
+                            #                selectInput(
+                            #                  inputId = "causal_aborto",
+                            #                  label = "Causales",
+                            #                  choices = sort(unique(aborto$causal)),
+                            #                  multiple = T
+                            #                ),
+                            #                selectInput(
+                            #                  inputId = "hospital_aborto",
+                            #                  label = "Hospital",
+                            #                  choices = sort(unique(aborto$hospital)),
+                            #                  multiple = T
+                            #                ),
+                            #                selectInput(
+                            #                  inputId = "redad_aborto",
+                            #                  label = "Rango de edad",
+                            #                  choices = c("Menor a 15 años", "15 a 17", "+18", 
+                            #                              "Desconocido"),
+                            #                  multiple = T,
+                            #                ),
+                            #                
+                            #                downloadButton("downloadData_aborto", "\nDescarga (.csv)")
+                            #   ),
+                            #   mainPanel(h3(align="center","Total de interrupciones legales del embarazo"),
+                            #             plotlyOutput("aborto_ts"),
+                            #             h6("Fuente: Datos proporcionados de O.P.D. Servicios de Salud")
+                            #             # h6("Fuente: Datos proporcionados por las Unidades Especializadas de Atención, de la
+                            #             #    Secretaría de Igualdad Sustantiva Entre Mujeres y Hombres (SISEMH)."),
+                            #             # h6("Los datos reflejan el total de los servicios brindados por violencias, las cuales son: 1) psicológica,
+                            #             #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
+                            #   )
+                            # )
+                            
                             # ),
                             tabPanel("Procedimiento", class="p-2", 
                                      box(
@@ -1855,7 +1905,7 @@ ui <- shinyUI(
                                                  #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
                                        )
                                      )
-                                     ), 
+                            ), 
                             tabPanel("Semanas de gestación", class="p-2", 
                                      box(
                                        width=12,
@@ -1993,9 +2043,9 @@ ui <- shinyUI(
                                                  #    2) física, 3) patrimonial, 4) económica, 5) sexual y 6) digital.")
                                        )
                                      )
-                                     )
+                            )
                             
-                   
+                            
                  ),
                  tabPanel(title = "Descarga masiva",
                           includeHTML("carrusel.html"), 
@@ -2012,6 +2062,13 @@ ui <- shinyUI(
     
   ))
 server <- function(input, output, session) {
+  
+  
+output$filecontainer <- renderUI({
+    tags$iframe(src="https://rstudio-pubs-static.s3.amazonaws.com/1083860_67c9ae7ca65d47b3b3c0ffa27031aa25.html",#"",
+                style="border: 0px solid white; width: 100%; height: 900px;" )#height = 600, width = 1200)
+  })
+  
   
   # Width
   plotWidth <- reactive({session$clientData[["output_user-muni_graf_width"]]})
@@ -2096,13 +2153,15 @@ server <- function(input, output, session) {
     
     reportes_llamadas_reactive() %>% 
       # reportes_llamadas %>% 
-      group_by(año, mes, clasificación) %>% 
+      # group_by(año, mes,clasificación) %>% 
+      group_by(fecha=floor_date(fecha, "month"), clasificación) %>% 
       summarise(total=n(),.groups = "drop") %>% 
-      mutate(text = paste("Total de llamadas: ", scales::comma(total), 
+      mutate(mes=paste0(year(fecha), "-", lubridate::month(fecha)),
+        text = paste("Total de llamadas: ", scales::comma(total), 
                           "\nPeriodo: ", mes,
                           "\nTipo de violencia: ", clasificación, sep="")) %>% 
       ggplot() +
-      aes(x = as.factor(mes), y = total, text=text,
+      aes(x = fecha, y = total, text=text,
           group = 1, fill = clasificación, color = clasificación) +
       geom_point(size=1.7)+
       geom_line(size=1) +
@@ -2121,13 +2180,13 @@ server <- function(input, output, session) {
       labs(title= "",
            #paste0("Municipio ",reportes_llamadas_reactive()$municipio[1]),
            x="", y="Total de llamadas", fill="", color="")+
-      scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
-                                  "2018-12","2018-03","2018-06","2018-09",
-                                  "2019-12","2019-03","2019-06","2019-09",
-                                  "2020-12","2020-03","2020-06","2020-09",
-                                  "2021-12","2021-03","2021-06","2021-09",
-                                  "2022-12","2022-03","2022-06","2022-09",
-                                  "2023-03"))+ #Actualizando conforme se agreguen trimestres
+      # scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
+      #                             "2018-12","2018-03","2018-06","2018-09",
+      #                             "2019-12","2019-03","2019-06","2019-09",
+      #                             "2020-12","2020-03","2020-06","2020-09",
+      #                             "2021-12","2021-03","2021-06","2021-09",
+      #                             "2022-12","2022-03","2022-06","2022-09",
+      #                             "2023-06", "2023-12","2023-03","2023-09"))+ #Actualizando conforme se agreguen trimestres
       theme_minimal()+
       theme(text=element_text(size=11,  family="Nutmeg-Light"),
             #plot.margin = margin(2, 2, 2, 2, "cm"),
@@ -2238,34 +2297,39 @@ server <- function(input, output, session) {
     height <- session$clientData$output_plot_responsive_height
     
     violencia_familiar_diario_reactive() %>% 
-      mutate(
-        month=factor(
-          month,levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                         "Septiembre", "Octubre","Noviembre", "Diciembre"))) %>%
-      group_by(mes,sexo) %>% 
+      # mutate(
+      #   month=factor(
+      #     month,levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+      #                    "Septiembre", "Octubre","Noviembre", "Diciembre"))) %>%
+      group_by(año) %>% 
       summarise(registro=sum(registro),.groups = "drop") %>% 
       mutate(text = paste("Total de denuncias: ", scales::comma(registro), 
-                          "\nPeríodo: ", mes,
-                          "\nSexo del denunciante: ", sexo, sep="")) %>% 
+                          "\nPeríodo: ", año,
+                          # "\nSexo del denunciante: ", sexo, 
+                          sep="")) %>% 
       ggplot()+
-      aes(x = as.factor(mes), y = registro, group=sexo, text=text) +
-      geom_point(aes(fill=sexo, color = sexo), size=3)+
-      geom_line (aes(fill=sexo, color = sexo), size=1) +
-      scale_color_manual(values = c(
-        Mujeres = "#B14C71",
-        Hombres = "#8F5199"))+
-      scale_fill_manual(values = c(
-        Mujeres = "#B14C71",
-        Hombres = "#8F5199"))+
+      aes(x = as.factor(año), y = registro, #group=sexo, 
+          text=text) +
+      geom_col( fill="#B14C71")+
+      # geom_point(aes(fill=sexo, color = sexo), size=3)+
+      # geom_line (aes(fill=sexo, color = sexo), size=1) +
+      # scale_color_manual(values = c(
+      #   Mujeres = "#B14C71",
+      #   Hombres = "#8F5199"))+
+      # scale_fill_manual(values = c(
+      #   Mujeres = "#B14C71",
+      #   Hombres = "#8F5199"))+
       scale_y_continuous(labels = scales::comma) +
-      scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
-                                  "2018-12","2018-03","2018-06","2018-09",
-                                  "2019-12","2019-03","2019-06","2019-09",
-                                  "2020-12","2020-03","2020-06","2020-09",
-                                  "2021-12","2021-03","2021-06","2021-09",
-                                  "2022-03","2022-06","2022-09","2022-12", 
-                                  "2023-03"))+
-      labs(x="", y="Total de denuncias", fill="Sexo", color="Sexo")+
+      # scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
+      #                             "2018-12","2018-03","2018-06","2018-09",
+      #                             "2019-12","2019-03","2019-06","2019-09",
+      #                             "2020-12","2020-03","2020-06","2020-09",
+      #                             "2021-12","2021-03","2021-06","2021-09",
+      #                             "2022-03","2022-06","2022-09","2022-12", 
+      #                             "2023-03", "2023-06","2023-09", "2023-12"))+
+      labs(x="", y="Total de denuncias", 
+           # fill="Sexo", color="Sexo"
+           fill="", color="")+
       theme_minimal()+
       theme(text=element_text(size=11,  family="Nutmeg-Light"),
             #plot.margin = margin(1, 1, 1, 1, "cm"),
@@ -2290,7 +2354,70 @@ server <- function(input, output, session) {
   
   
   
+# ------------------------------------------------------------------
   
+  output$grafico_violencia_familiar_mes <- renderPlotly({ #jati"
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height
+    
+    violencia_familiar_diario_reactive() %>% 
+      mutate(
+        month=factor(
+          month,levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+                         "Septiembre", "Octubre","Noviembre", "Diciembre"))) %>%
+      group_by(mes, sexo) %>% 
+      summarise(registro=sum(registro),.groups = "drop") %>% 
+      mutate(text = paste("Total de denuncias: ", scales::comma(registro), 
+                          "\nPeríodo: ", mes,
+                          "\nSexo del denunciante: ", sexo, 
+                          sep="")) %>% 
+      ggplot()+
+      aes(x = as.factor(mes), y = registro, group=sexo, 
+          text=text) +
+      # geom_col( fill="#B14C71")+
+      geom_point(aes(fill=sexo, color = sexo), size=3)+
+      geom_line (aes(fill=sexo, color = sexo), size=1) +
+      scale_color_manual(values = c(
+        Mujeres = "#B14C71",
+        Hombres = "#8F5199"))+
+      scale_fill_manual(values = c(
+        Mujeres = "#B14C71",
+        Hombres = "#8F5199"))+
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
+                                  "2018-12","2018-03","2018-06","2018-09",
+                                  "2019-12","2019-03","2019-06","2019-09",
+                                  "2020-12","2020-03","2020-06","2020-09",
+                                  "2021-12","2021-03","2021-06","2021-09",
+                                  "2022-03","2022-06","2022-09","2022-12",
+                                  "2023-03", "2023-06","2023-09", "2023-12"))+
+      labs(x="", y="Total de denuncias", 
+           # fill="Sexo", color="Sexo"
+           fill="", color="")+
+      theme_minimal()+
+      theme(text=element_text(size=11,  family="Nutmeg-Light"),
+            #plot.margin = margin(1, 1, 1, 1, "cm"),
+            strip.text.x = element_text(size = 12*textFunction(), face = "bold", angle=90, family="Nutmeg-Light"),
+            plot.title = element_text(face="bold",size = 20L, hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 12L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=10*textFunction(), family="Nutmeg-Light"))->grafico_violencia_familiar_1_mes
+    
+    
+    # #grafico_violencia_familiar
+    ggplotly(grafico_violencia_familiar_1_mes, tooltip = "text") %>%
+      layout(title = list(text = paste0(#"Total de denuncias por violencia familiar \n",
+        violencia_familiar_diario_reactive()$zona,
+        '<br>',
+        '<sup>')),
+        margin = list(b=0,t=30),
+        xaxis = list(side = "bottom"),
+        legend = list(orientation = "h", x = 0.0, y = -0.5,
+                      side="bottom"))
+    
+  })  
+  
+  
+# ----------------------------------------------------------------
   
   
   medidas_reactive <- reactive({
@@ -2408,7 +2535,7 @@ server <- function(input, output, session) {
                                   "2020-12","2020-03","2020-06","2020-09",
                                   "2021-12","2021-03","2021-06","2021-09",
                                   "2022-12","2022-03","2022-06", "2022-09",
-                                            "2023-03","2023-06"))+
+                                  "2023-03","2023-06","2023-09", "2023-12"))+
       #scale_x_discrete(labels = function(x) str_wrap(x, width = 15)) +
       labs(#title = paste("Total de medidas emitidas"),
         #violencia_familiar_diario_reactive()$municipio[1]),
@@ -2435,7 +2562,83 @@ server <- function(input, output, session) {
     #     )
   })  
   
-  
+  output$grafico_medidas_anual <- renderPlotly ({
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height  
+    
+    medidas_reactive() %>% 
+      group_by(año) %>% 
+      summarise(medidas=sum(medidas_aceptadas + medidas_rechazadas),
+                ordenes=sum(ordenes_aceptadas + ordenes_rechazadas),.groups = "drop") %>% 
+      pivot_longer(cols=c("ordenes","medidas"),
+                   names_to = "tipo",
+                   values_to = "total")%>% 
+      # mutate(fecha=case_when(
+      #   mes=="Enero"~ "01", 
+      #   mes=="Febrero"~"02", 
+      #   mes=="Marzo"~"03", 
+      #   mes=="Abril"~"04", 
+      #   mes=="Mayo"~"05", 
+      #   mes=="Junio"~"06",
+      #   mes=="Julio"~"07", 
+      #   mes=="Agosto"~"08", 
+      #   mes=="Septiembre"~"09", 
+      #   mes=="Octubre"~"10", 
+      #   mes=="Noviembre"~"11", 
+      #   mes=="Diciembre"~"12"),
+      #   fecha=paste0(año,"-", fecha)) %>%  
+      filter(tipo=="medidas") %>% 
+      mutate(text = paste("Total de medidas: ", scales::comma(total), 
+                          "\nPeríodo: ", año, sep=""
+                          )
+             ) %>% 
+      ggplot() +
+      aes(x =as.factor(año), y = total, fill="#CB337F", text=text) +
+      geom_col()+
+      # geom_point(color="#CB337F", size=3, alpha=0.7) + 
+      # geom_segment(aes(x=fecha, xend=fecha, y=0, yend=total))+
+      #geom_line(size=1)+
+      # scale_fill_manual(
+      #   values = c(#ordenes = "#B14C71"#,
+      #     medidas ="#B14C71" #"#8F5199"
+      #   ))+
+      #   scale_color_manual(
+      #     values = c(#ordenes = "#B14C71"#,
+      #       medidas ="#B14C71" #"#8F5199"
+      #     ))+
+      scale_y_continuous(labels = scales::comma) +
+      # scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
+      #                             "2018-12","2018-03","2018-06","2018-09",
+      #                             "2019-12","2019-03","2019-06","2019-09",
+      #                             "2020-12","2020-03","2020-06","2020-09",
+      #                             "2021-12","2021-03","2021-06","2021-09",
+      #                             "2022-12","2022-03","2022-06", "2022-09",
+      #                             "2023-03","2023-06","2023-09", "2023-12"))+
+      #scale_x_discrete(labels = function(x) str_wrap(x, width = 15)) +
+      labs(#title = paste("Total de medidas emitidas"),
+        #violencia_familiar_diario_reactive()$municipio[1]),
+        x="", y="", fill="Tipo", color="Tipo")+
+      #facet_grid(.~año, space = "free_x", scales = "free_x", switch="x") +
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(size=11,  family="Nutmeg-Light"),
+            #plot.margin = margin(1, 1, 1, 1, "cm"),
+            strip.text.x = element_text(size = 12*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 15L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 15L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 12L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))->gr_medidas
+    
+    ggplotly(gr_medidas, tooltip = "text") 
+    # %>%
+    #   layout(#legend = list(orientation = "h", x = 0.1, y = -0.3),
+    #     margin = list(b=0,t=0),
+    #     # title = paste("Total de medidas de protección emitidas \n",
+    #     #               #medidas_reactive()$municipio,
+    #     #               '</sup>',
+    #     #               '<br>')
+    #     )
+  })  
   
   
   output$mapa_1 <- renderPlotly ({
@@ -2598,238 +2801,21 @@ server <- function(input, output, session) {
   # ---------------------------------------------------------------------------
   
   output$table_medidas <- renderDataTable ({
-  
+    
+    
+    if (input$mapa_medidas == "Año 2019") {
       
-      if (input$mapa_medidas == "Año 2019") {
-
-        medidas_2019 %>% 
-          select(año, municipio_name, total) %>%
-          #filter(!total==0) %>% 
-          arrange(-total) %>% 
-          datatable(
-            
-            filter = 'top',
-            colnames = c('Año',
-                         'Municipio', 
-                         'Total'), 
-            
-            extensions = 'Buttons',
-            options = list(
-              #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
-              language = list(
-                info = ' ',
-                paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
-              initComplete = JS(
-                "function(settings, json) {",
-                "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
-              
-              dom = "tip",#'Blfrtip',
-              buttons = c('copy', 'excel', 'print'),
-              lengthMenu = list(c(10,20,55,100, "All"),
-                                c(10,20,55,100, "All")),
-              columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
-          
-          formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
-          
-          #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
-          #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
-          formatStyle(
-            columns = c(1:5),
-            fontFamily = "Nutmeg-Light",
-            #fontSize = "13px",
-            #color = '#008080',
-            fontWeight = 'plain',
-            #paddingRight = "0.5em",
-            borderRightWidth = "1px",
-            borderRightStyle = "solid",
-            borderRightColor = "white",
-            borderBottomColor = "#ffffff",
-            borderBottomStyle = "solid",
-            borderBottomWidth = "0.5px",
-            #borderCollapse = "collapse",
-            verticalAlign = "middle",
-            textAlign = "center",
-            wordWrap = "break-word"#,
-            #backgroundColor = '#e6e6e5'
-          ) ->datatable_1     
-        }
-
-      if (input$mapa_medidas == "Año 2020") {
-
-        medidas_2020 %>%
-          select(año, municipio_name, total) %>%
-          #filter(!total==0) %>% 
-          arrange(-total) %>% 
-          datatable(
-            
-            filter = 'top',
-            colnames = c('Año',
-                         'Municipio', 
-                         'Total'), 
-            
-            extensions = 'Buttons',
-            options = list(
-              #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
-              language = list(
-                info = ' ',
-                paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
-              initComplete = JS(
-                "function(settings, json) {",
-                "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
-              
-              dom = "tip",#'Blfrtip',
-              buttons = c('copy', 'excel', 'print'),
-              lengthMenu = list(c(10,20,55,100, "All"),
-                                c(10,20,55,100, "All")),
-              columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
-          
-          formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
-          
-          #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
-          #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
-          formatStyle(
-            columns = c(1:5),
-            fontFamily = "Nutmeg-Light",
-            #fontSize = "13px",
-            #color = '#008080',
-            fontWeight = 'plain',
-            #paddingRight = "0.5em",
-            borderRightWidth = "1px",
-            borderRightStyle = "solid",
-            borderRightColor = "white",
-            borderBottomColor = "#ffffff",
-            borderBottomStyle = "solid",
-            borderBottomWidth = "0.5px",
-            #borderCollapse = "collapse",
-            verticalAlign = "middle",
-            textAlign = "center",
-            wordWrap = "break-word"#,
-            #backgroundColor = '#e6e6e5'
-          )->datatable_1 
-        }
-
-      if (input$mapa_medidas == "Año 2021") {
-
-        medidas_2021 %>%
-          select(año, municipio_name, total) %>%
-          #filter(!total==0) %>% 
-          arrange(-total) %>% 
-          datatable(
-            
-            filter = 'top',
-            colnames = c('Año',
-                         'Municipio', 
-                         'Total'), 
-            
-            extensions = 'Buttons',
-            options = list(
-              #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
-              language = list(
-                info = ' ',
-                paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
-              initComplete = JS(
-                "function(settings, json) {",
-                "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
-              
-              dom = "tip",#'Blfrtip',
-              buttons = c('copy', 'excel', 'print'),
-              lengthMenu = list(c(10,20,55,100, "All"),
-                                c(10,20,55,100, "All")),
-              columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
-          
-          formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
-          
-          #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
-          #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
-          formatStyle(
-            columns = c(1:5),
-            fontFamily = "Nutmeg-Light",
-            #fontSize = "13px",
-            #color = '#008080',
-            fontWeight = 'plain',
-            #paddingRight = "0.5em",
-            borderRightWidth = "1px",
-            borderRightStyle = "solid",
-            borderRightColor = "white",
-            borderBottomColor = "#ffffff",
-            borderBottomStyle = "solid",
-            borderBottomWidth = "0.5px",
-            #borderCollapse = "collapse",
-            verticalAlign = "middle",
-            textAlign = "center",
-            wordWrap = "break-word"#,
-            #backgroundColor = '#e6e6e5'
-          )->datatable_1
-      }
-
-      if (input$mapa_medidas == "Año 2022") {
-
-        medidas_2022 %>%
-          select(año, municipio_name, total) %>%
-            #filter(!total==0) %>% 
-              arrange(-total) %>% 
-              datatable(
-                
-                filter = 'top',
-                colnames = c('Año',
-                             'Municipio', 
-                             'Total'), 
-                
-                extensions = 'Buttons',
-                options = list(
-                  #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
-                  language = list(
-                    info = ' ',
-                    paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
-                  initComplete = JS(
-                    "function(settings, json) {",
-                    "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
-                  
-                  dom = "tip",#'Blfrtip',
-                  buttons = c('copy', 'excel', 'print'),
-                  lengthMenu = list(c(10,20,55,100, "All"),
-                                    c(10,20,55,100, "All")),
-                  columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
-              
-              formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
-              
-              #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
-              #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
-              formatStyle(
-                columns = c(1:5),
-                fontFamily = "Nutmeg-Light",
-                #fontSize = "13px",
-                #color = '#008080',
-                fontWeight = 'plain',
-                #paddingRight = "0.5em",
-                borderRightWidth = "1px",
-                borderRightStyle = "solid",
-                borderRightColor = "white",
-                borderBottomColor = "#ffffff",
-                borderBottomStyle = "solid",
-                borderBottomWidth = "0.5px",
-                #borderCollapse = "collapse",
-                verticalAlign = "middle",
-                textAlign = "center",
-                wordWrap = "break-word"#,
-                #backgroundColor = '#e6e6e5'
-              )->datatable_1
-      }
-
-
-      if (input$mapa_medidas == "Año 2023") {
-
-        medidas_2023 %>%
+      medidas_2019 %>% 
         select(año, municipio_name, total) %>%
-        #filter(!total==0) %>%
-        arrange(-total) %>%
+        #filter(!total==0) %>% 
+        arrange(-total) %>% 
         datatable(
-
+          
           filter = 'top',
           colnames = c('Año',
-                       'Municipio',
-                       'Total'),
-
+                       'Municipio', 
+                       'Total'), 
+          
           extensions = 'Buttons',
           options = list(
             #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
@@ -2839,40 +2825,258 @@ server <- function(input, output, session) {
             initComplete = JS(
               "function(settings, json) {",
               "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
-
+            
+            dom = "tip",#'Blfrtip',
+            buttons = c('copy', 'excel', 'print'),
+            lengthMenu = list(c(10,20,55,100, "All"),
+                              c(10,20,55,100, "All")),
+            columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+        
+        formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
+        
+        #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
+        #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
+        
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          #fontSize = "13px",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        ) ->datatable_1     
+    }
+    
+    if (input$mapa_medidas == "Año 2020") {
+      
+      medidas_2020 %>%
+        select(año, municipio_name, total) %>%
+        #filter(!total==0) %>% 
+        arrange(-total) %>% 
+        datatable(
+          
+          filter = 'top',
+          colnames = c('Año',
+                       'Municipio', 
+                       'Total'), 
+          
+          extensions = 'Buttons',
+          options = list(
+            #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
+            language = list(
+              info = ' ',
+              paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+            initComplete = JS(
+              "function(settings, json) {",
+              "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
+            
+            dom = "tip",#'Blfrtip',
+            buttons = c('copy', 'excel', 'print'),
+            lengthMenu = list(c(10,20,55,100, "All"),
+                              c(10,20,55,100, "All")),
+            columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+        
+        formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
+        
+        #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
+        #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          #fontSize = "13px",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )->datatable_1 
+    }
+    
+    if (input$mapa_medidas == "Año 2021") {
+      
+      medidas_2021 %>%
+        select(año, municipio_name, total) %>%
+        #filter(!total==0) %>% 
+        arrange(-total) %>% 
+        datatable(
+          
+          filter = 'top',
+          colnames = c('Año',
+                       'Municipio', 
+                       'Total'), 
+          
+          extensions = 'Buttons',
+          options = list(
+            #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
+            language = list(
+              info = ' ',
+              paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+            initComplete = JS(
+              "function(settings, json) {",
+              "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
+            
+            dom = "tip",#'Blfrtip',
+            buttons = c('copy', 'excel', 'print'),
+            lengthMenu = list(c(10,20,55,100, "All"),
+                              c(10,20,55,100, "All")),
+            columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+        
+        formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
+        
+        #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
+        #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          #fontSize = "13px",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )->datatable_1
+    }
+    
+    if (input$mapa_medidas == "Año 2022") {
+      
+      medidas_2022 %>%
+        select(año, municipio_name, total) %>%
+        #filter(!total==0) %>% 
+        arrange(-total) %>% 
+        datatable(
+          
+          filter = 'top',
+          colnames = c('Año',
+                       'Municipio', 
+                       'Total'), 
+          
+          extensions = 'Buttons',
+          options = list(
+            #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
+            language = list(
+              info = ' ',
+              paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+            initComplete = JS(
+              "function(settings, json) {",
+              "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
+            
+            dom = "tip",#'Blfrtip',
+            buttons = c('copy', 'excel', 'print'),
+            lengthMenu = list(c(10,20,55,100, "All"),
+                              c(10,20,55,100, "All")),
+            columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>% 
+        
+        formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>% 
+        
+        #formatStyle('entidad', target = "row", fontWeight = "bold") %>% 
+        #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>% 
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          #fontSize = "13px",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )->datatable_1
+    }
+    
+    
+    if (input$mapa_medidas == "Año 2023") {
+      
+      medidas_2023 %>%
+        select(año, municipio_name, total) %>%
+        #filter(!total==0) %>%
+        arrange(-total) %>%
+        datatable(
+          
+          filter = 'top',
+          colnames = c('Año',
+                       'Municipio',
+                       'Total'),
+          
+          extensions = 'Buttons',
+          options = list(
+            #language = list(url = '//cdn.datatables.net/plug-ins/1.10.11/i18n/Spanish.json'),
+            language = list(
+              info = ' ',
+              paginate = list(previous = 'Anterior', `next` = 'Siguiente')),
+            initComplete = JS(
+              "function(settings, json) {",
+              "$(this.api().table().header()).css({'background-color': '#CB337F', 'color': '#fff', align:'center'});","}"),
+            
             dom = "tip",#'Blfrtip',
             buttons = c('copy', 'excel', 'print'),
             lengthMenu = list(c(10,20,55,100, "All"),
                               c(10,20,55,100, "All")),
             columnDefs = list(list(className = 'dt-center', targets = 1:3)))) %>%
-
-          formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>%
-
-          #formatStyle('entidad', target = "row", fontWeight = "bold") %>%
-          #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>%
-          formatStyle(
-            columns = c(1:5),
-            fontFamily = "Nutmeg-Light",
-            #fontSize = "13px",
-            #color = '#008080',
-            fontWeight = 'plain',
-            #paddingRight = "0.5em",
-            borderRightWidth = "1px",
-            borderRightStyle = "solid",
-            borderRightColor = "white",
-            borderBottomColor = "#ffffff",
-            borderBottomStyle = "solid",
-            borderBottomWidth = "0.5px",
-            #borderCollapse = "collapse",
-            verticalAlign = "middle",
-            textAlign = "center",
-            wordWrap = "break-word"#,
-            #backgroundColor = '#e6e6e5'
-          )->datatable_1
-
-      }
+        
+        formatCurrency('total',currency = "", interval = 3, mark = ",", digits = 0) %>%
+        
+        #formatStyle('entidad', target = "row", fontWeight = "bold") %>%
+        #formatStyle("subtipo.de.delito", color = styleEqual(c("Homicidio doloso"), c("#5F55A0"))) %>%
+        formatStyle(
+          columns = c(1:5),
+          fontFamily = "Nutmeg-Light",
+          #fontSize = "13px",
+          #color = '#008080',
+          fontWeight = 'plain',
+          #paddingRight = "0.5em",
+          borderRightWidth = "1px",
+          borderRightStyle = "solid",
+          borderRightColor = "white",
+          borderBottomColor = "#ffffff",
+          borderBottomStyle = "solid",
+          borderBottomWidth = "0.5px",
+          #borderCollapse = "collapse",
+          verticalAlign = "middle",
+          textAlign = "center",
+          wordWrap = "break-word"#,
+          #backgroundColor = '#e6e6e5'
+        )->datatable_1
       
-datatable_1
+    }
+    
+    datatable_1
     
     
     
@@ -2965,7 +3169,7 @@ datatable_1
       mutate(text = paste("Total de ordenes: ", scales::comma(total), 
                           "\nPeríodo: ", fecha, sep="")) %>% 
       ggplot() +
-      aes(x =fecha, y = total, color="8F5199", text=text) +
+      aes(x =fecha, y = total, color="#8F5199", text=text) +
       #geom_col()+
       geom_point(color="#8F5199", size=3, alpha=0.6) + 
       geom_segment(aes(x=fecha, xend=fecha, y=0, yend=total))+#, color="#b24dd1")+
@@ -2985,7 +3189,7 @@ datatable_1
                                   "2020-12","2020-03","2020-06","2020-09",
                                   "2021-12","2021-03","2021-06","2021-09",
                                   "2022-12","2022-03","2022-06","2022-09",
-                                            "2023-03", "2023-06"))+  
+                                  "2023-03","2023-06","2023-09","2023-12"))+  
       #scale_x_discrete(labels = function(x) str_wrap(x, width = 15)) +
       labs(x="", y="Total", fill="Tipo", color="Tipo")+
       #facet_grid(.~año, space = "free_x", scales = "free_x", switch="x") +
@@ -3009,7 +3213,79 @@ datatable_1
     #                   '<br>'))
   })  
   
-  
+  output$grafico_ordenes_anual <- renderPlotly ({
+    width <- session$clientData$output_plot_responsive_width
+    height <- session$clientData$output_plot_responsive_height
+    
+    ordenes_reactive() %>% 
+      #medidas_ordenes_municipal %>% 
+      group_by(año) %>% 
+      summarise(medidas=sum(medidas_aceptadas + medidas_rechazadas),
+                ordenes=sum(ordenes_aceptadas + ordenes_rechazadas),.groups = "drop") %>% 
+      pivot_longer(cols=c("ordenes","medidas"),
+                   names_to = "tipo",
+                   values_to = "total")%>% 
+      # mutate(fecha=case_when(
+      #   mes=="Enero"~ "01", 
+      #   mes=="Febrero"~"02", 
+      #   mes=="Marzo"~"03", 
+      #   mes=="Abril"~"04", 
+      #   mes=="Mayo"~"05", 
+      #   mes=="Junio"~"06",
+      #   mes=="Julio"~"07", 
+      #   mes=="Agosto"~"08", 
+      #   mes=="Septiembre"~"09", 
+      #   mes=="Octubre"~"10", 
+      #   mes=="Noviembre"~"11", 
+      #   mes=="Diciembre"~"12"),
+      #   fecha=paste0(año,"-", fecha)) %>%  
+      filter(tipo=="ordenes") %>% 
+      mutate(text = paste("Total de ordenes: ", scales::comma(total), 
+                          "\nPeríodo: ", año, sep="")) %>% 
+      ggplot() +
+      aes(x =factor(año), y = total, fill="#b24dd1", text=text) +
+      geom_col(fill="#b24dd1", alpha=.85)+
+      # geom_point(color="#8F5199", size=3, alpha=0.6) + 
+      # geom_segment(aes(x=fecha, xend=fecha, y=0, yend=total))+#, color="#b24dd1")+
+      #geom_line(size=1)+
+      # scale_fill_manual(
+      #   values = c(#ordenes = "#B14C71"#,
+      #     medidas ="#B14C71" #"#8F5199"
+      #   ))+
+      #   scale_color_manual(
+      #     values = c(#ordenes = "#B14C71"#,
+      #       medidas ="#B14C71" #"#8F5199"
+      #     ))+
+      scale_y_continuous(labels = scales::comma) +
+      # scale_x_discrete(breaks = c("2017-12","2017-03","2017-06","2017-09",
+      #                             "2018-12","2018-03","2018-06","2018-09",
+      #                             "2019-12","2019-03","2019-06","2019-09",
+      #                             "2020-12","2020-03","2020-06","2020-09",
+      #                             "2021-12","2021-03","2021-06","2021-09",
+      #                             "2022-12","2022-03","2022-06","2022-09",
+      #                             "2023-03","2023-06","2023-09","2023-12"))+  
+      #scale_x_discrete(labels = function(x) str_wrap(x, width = 15)) +
+      labs(x="", y="Total", fill="Tipo", color="Tipo")+
+      #facet_grid(.~año, space = "free_x", scales = "free_x", switch="x") +
+      theme_minimal()+
+      theme(legend.position='none',
+            text=element_text(size=11,  family="Nutmeg-Light"),
+            #plot.margin = margin(2, 2, 2, 2, "cm"),
+            strip.text.x = element_text(size = 12*textFunction(), face = "bold", angle=90),
+            plot.tag = element_text(size = 15L*textFunction(), hjust = 0, family="Nutmeg-Light"),
+            plot.title = element_text(size = 15L*textFunction(), hjust = 0.5, family="Nutmeg-Light"),
+            plot.caption = element_text(size = 12L*textFunction(), hjust = 0.5),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=9*textFunction()))->gr_ordenes
+    
+    ggplotly(gr_ordenes, tooltip = "text") 
+    # %>%
+    #   layout(#legend = list(orientation = "h", x = 0.1, y = -0.3),
+    #     margin = list(b=0,t=70),
+    #     title = paste("Total de órdenes de protección emitidas \n",
+    #                   #medidas_reactive()$municipio,
+    #                   '</sup>',
+    #                   '<br>'))
+  })  
   
   
   output$mapa_2 <- renderPlotly ({
@@ -3457,7 +3733,7 @@ datatable_1
   
   # ---------------------------------------------------------------------------- #  
   
-
+  
   
   # ---------------------------------------------------------------------------
   
@@ -4211,8 +4487,8 @@ datatable_1
     },
     content = function(file) {
       openxlsx::write.xlsx(aborto, file, row.names = F)
-    
-  })
+      
+    })
   
   output$downloadData_aborto2 <- downloadHandler(
     filename = function() {
@@ -4320,8 +4596,8 @@ datatable_1
              if(is.null(input$hospital_aborto)) hospital!="" else hospital %in% input$hospital_aborto,
              if(is.null(input$redad_aborto)) rango_edad!="" else rango_edad %in% input$redad_aborto
              
-             ) 
-  
+      ) 
+    
   })
   
   data_aborto2 <- reactive({
@@ -4352,11 +4628,11 @@ datatable_1
              if(is.null(input$causal_aborto4)) causal!="" else causal %in% input$causal_aborto4,
              if(is.null(input$hospital_aborto4)) hospital!="" else hospital %in% input$hospital_aborto4,
              if(is.null(input$redad_aborto4)) rango_edad!="" else rango_edad %in% input$redad_aborto4
-
+             
       )
-
+    
   })
-
+  
   output$aborto_ts <- renderPlotly({
     width <- session$clientData$output_plot_responsive_width
     height <- session$clientData$output_plot_responsive_height
@@ -4367,12 +4643,12 @@ datatable_1
       complete(fecha=seq.Date(as_date(floor_date(min(input$date_aborto), "month")),
                               as_date(floor_date(max(input$date_aborto), "month")), "1 month"),
                fill=list(Total=0)
-               ) %>%
+      ) %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
       ggplot(aes(x=fecha, y=Total,
-                 )) +
-      geom_point(size=2, color="#6737ab", alpha=.7) +
-      geom_line(size=1.2, color="#6737ab") + theme_minimal() +
+      )) +
+      geom_point(size=4, color="#6737ab") +
+      geom_line(size=1, color="#6737ab") + theme_minimal() +
       theme(legend.position = "none",
             legend.key.height= unit(1.3, 'cm'),
             legend.key.width= unit(1.3, 'cm'),
@@ -4383,9 +4659,9 @@ datatable_1
             plot.caption = element_text(size = 12L*textFunction(), hjust = 0),
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
-
+    
     ggplotly(plot
-             ) %>%
+    ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
              margin = list(b=0,t=0)
              # title = paste0("Total de servicios brindados por tipo de violencia\n", 
@@ -4405,11 +4681,13 @@ datatable_1
       summarise(Total=n()) %>% ungroup() %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
       ggplot(aes(x=reorder(procedimiento, -Total), y=Total,
-                 text=paste0("Procemiento: ", procedimiento, 
-                                  "<br>Total: ", Total)
+                 text=paste0("Procedimiento: ", procedimiento, 
+                             "<br>Total: ", Total)
       )) +
-      geom_col(size=2, fill="#6737ab") + theme_minimal() +
-      labs(x="Procedimiento") +
+      geom_col(size=2, fill="#6737ab") + 
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 16)) +
+      labs(x="") +
+      theme_minimal() +
       theme(legend.position = "none",
             legend.key.height= unit(1.3, 'cm'),
             legend.key.width= unit(1.3, 'cm'),
@@ -4447,7 +4725,8 @@ datatable_1
                              "<br>Total: ", Total)
       )) +
       geom_col(size=2, fill="#D581B9") + theme_minimal() +
-      labs(x="Hospital") +
+      labs(x="") +
+      scale_x_discrete(labels = function(x) str_wrap(x, width = 16)) +
       theme(legend.position = "none",
             legend.key.height= unit(1.3, 'cm'),
             legend.key.width= unit(1.3, 'cm'),
@@ -4483,11 +4762,11 @@ datatable_1
     
     data_aborto3() %>%
       filter(!hospital %in% c("Sin información", "Otro",
-                             "Otra Instancia particular")) %>% 
+                              "Otra Instancia particular")) %>% 
       group_by(hospital) %>%
       summarise(Total=n()) %>% 
       full_join(coord_hospital, "hospital") %>% 
-      replace_na(list(Total=0)) %>% 
+      replace_na(list(Total=0)) %>% drop_na(x) %>% 
       sf::st_as_sf(coords=c("x", "y")) %>% 
       leaflet() %>% addTiles() %>% 
       addAwesomeMarkers(popup = ~paste0(
@@ -4508,7 +4787,7 @@ datatable_1
       )) +
       geom_col(size=2, fill="purple") + theme_minimal() +
       # geom_line(size=1.2, color="purple") +
-      labs(x="Año") +
+      labs(x="") +
       theme(legend.position = "none",
             legend.key.height= unit(1.3, 'cm'),
             legend.key.width= unit(1.3, 'cm'),
@@ -4535,7 +4814,7 @@ datatable_1
   output$aborto_gestacion <- renderPlotly({
     width <- session$clientData$output_plot_responsive_width
     height <- session$clientData$output_plot_responsive_height
-
+    
     plot <- data_aborto4() %>%
       # mutate(text=paste0("Total: ", comma(Total))) %>%
       group_by(rango_sgd) %>% summarise(Total=n()) %>% 
@@ -4544,7 +4823,7 @@ datatable_1
                              "<br>Total: ", Total)
       )) +
       geom_col(size=2, fill="#D581B9") + theme_minimal() +
-      labs(x="Semanas de gestación") +
+      labs(x="")+ #Semanas de gestación") +
       theme(legend.position = "none",
             legend.key.height= unit(1.3, 'cm'),
             legend.key.width= unit(1.3, 'cm'),
@@ -4555,7 +4834,7 @@ datatable_1
             plot.caption = element_text(size = 12L*textFunction(), hjust = 0),
             strip.text.x = element_text(size = 11*textFunction(), color = "black", face = "bold.italic"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, size=10*textFunction()))
-
+    
     ggplotly(plot, tooltip = "text"
     ) %>%
       layout(legend = list(orientation = "h", x = 0.1, y = -0.3),
@@ -4565,7 +4844,7 @@ datatable_1
              #                '</sup>',
              #                '<br>')
       )
-
+    
   })
   
   
