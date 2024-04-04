@@ -78,7 +78,8 @@ indicador_1 %>%
                values_to = "Aplicado")->indicador_1
 
 
-id_violenta <- indicador_1$Folio
+id_violenta <- indicador_1 %>% 
+  filter(!duplicated(Folio)) %>% pull(Folio)
 
 # Indicador 2: ----------------------------------------------------------------#
 
@@ -150,6 +151,8 @@ indicador_3 %>%
   `Toma de huellas decadactilares` = as.numeric(`Toma de huellas decadactilares`),
   `Total de muertes violentas`= c(1)) ->indicador_3
 
+indicador_3 <- indicador_3 %>% 
+  filter(Folio %in% id_violenta)
 
 # Indicador 4: ----------------------------------------------------------------#
 indicador_4 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 4")%>% suppressWarnings()
@@ -1715,7 +1718,7 @@ ui <- dashboardPage(
     ),
     menuSubItem(
       tabName = "Ind3",
-      text = "Indicador 3 (pendiente)"
+      text = "Indicador 3"
       #icon = icon("angle-double-right")
     ),
     menuSubItem(
@@ -1989,10 +1992,10 @@ ui <- dashboardPage(
                     box(
                          width=12,  
                          div(class="row d-flex", #Replicar
-                        valueBox("65.8%", "Indicador 2023", icon=icon("equals"),color="light-blue", width = 3), # actualizar
-                         valueBox("73.4%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
-                         valueBox("71.4%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
-                         valueBox("70.8%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
+                        valueBox("59.9%", "Indicador 2023", icon=icon("equals"),color="light-blue", width = 3), # actualizar
+                         valueBox("61.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
+                         valueBox("55.7%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
+                         valueBox("57.7%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
                          br(), br(), br(),
                     # sidebarLayout(
                       fluidRow(column(12, offset = 5,"Seleccione algunas características")),
@@ -2022,9 +2025,10 @@ ui <- dashboardPage(
                       
                       fluidRow(
                         # div(class="display dataTable no-footer",
-                            column(6,dataTableOutput("t_1", height = "auto", width = "auto")),
+                            column(4,dataTableOutput("t_1", height = "auto", width = "auto")),
                                 # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                            column(6,plotlyOutput("gr1",  height = "auto", width = "auto"))
+                            column(7, offset=1, 
+                                   plotlyOutput("gr1",  height = "auto", width = "auto"))
                             ),
                       fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                          )
@@ -2096,7 +2100,7 @@ ui <- dashboardPage(
                 # sidebarLayout(
                 fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                 fluidRow(
-                  column(4,
+                  column(4, offset = 2,
                                                selectInput(
                                                  inputId = "ind_2_año",
                                                  label = "Seleccione el año",
@@ -2104,7 +2108,7 @@ ui <- dashboardPage(
                                                  multiple = T
                                                ) 
                 ),
-                column(4,selectInput(
+                column(4,offset = 2,selectInput(
                   inputId = "ind_2_mes",
                   label = "Seleccione el mes",
                   choices = unique(sort(indicador_2$Mes)),
@@ -2177,7 +2181,62 @@ ui <- dashboardPage(
       #                                plotlyOutput("gr3",  height = "auto", width = "auto"),
       #                                h6("Fuente: Datos proporcionados por IJCF."), br())
       #                    )))),
-      
+      tabItem(tabName = "Ind3", 
+              #tags$style(".info-box-content p { font-size: 2.5rem; }"),
+              
+              fluidRow(width=10, 
+                       h3(align="center","Indicador 3:", style="color:black"),
+                       
+                       h4(p(align="center", "Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF."))
+              ),
+              
+              box(
+                width=12,  
+                div(class="row d-flex", #Replicar
+                    valueBox("42.2%", "Indicador 2023", icon=icon("equals"),color="light-blue", width = 3), # actualizar
+                    valueBox("47.1%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
+                    valueBox("46.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
+                    valueBox("46.9%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
+                br(), br(), br(),
+                # sidebarLayout(
+                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
+                fluidRow(
+                  column(4, offset = 2,
+                         selectInput(
+                           inputId = "ind_3_año",
+                           label = "Seleccione el año",
+                           choices = unique(sort(indicador_3$Año)),
+                           multiple = T
+                         ) 
+                  ),
+                  column(4, offset = 2, selectInput(
+                    inputId = "ind_3_mes",
+                    label = "Seleccione el mes",
+                    choices = unique(sort(indicador_3$Mes)),
+                    multiple = TRUE
+                  )
+                  )#,
+                  # column(4,selectInput(
+                  #   inputId = "ind_1_servicio",
+                  #   label = "Selecciona el tipo de acción forense",
+                  #   choices = unique(sort(indicador_1$`Servicios forenses`)),
+                  #   multiple = TRUE
+                  # )
+                  # )#,  
+                  #downloadButton("downloadData_ind_1", "Descarga (.csv)")
+                ),
+                
+                fluidRow(
+                  # div(class="display dataTable no-footer",
+                  column(4,dataTableOutput("t_3", height = "1200px", width = "auto")),
+                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
+                  column(7, offset = 1,
+                         plotlyOutput("gr3",  height = "1200px", width = "auto"))
+                ),
+                fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
+                )
+              )),
+      #####
       #Indicado 4: --------------------------------------------------------------
       # tabItem(tabName = "Ind4", 
       #         tags$style(".info-box-content p { font-size: 2.5rem; }"),
@@ -2244,7 +2303,7 @@ ui <- dashboardPage(
                 # sidebarLayout(
                 fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                 fluidRow(
-                  column(4,
+                  column(4, offset = 2, 
                          selectInput(
                            inputId = "ind_4_año",
                            label = "Seleccione el año",
@@ -2252,7 +2311,7 @@ ui <- dashboardPage(
                            multiple = T
                          ) 
                   ),
-                  column(4,selectInput(
+                  column(4,offset = 2,selectInput(
                     inputId = "ind_4_mes",
                     label = "Seleccione el mes",
                     choices = unique(sort(indicador_4$Mes)),
@@ -2271,9 +2330,9 @@ ui <- dashboardPage(
                 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_4", height = "auto", width = "auto")),
+                  column(5,dataTableOutput("t_4", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr4",  height = "auto", width = "auto"))
+                  column(7,plotlyOutput("gr4",  height = "700px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                 )
@@ -2376,9 +2435,9 @@ ui <- dashboardPage(
                 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_6", height = "auto", width = "auto")),
+                  column(5,dataTableOutput("t_6", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr6",  height = "auto", width = "auto"))
+                  column(7,plotlyOutput("gr6",  height = "600px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                 )
@@ -2482,9 +2541,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_7", height = "auto", width = "auto")),
+                  column(4,dataTableOutput("t_7", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr7",  height = "auto", width = "auto"))
+                  column(7, offset = 1, 
+                         plotlyOutput("gr7",  height = "600px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -2586,9 +2646,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_9", height = "auto", width = "auto")),
+                  column(4,dataTableOutput("t_9", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr9",  height = "auto", width = "auto"))
+                  column(7, offset=1, 
+                         plotlyOutput("gr9",  height = "auto", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -2692,9 +2753,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_10", height = "auto", width = "auto")),
+                  column(4,dataTableOutput("t_10", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr10",  height = "auto", width = "auto"))
+                  column(7, offset=1, 
+                         plotlyOutput("gr10",  height = "auto", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -2796,9 +2858,9 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_11", height = "auto", width = "auto")),
+                  column(5,dataTableOutput("t_11", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr11",  height = "auto", width = "auto"))
+                  column(7,plotlyOutput("gr11",  height = "auto", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -2901,9 +2963,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_12", height = "auto", width = "auto")),
+                  column(4,dataTableOutput("t_12", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr12",  height = "auto", width = "auto"))
+                  column(7,offset=1,
+                         plotlyOutput("gr12",  height = "600px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -3006,9 +3069,9 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_13", height = "auto", width = "auto")),
+                  column(5,dataTableOutput("t_13", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr13",  height = "auto", width = "auto"))
+                  column(7,plotlyOutput("gr13",  height = "700px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -3109,9 +3172,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_16", height = "auto", width = "auto")),
+                  fluidRow(column(11,dataTableOutput("t_16", height = "400px", width = "auto"))),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr16",  height = "auto", width = "auto"))
+                  fluidRow(
+                         plotlyOutput("gr16",  height = "1000px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por IJCF.")), br()
@@ -3218,9 +3282,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_17", height = "auto", width = "auto")),
+                  fluidRow(column(11,dataTableOutput("t_17", height = "400px", width = "auto"))),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr17",  height = "auto", width = "auto"))
+                  fluidRow(
+                    plotlyOutput("gr17",  height = "450px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
@@ -3321,9 +3386,10 @@ ui <- dashboardPage(
 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_18", height = "auto", width = "auto")),
+                  column(4,dataTableOutput("t_18", height = "auto", width = "auto")),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr18",  height = "auto", width = "auto"))
+                  column(6, offset = 2,
+                         plotlyOutput("gr18",  height = "auto", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
@@ -3535,9 +3601,10 @@ ui <- dashboardPage(
                 
                 fluidRow(
                   # div(class="display dataTable no-footer",
-                  column(6,dataTableOutput("t_20", height = "auto", width = "auto")),
+                  fluidRow(column(11,dataTableOutput("t_20", height = "400px", width = "auto"))),
                   # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                  column(6,plotlyOutput("gr20",  height = "auto", width = "auto"))
+                  fluidRow(
+                    plotlyOutput("gr20",  height = "700px", width = "auto"))
                 ),
                 fluidRow(column(8, offset = 1,
                                 h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
@@ -3605,7 +3672,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(4,
+                 column(4, offset = 2, 
                         selectInput(
                           inputId = "ind_21_año",
                           label = "Seleccione el año",
@@ -3613,7 +3680,7 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(4,selectInput(
+                 column(4,offset = 2,selectInput(
                    inputId = "ind_21_establecimiento",
                    label = "Seleccione el hospital",
                    choices = unique(sort(indicador_21$Establecimiento)),
@@ -3702,7 +3769,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(4,
+                 column(4, offset = 2,
                         selectInput(
                           inputId = "ind_22_año",
                           label = "Seleccione el año",
@@ -3710,7 +3777,7 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(4,selectInput(
+                 column(4, offset = 2, selectInput(
                    inputId = "ind_22_formación",
                    label = "Seleccione la formación del personal",
                    choices = unique(sort(indicador_22$Formación)),
@@ -3729,9 +3796,10 @@ ui <- dashboardPage(
                
                fluidRow(
                  # div(class="display dataTable no-footer",
-                 column(4,dataTableOutput("t_22", height = "auto", width = "auto")),
+                 fluidRow(column(11,dataTableOutput("t_22", height = "400px", width = "auto"))),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr22",  height = "auto", width = "auto"))
+                 fluidRow(
+                   plotlyOutput("gr22",  height = "700px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
@@ -4221,7 +4289,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(4,
+                 column(4, offset = 2, 
                         selectInput(
                           inputId = "ind_27_año",
                           label = "Seleccione el año",
@@ -4229,7 +4297,7 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(4,selectInput(
+                 column(4,offset = 2, selectInput(
                    inputId = "ind_27_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_27$Mes)),
@@ -4353,7 +4421,7 @@ ui <- dashboardPage(
                  # div(class="display dataTable no-footer",
                  column(4,dataTableOutput("t_28", height = "auto", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr28",  height = "auto", width = "auto"))
+                 column(8,plotlyOutput("gr28",  height = "600px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -4552,7 +4620,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,  
                         selectInput(
                           inputId = "ind_30_año",
                           label = "Seleccione el año",
@@ -4560,14 +4628,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_30_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_30$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_30_condena",
                    label = "Selecciona el tipo de condena",
                    choices = unique(sort(indicador_30$`Tipo de sentencia (absolutoria, condenatoria y en proceso)`)),
@@ -4658,7 +4726,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_32_año",
                           label = "Seleccione el año",
@@ -4666,14 +4734,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_32_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_32$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_32_municipio",
                    label = "Selecciona el municipio",
                    choices = unique(sort(indicador_32$Municipio)),
@@ -4689,7 +4757,8 @@ ui <- dashboardPage(
                  # div(class="display dataTable no-footer",
                  column(4,dataTableOutput("t_32", height = "auto", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr32",  height = "auto", width = "auto"))
+                 column(6,  offset = 2, 
+                        plotlyOutput("gr32",  height = "700px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -4763,7 +4832,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_33_año",
                           label = "Seleccione el año",
@@ -4771,14 +4840,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_33_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_33$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_33_edad",
                    label = "Selecciona el rango de edad",
                    choices = unique(sort(indicador_33$Edad)),
@@ -4867,7 +4936,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_34_año",
                           label = "Seleccione el año",
@@ -4875,14 +4944,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_34_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_34$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_34_edad",
                    label = "Selecciona el rango de edad",
                    choices = unique(sort(indicador_34$`Rango de edad`)),
@@ -4895,9 +4964,10 @@ ui <- dashboardPage(
                
                fluidRow(
                  # div(class="display dataTable no-footer",
-                 column(4,dataTableOutput("t_34", height = "auto", width = "auto")),
+                 column(4,dataTableOutput("t_34", height = "1000px", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr34",  height = "auto", width = "auto"))
+                 column(7, offset=1, 
+                        plotlyOutput("gr34",  height = "1000px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -4968,7 +5038,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4, offset = 2,
                         selectInput(
                           inputId = "ind_35_año",
                           label = "Seleccione el año",
@@ -4976,7 +5046,7 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,offset = 2,selectInput(
                    inputId = "ind_35_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_35$Mes)),
@@ -5072,7 +5142,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4, 
                         selectInput(
                           inputId = "ind_36_año",
                           label = "Seleccione el año",
@@ -5080,14 +5150,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4, selectInput(
                    inputId = "ind_36_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_36$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_36_edad",
                    label = "Selecciona el rango de edad",
                    choices = unique(sort(indicador_36$`Rango de edad`)),
@@ -5179,7 +5249,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_37_año",
                           label = "Seleccione el año",
@@ -5187,14 +5257,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_37_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_37$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_37_personal",
                    label = "Seleccione la función del personal",
                    choices = unique(sort(indicador_37$Personal)),
@@ -5282,7 +5352,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_38_año",
                           label = "Seleccione el año",
@@ -5290,14 +5360,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_38_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_38$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_38_edad",
                    label = "Selecciona el rango de edad",
                    choices = unique(sort(indicador_38$`Rango de edad`)),
@@ -5310,9 +5380,9 @@ ui <- dashboardPage(
                
                fluidRow(
                  # div(class="display dataTable no-footer",
-                 column(4,dataTableOutput("t_38", height = "auto", width = "auto")),
+                 column(4,dataTableOutput("t_38", height = "800px", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr38",  height = "auto", width = "auto"))
+                 column(8,plotlyOutput("gr38",  height = "600px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -5388,7 +5458,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(3,
+                 column(4,
                         selectInput(
                           inputId = "ind_39_año",
                           label = "Seleccione el año",
@@ -5396,14 +5466,14 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_39_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_39$Mes)),
                    multiple = TRUE
                  )
                  ),
-                 column(3,selectInput(
+                 column(4,selectInput(
                    inputId = "ind_39_edad",
                    label = "Selecciona el rango de edad",
                    choices = unique(sort(indicador_39$`Rango de edad`)),
@@ -5416,9 +5486,9 @@ ui <- dashboardPage(
                
                fluidRow(
                  # div(class="display dataTable no-footer",
-                 column(4,dataTableOutput("t_39", height = "auto", width = "auto")),
+                 column(4,dataTableOutput("t_39", height = "800px", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr39",  height = "auto", width = "auto"))
+                 column(8,plotlyOutput("gr39",  height = "600px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -5495,7 +5565,7 @@ ui <- dashboardPage(
                # sidebarLayout(
                fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                fluidRow(
-                 column(4,
+                 column(4, offset = 2,
                         selectInput(
                           inputId = "ind_40_año",
                           label = "Seleccione el año",
@@ -5503,7 +5573,7 @@ ui <- dashboardPage(
                           multiple = T
                         )
                  ),
-                 column(4,selectInput(
+                 column(4, offset = 2,selectInput(
                    inputId = "ind_40_mes",
                    label = "Seleccione el mes",
                    choices = unique(sort(indicador_39$Mes)),
@@ -5523,9 +5593,10 @@ ui <- dashboardPage(
                
                fluidRow(
                  # div(class="display dataTable no-footer",
-                 column(4,dataTableOutput("t_40", height = "auto", width = "auto")),
+                 column(4,dataTableOutput("t_40", height = "1200px", width = "auto")),
                  # h6("Fuente: Datos proporcionados por IJCF."),br(),
-                 column(8,plotlyOutput("gr40",  height = "auto", width = "auto"))
+                 column(6, offset=2, 
+                        plotlyOutput("gr40",  height = "1000px", width = "auto"))
                ),
                fluidRow(column(8, offset = 1,
                                h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
@@ -5608,7 +5679,7 @@ server <- function(input, output) {
       aes(x = Periodo, y = `Total de acciones con debida diligencia aplicados con PEG`, 
           colour = `Servicios forenses`, group=`Servicios forenses`, text=text) +
       geom_line(size = 1.5) + 
-      geom_point(size = 3)+
+      geom_point(size = 2)+
       
       geom_point(aes(x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"), shape = "asterisk", size = 4.5)+
       geom_line(aes( x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"),  linetype = "dashed", size = 1.5)+
@@ -5644,14 +5715,29 @@ server <- function(input, output) {
   output$t_1 <- renderDataTable ({
     
     ind_1_reactive() %>% 
+      filter(`Servicios forenses` %in% c("Oportuna recolección de pruebas",
+                                         "Oportuna recolección de pruebas")) %>%
+      group_by(Folio, Año) %>% 
+      summarise(
+        `Total de muertes violentas de mujeres`=sum(`Total de muertes violentas`, na.rm = T), #aquí se debe dividir entre la cantidad de elecciones en la acción forense
+        `Total de acciones con debida diligencia aplicados con PEG`= sum(Aplicado, na.rm=T),
+        `Total de acciones con debida diligencia`= n()
+        
+      ) %>% mutate(`Total de muertes violentas de mujeres`=`Total de muertes violentas de mujeres`/`Total de acciones con debida diligencia`) %>% 
       group_by(Año) %>% 
       summarise(
-        `Total de muertes violentas de mujeres`=sum(`Total de muertes violentas`/6), #aquí se debe dividir entre la cantidad de elecciones en la acción forense
-        `Total de acciones con debida diligencia aplicados con PEG`= sum(Aplicado, na.rm=T),
-        `Total de acciones con debida diligencia`= n(),
-        
-        Indicador=scales::percent(sum((`Total de acciones con debida diligencia aplicados con PEG`)/`Total de acciones con debida diligencia`), 0.1))->tabla_1
-    
+        `Total de muertes violentas de mujeres`=sum(`Total de muertes violentas de mujeres`, na.rm = T),
+        `Total de acciones con debida diligencia aplicados con PEG`= sum(`Total de acciones con debida diligencia aplicados con PEG`, na.rm=T),
+        `Total de acciones con debida diligencia`= sum(`Total de acciones con debida diligencia`)
+      ) ->tabla_1
+      # group_by(Año) %>% 
+      # summarise(
+      #   `Total de muertes violentas de mujeres`=sum(`Total de muertes violentas`/6), #aquí se debe dividir entre la cantidad de elecciones en la acción forense
+      #   `Total de acciones con debida diligencia aplicados con PEG`= sum(Aplicado, na.rm=T),
+      #   `Total de acciones con debida diligencia`= n(),
+      #   
+      #   Indicador=scales::percent(sum((`Total de acciones con debida diligencia aplicados con PEG`)/`Total de acciones con debida diligencia`), 0.1))->tabla_1
+      # 
     tabla_1 %>% datatable(filter="top", extensions = 'Buttons',
                           options = list(dom = 'Blfrtip',
                                          buttons = c('copy', 'excel', 'print'),
@@ -5728,7 +5814,7 @@ server <- function(input, output) {
       aes(x = Periodo, y = `Total de dictámenes`, 
           colour = `Dictámenes forenses`, group=`Dictámenes forenses`, text=text) +
       geom_line(size = 1.5) + 
-      geom_point(size = 3) +
+      geom_point(size = 2) +
       geom_point(aes(x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"), shape = "asterisk", size = 4.5)+
       geom_line(aes( x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"),  linetype = "dashed", size = 1.5)+
       labs(x="", y="", title = "Indicador 2",
@@ -5759,7 +5845,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Total de muertes violentas de mujeres`=n(),
                 `Total de dictámenes psicosociales`= sum(`Dictamen psicosocial (servicio)`, na.rm = t),
-                `Indicador`=scales::percent(sum((`Total de dictámenes psicosociales`)/`Total de muertes violentas de mujeres`), 0.1))->tabla_2
+                # `Indicador`=scales::percent(sum((`Total de dictámenes psicosociales`)/`Total de muertes violentas de mujeres`), 0.1)
+                )->tabla_2
     
     
     
@@ -5802,8 +5889,8 @@ server <- function(input, output) {
     indicador_3 %>%
       filter(
         if(!is.null(input$ind_3_año))            Año %in% input$ind_3_año         else Año != "",
-        if(!is.null(input$ind_3_mes))            Mes %in% input$ind_3_mes         else Mes != "",
-        if(!is.null(input$ind_3_peritaje))  Peritaje %in% input$ind_3_peritaje    else Peritaje != ""
+        if(!is.null(input$ind_3_mes))            Mes %in% input$ind_3_mes         else Mes != ""#,
+        # if(!is.null(input$ind_3_peritaje))  Peritaje %in% input$ind_3_peritaje    else Peritaje != ""
       )
     
   })
@@ -5812,15 +5899,21 @@ server <- function(input, output) {
   
   output$gr3 <-renderPlotly ({
     
-    ind_3_reactive() %>% 
-      #indicador_3 %>% 
-      group_by(Año, Mes, Periodo, Peritaje) %>% 
+    # ind_3_reactive() %>% 
+      indicador_3 %>% 
+      pivot_longer(cols = 6:30,
+                   names_to = "Peritaje",
+                   values_to = "Total de peritajes")%>%
+      filter(`Total de peritajes`>0) %>% 
+      group_by(Año, #Mes, Periodo, 
+               Peritaje) %>% 
       summarise(`Peritajes a los cuales se aplicó la perspectiva de género`= n()) %>% 
-      mutate(text = paste("Año: ", Año,
-                          "\nMes", Mes,
+      mutate(Peritaje=str_wrap(Peritaje, 28),
+        text = paste("Año: ", Año,
+                          # "\nMes", Mes,
                           "\nTotal: ", scales::comma(`Peritajes a los cuales se aplicó la perspectiva de género`), sep="")) %>%
       ggplot() +
-      aes(x = Periodo, y = `Peritajes a los cuales se aplicó la perspectiva de género`, 
+      aes(x = Año, y = `Peritajes a los cuales se aplicó la perspectiva de género`, 
           colour = `Peritaje`, group=`Peritaje`, text=text) +
       geom_line(size = 1) + 
       geom_point(size = 1.5) +
@@ -5829,7 +5922,7 @@ server <- function(input, output) {
       # guides(colour=guide_legend(ncol=3))+
       
       theme_minimal()+   
-      #facet_wrap(vars(año))+
+      facet_wrap(.~Peritaje, scales = "free_y")+
       scale_y_continuous(labels = scales::comma) +
       scale_fill_manual(values = mycolors) +
       scale_color_manual(values=mycolors)+
@@ -5837,7 +5930,8 @@ server <- function(input, output) {
       theme(
         text=element_text(size=12,  family="Nutmeg-Light"),
         plot.title = element_text(family="Nutmeg-Light"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family = "Nutmeg-Light"))->gr3
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family = "Nutmeg-Light"), 
+        legend.position = "none")->gr3
     
     
     ggplotly(gr3, tooltip = "text") %>% 
@@ -5852,24 +5946,28 @@ server <- function(input, output) {
   output$t_3 <- renderDataTable ({
     
     ind_3_reactive() %>% 
-    indicador_3 %>%
-    pivot_longer(cols = 6:30,
-                 names_to = "Peritaje",
-                 values_to = "Total de peritajes")%>%
+    # indicador_3 %>%
+    # pivot_longer(cols = 6:30,
+    #              names_to = "Peritaje",
+    #              vindicador_3 %>%
+    # pivot_longer(cols = 6:30,
+    #              names_to = "Peritaje",
+    #              values_to = "Total de peritajes")alues_to = "Total de peritajes")%>%
       group_by(Año) %>%
-      summarise(`total`=n(),
-                `Total de muertes violentas de mujeres`=total*25,
-                `Total de peritajes realizados en IJCF por violencia de género`=sum(`Total de peritajes`),
-                
+      summarise(#`total`=n(),
+                `Total de muertes violentas de mujeres`=n(),
+                # `Total de peritajes realizados en IJCF por violencia de género`=sum(`Total de peritajes`, na.rm = T),
+                `Totalidad de peritajes de servicios forenses`=`Total de muertes violentas de mujeres`*25,
                 `Peritajes a los cuales se aplicó la perspectiva de género`= sum(suma_dictamenes),
-                `Indicador`=scales::percent(sum((`Peritajes a los cuales se aplicó la perspectiva de género`)/`Total de peritajes realizados en IJCF por violencia de género`, na.rm = T), 0.1)) ->tabla_3
+                # `Indicador`=scales::percent(sum((`Peritajes a los cuales se aplicó la perspectiva de género`)/`Totalidad de peritajes de servicios forenses`, na.rm = T), 0.1)
+                ) ->tabla_3
     
     tabla_3%>% datatable(filter="top", extensions = 'Buttons',
                          options = list(dom = 'Blfrtip',
                                         buttons = c('copy', 'excel', 'print'),
                                         lengthMenu = list(c(6,10,20, -1),
                                                           c(6,10,20,"Todo")))) %>% 
-      formatCurrency('Total de peritajes realizados en IJCF por violencia de género',currency = "", interval = 3, mark = ",", digits = 0) %>% 
+      formatCurrency('Totalidad de peritajes de servicios forenses',currency = "", interval = 3, mark = ",", digits = 0) %>% 
       formatCurrency('Peritajes a los cuales se aplicó la perspectiva de género',currency = "", interval = 3, mark = ",", digits = 0)
     
     
@@ -5935,13 +6033,13 @@ server <- function(input, output) {
       aes(x = Periodo, y = `Dictámenes con acreditación técnica`, 
           colour = `Dictámenes`, group=Dictámenes, text=text) +
       geom_line(size = 1.5) + 
-      geom_point(size = 3) +
+      geom_point(size = 2) +
       geom_point(aes(x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"), shape = "asterisk", size = 4.5)+
       geom_line(aes( x=Periodo, y=`Total de muertes violentas de mujeres`, color="Total de muertes violentas de mujeres"),  linetype = "dashed", size = 1.5)+
       labs(x="", y="", title = "Indicador 4",
            color = "Dictámenes con acreditación técnica") +
       theme_minimal()+   
-      #facet_wrap(vars(Año))+
+      facet_wrap(.~Dictámenes, scales = "free_y", ncol = 1)+
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(`Genética mínimo 18 muestras` = "#c91682",
@@ -5977,7 +6075,8 @@ server <- function(input, output) {
         `Total de muertes violentas de mujeres`=sum(`Total de muertes violentas`/3),
         `Total de peritajes realizados`= n(),
         `Total de peritajes realizados conforme a lineamientos del IJCF`= sum(`Total de peritajes`, na.rm=t),
-        `Indicador`=scales::percent(sum((`Total de peritajes realizados conforme a lineamientos del IJCF`)/`Total de peritajes realizados`), 0.1))->tabla_4
+        # `Indicador`=scales::percent(sum((`Total de peritajes realizados conforme a lineamientos del IJCF`)/`Total de peritajes realizados`), 0.1)
+        )->tabla_4
     
     
     
@@ -6049,12 +6148,12 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Fecha, y = Total,
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(linewidth = 1.5) + 
-      geom_point(size = 3)+
+      geom_line(linewidth = 1.2) + 
+      geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 6",
            color = "Clasificación") +
       theme_minimal()+   
-      #facet_wrap(vars(Año))+
+      facet_wrap(.~Clasificación, scales = "free_y", ncol = 1)+
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
@@ -6064,6 +6163,7 @@ server <- function(input, output) {
           `Órdenes de protección rechazadas` = "#C91682"))+
       theme(legend.position = "bottom")+
       theme(#axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        legend.position = "none", 
             text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family="Nutmeg-Light"))-> gr6
@@ -6085,7 +6185,8 @@ server <- function(input, output) {
       summarise(`Mujeres víctimas de violencia de género`=sum(`Mujeres víctimas de violencia de género`, na.rm=T),
                 `Órdenes de protección`=sum(`Órdenes de protección aceptadas` + `Órdenes de protección rechazadas`),
                 `Medidas de protección`=sum(`Medidas de protección aceptadas` +`Medidas de protección rechazadas`),
-                `Indicador`=scales::percent(sum((`Órdenes de protección`+`Medidas de protección`)/`Mujeres víctimas de violencia de género`), 0.1)) ->tabla_6
+                # `Indicador`=scales::percent(sum((`Órdenes de protección`+`Medidas de protección`)/`Mujeres víctimas de violencia de género`), 0.1)
+                ) ->tabla_6
     
     
     tabla_6 %>% datatable(filter="top", extensions = 'Buttons',
@@ -6151,23 +6252,25 @@ server <- function(input, output) {
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=4:6) %>% 
-      mutate(text = paste("Año: ", Año,
+      mutate(Clasificación=str_wrap(Clasificación, 60), 
+             text = paste("Año: ", Año,
                           "\nMes", Mes,
                           "\nTotal : ", scales::comma(Total), sep="")) %>% 
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(linewidth = 1.5) + geom_point(size = 3)+
+      geom_line(linewidth = 1.2) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 7",
            color = "Clasificación") +
       theme_minimal()+   
       scale_y_continuous(labels = scales::comma) +
+      facet_wrap(.~Clasificación, scales = "free_y", ncol = 1) +
       scale_color_manual(
         values = c(
           `Total de mujeres víctimas de violencia de género atendidas` = "#d98cbc",
           `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` = "#c91682",
           `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal` = "#7e3794"))+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr7
@@ -6188,7 +6291,8 @@ server <- function(input, output) {
       summarise(`Total de mujeres víctimas de violencia de género atendidas`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
                 `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`),
                 `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`),
-                `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)/`Total de mujeres víctimas de violencia de género atendidas`)) -> tabla_7
+                # `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)/`Total de mujeres víctimas de violencia de género atendidas`)
+                ) -> tabla_7
     
     
     
@@ -6264,7 +6368,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(linewidth = 1.5) + geom_point(size = 3)+
+      geom_line(linewidth = 1.2) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 9",
            color = "Clasificación") +
       theme_minimal()+
@@ -6274,7 +6378,7 @@ server <- function(input, output) {
           `Total de medidas de protección emitidas por violencia por razón de género vigentes` = "#d98cbc",
           `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas` = "#c91682",
           `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora` = "#7e3794"))+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr9
@@ -6296,7 +6400,8 @@ server <- function(input, output) {
       summarise(`Total de medidas de protección emitidas por violencia por razón de género vigentes`=sum(`Total de medidas de protección emitidas por violencia por razón de género vigentes`),
                 `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`=sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`),
                 `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
-                `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/`Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1))-> tabla_9
+                # `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/`Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1)
+                )-> tabla_9
     
     
     tabla_9 %>% datatable(filter="top", extensions = 'Buttons',
@@ -6370,7 +6475,7 @@ server <- function(input, output) {
                           "\nTotal : ", scales::comma(Total), sep="")) %>% 
       ggplot() +
       aes(x = Fecha, y = Total, colour = Clasificación, group= Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 10",
            color = " Clasificación ") +
       theme_minimal()+   
@@ -6403,7 +6508,8 @@ server <- function(input, output) {
                 
                 `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
                 
-                `Indicador`=scales::percent(sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`+ `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/`Total de órdenes de protección emitidas por violencia por razón de género`, 0.1)) -> tabla_10
+                # `Indicador`=scales::percent(sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`+ `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/`Total de órdenes de protección emitidas por violencia por razón de género`, 0.1)
+                ) -> tabla_10
     
     
     tabla_10 %>% datatable(filter="top", extensions = 'Buttons',
@@ -6474,10 +6580,11 @@ server <- function(input, output) {
       ggplot() +
       aes(x =Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 11",
            color = "Clasificación") +
       theme_minimal()+   
+      facet_wrap(.~Clasificación, scales = "free_y", ncol = 1)+ 
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
@@ -6485,7 +6592,7 @@ server <- function(input, output) {
           `Mujeres con órdenes de protección vigentes que han recibido seguimiento` = "#d98cbc",
           `Total de mujeres con medidas de protección vigentes` = "#7e3794",
           `Total de mujeres con órdenes de protección vigentes` = "#c91682"))+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr11
@@ -6512,7 +6619,8 @@ server <- function(input, output) {
                 
                 `Total de mujeres con órdenes de protección vigentes`=sum(`Total de mujeres con órdenes de protección vigentes`),
                 
-                `Indicador`=scales::percent(sum((`Mujeres con medidas de protección vigentes que han recibido seguimiento`+ `Mujeres con órdenes de protección vigentes que han recibido seguimiento`)/(`Total de mujeres con medidas de protección vigentes` +`Total de mujeres con órdenes de protección vigentes`)), 0.1)) -> tabla_11
+                # `Indicador`=scales::percent(sum((`Mujeres con medidas de protección vigentes que han recibido seguimiento`+ `Mujeres con órdenes de protección vigentes que han recibido seguimiento`)/(`Total de mujeres con medidas de protección vigentes` +`Total de mujeres con órdenes de protección vigentes`)), 0.1)
+                ) -> tabla_11
     
     
     tabla_11 %>% datatable(filter="top", extensions = 'Buttons',
@@ -6585,16 +6693,18 @@ server <- function(input, output) {
                           "Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección",
                           "Total de órdenes de protección emitidas vigentes",
                           "Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección")) %>% 
-      mutate(text = paste("Año: ", Año,
+      mutate(Clasificación=str_wrap(Clasificación, 55), 
+        text = paste("Año: ", Año,
                           "\nMes: ",Mes,
                           "\nTotal : ", scales::comma(Total), sep="")) %>% 
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 12",
            color = "Clasificación") +
       theme_minimal()+   
+      facet_wrap(.~Clasificación, scales = "free_y", ncol=1)+
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
@@ -6602,7 +6712,7 @@ server <- function(input, output) {
           `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección` = "#d98cbc",
           `Total de medidas de protección emitidas vigentes` = "#7e3794",
           `Total de órdenes de protección emitidas vigentes` = "#c91682"))+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr12
@@ -6628,7 +6738,8 @@ server <- function(input, output) {
                 
                 `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`),
                 
-                `Indicador`=scales::percent(sum((`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`+ `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`)/(`Total de medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)), 0.1)) -> tabla_12
+                # `Indicador`=scales::percent(sum((`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`+ `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`)/(`Total de medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)), 0.1)
+                ) -> tabla_12
     
     
     
@@ -6692,23 +6803,26 @@ server <- function(input, output) {
                 `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
                 `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
                 `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-                `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1)) %>% 
+                # `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Total medidas de protección emitidas vigentes",
                           "Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)",
                           "Total de órdenes de protección emitidas vigentes",
                           "Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)")) %>% 
-      mutate(text = paste("Año: ", Año,
+      mutate(Clasificación=str_wrap(Clasificación, 40), 
+        text = paste("Año: ", Año,
                           "\nMes: ",  Mes,
                           "\nTotal : ", scales::comma(Total), sep="")) %>% 
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 13",
            color = "Clasificación") +
       theme_minimal()+   
+      facet_wrap(.~Clasificación, scales = "free_y", ncol = 1)+
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
@@ -6716,7 +6830,7 @@ server <- function(input, output) {
           `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)` = "#d98cbc",
           `Total de órdenes de protección emitidas vigentes` = "#7e3794",
           `Total medidas de protección emitidas vigentes` = "#c91682"))+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr13
@@ -6739,7 +6853,8 @@ server <- function(input, output) {
                 `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
                 `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
                 `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-                `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1)) -> tabla_13
+                # `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1)
+                ) -> tabla_13
     
     
     tabla_13 %>% datatable(filter="top", extensions = 'Buttons',
@@ -6798,19 +6913,19 @@ server <- function(input, output) {
     ind_16_reactive() %>%
     #indicador_16 %>%
       group_by(Año, Mes, Periodo, `Rango de edad`) %>%
-      summarise(`Total de mujeres que denuncian abuso sexual infantil`=sum(`Total de mujeres que denuncian abuso sexual infantil`),
+      summarise(`Total de NA que denuncian ASI`=sum(`Total de mujeres que denuncian abuso sexual infantil`),
 
-                `Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
+                `Total de NA canalizadas a Salud para atención integral por ASI`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
 
                 `Total de mujeres que denuncian violación`=sum(`Total de mujeres que denuncian violación`),
 
-                `Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`)) %>%
+                `Total de mujeres canalizadas a salud para atención integral por violación`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`)) %>%
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
-                   cols=c("Total de mujeres que denuncian abuso sexual infantil",
+                   cols=c("Total de NA que denuncian ASI",
                           "Total de mujeres que denuncian violación",
-                          "Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil",
-                          "Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación")) %>%
+                          "Total de NA canalizadas a Salud para atención integral por ASI",
+                          "Total de mujeres canalizadas a salud para atención integral por violación")) %>%
 
       mutate(text = paste("Año: ", Año,
                           "\nMes: ", Mes,
@@ -6823,13 +6938,13 @@ server <- function(input, output) {
       geom_tile(color = "white",
                 lwd = 1,
                 linetype = 1) +
-      labs(x="", y="", title = "Indicador 16",
+      labs(x="", y="", #title = "Indicador 16\n\n\n",
            color = "Clasificación") +
       geom_text(aes(label=comma(Total, accuracy = 1)),#hjust=.5, vjust=-.8,
                 size=2, color="ghostwhite")+
       scale_size_continuous(range = c(3,15))+
       scale_fill_gradient(low = "#dba9c8", high = "#7e3794") +
-      facet_wrap(~ Clasificación, ncol = 2,
+      facet_wrap(~ Clasificación, ncol = 1,
                  labeller = label_wrap_gen(width = 50, multi_line = TRUE)) +
       theme_minimal()+
       theme(legend.position = "bottom")+
@@ -6840,8 +6955,8 @@ server <- function(input, output) {
 
 
     ggplotly(gr16, tooltip = "text") %>%
-      layout(title = list(text = paste0(" Indicador 16: "#,ind_16_reactive()$`Rango de edad`
-                                        )),
+      layout(#title = list(text = paste0(" Indicador 16: "#,ind_16_reactive()$`Rango de edad`
+                                        # )),
              legend = list(orientation = 'v',  x = 0, y = -1),
              xaxis = list(side = "bottom"),legend = list(side="bottom"))
 
@@ -6860,17 +6975,19 @@ server <- function(input, output) {
 
     ind_16_reactive() %>%
       #indicador_16 %>%
+      rename(`Total de niñas que denuncian abuso sexual infantil`=`Total de mujeres que denuncian abuso sexual infantil`, 
+             `Total de adolescentes canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`=`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`) %>% 
       group_by(Año) %>%
-      summarise(`Total de mujeres que denuncian abuso sexual infantil`=sum(`Total de mujeres que denuncian abuso sexual infantil`),
+      summarise(`Total de NA que denuncian ASI`=sum(`Total de niñas que denuncian abuso sexual infantil`),
 
-                `Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
+                `Total de NA canalizadas a Salud para atención integral por ASI`=sum(`Total de adolescentes canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
 
                 `Total de mujeres que denuncian violación`=sum(`Total de mujeres que denuncian violación`),
 
-                `Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`),
+                `Total de mujeres canalizadas a salud para atención integral por violación`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`),
 
-                `% Abuso sexual infantil`=scales::percent(sum((`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`)/(`Total de mujeres que denuncian abuso sexual infantil`)), 0.1),
-                `% Violación`=scales::percent(sum((`Total de mujeres canalizadas para atención integral de la salud (nom 46) por violación`)/(`Total de mujeres que denuncian violación`)), 0.1)) -> tabla_16
+                `% Abuso sexual infantil`=scales::percent(sum((`Total de NA canalizadas a Salud para atención integral por ASI`)/(`Total de NA que denuncian ASI`)), 0.1),
+                `% Violación`=scales::percent(sum((`Total de mujeres canalizadas a salud para atención integral por violación`)/(`Total de mujeres que denuncian violación`)), 0.1)) -> tabla_16
 
 
     tabla_16 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -7269,7 +7386,8 @@ server <- function(input, output) {
       group_by(Año) %>%
       summarise(`Total de mujeres que solicitaron el procedimiento de interrupción legal del embarazo`= n(),
                 `Total de mujeres que de conformidad con las causales legales recibieron el procedimiento de ile`= sum(`¿Se realizó el procedimiento? (sí/no)`),
-                `Indicador`=scales::percent((`Total de mujeres que de conformidad con las causales legales recibieron el procedimiento de ile`)/(`Total de mujeres que solicitaron el procedimiento de interrupción legal del embarazo`), 0.1))->tabla_19
+                # `Indicador`=scales::percent((`Total de mujeres que de conformidad con las causales legales recibieron el procedimiento de ile`)/(`Total de mujeres que solicitaron el procedimiento de interrupción legal del embarazo`), 0.1)
+                )->tabla_19
     
     
     tabla_19%>%  datatable(filter="top", extensions = 'Buttons',
@@ -7417,7 +7535,8 @@ server <- function(input, output) {
       group_by(Año) %>%
       summarise(`Total de mujeres víctimas de violencia sexual y/o familiar atendidas en el sector salud`= n(),
                 `Total de mujeres atendidas por violencia sexual y/o familiar notificadas al mp/fiscalía`= sum(`Notificadas al mp: (si/no)`),
-                `Indicador`=scales::percent((`Total de mujeres atendidas por violencia sexual y/o familiar notificadas al mp/fiscalía`)/(`Total de mujeres víctimas de violencia sexual y/o familiar atendidas en el sector salud`), 0.1))->tabla_20
+                # `Indicador`=scales::percent((`Total de mujeres atendidas por violencia sexual y/o familiar notificadas al mp/fiscalía`)/(`Total de mujeres víctimas de violencia sexual y/o familiar atendidas en el sector salud`), 0.1)
+                )->tabla_20
     
     
     tabla_20%>%  datatable(filter="top", extensions = 'Buttons',
@@ -7468,7 +7587,8 @@ server <- function(input, output) {
       group_by(Año) %>%
       summarise(`Total de unidades en condiciones óptimas para realizar ILE/IVE` = sum(`Se cuenta con equipo y material para procedimiento ile/ive: (si/no)`),
                 `Total de unidades de segundo y tercer nivel en condiciones óptimas para realizar el procedimiento ive e ile`= n(),
-                `Indicador`=scales::percent((`Total de unidades en condiciones óptimas para realizar ILE/IVE`)/(`Total de unidades de segundo y tercer nivel en condiciones óptimas para realizar el procedimiento ive e ile`), 0.1))->tabla_21
+                # `Indicador`=scales::percent((`Total de unidades en condiciones óptimas para realizar ILE/IVE`)/(`Total de unidades de segundo y tercer nivel en condiciones óptimas para realizar el procedimiento ive e ile`), 0.1)
+                )->tabla_21
     
     tabla_21%>% datatable(filter="top", options = list(pageLength = 6))
     
@@ -7507,17 +7627,19 @@ server <- function(input, output) {
     
     ind_22_reactive() %>% 
       # indicador_22 %>% 
-      group_by(Periodo, Formación) %>% 
+      # group_by(Periodo, Formación) %>% 
+      group_by(Formación) %>% 
       summarise(`Total de personal de salud que atiende ILE/IVE capacitado`= n()) %>% 
       mutate(text = paste(#"año: ", periodo,
-        "Periodo: ",  format(as_date(Periodo), "%b de %y"),
+        # "Periodo: ",  format(as_date(Periodo), "%b de %y"),
         "\nFormación del personal: ", Formación,
         "\nTotal: ", scales::comma(`Total de personal de salud que atiende ILE/IVE capacitado`), sep=""))%>%
       ggplot() +
-      aes(x = Periodo, y =`Total de personal de salud que atiende ILE/IVE capacitado`,
+      aes(x = reorder(Formación, -`Total de personal de salud que atiende ILE/IVE capacitado`),
+          y =`Total de personal de salud que atiende ILE/IVE capacitado`,
           colour = Formación, group=Formación, text=text) +
       geom_line(size = 1.5) + 
-      geom_point(size = 3) +
+      geom_point(size = 2) +
       # scale_fill_manual(values = mycolors) +
       # scale_color_manual(values=mycolors)+      
       # scale_x_discrete(breaks = c("enero", "febrero", "marzo","abril", "mayo", "junio","julio", "agosto",
@@ -7530,10 +7652,10 @@ server <- function(input, output) {
       #       `causal de violación` = "#7e3794"))+
       labs(x="", y="", title = "Indicador 22")+
       theme_minimal()+
-      theme(legend.position = "bottom")+
+      theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             strip.text = element_text(size = 9, family="Nutmeg-Light"),
-            axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light"),
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.y = element_text(size=7, family="Nutmeg-Light"))->gr22
     
@@ -7556,7 +7678,8 @@ server <- function(input, output) {
       group_by(Año) %>%
       summarise(`Total de personal de salud que atiende ILE/IVE capacitado`= n(),
                 `Total de personal de salud que atiende ILE/IVE`= n(),
-                `Indicador`=scales::percent((`Total de personal de salud que atiende ILE/IVE capacitado`)/(`Total de personal de salud que atiende ILE/IVE`), 0.1))->tabla_22
+                # `Indicador`=scales::percent((`Total de personal de salud que atiende ILE/IVE capacitado`)/(`Total de personal de salud que atiende ILE/IVE`), 0.1)
+                )->tabla_22
     
     
     tabla_22%>% datatable(filter="top", options = list(pageLength = 6))
@@ -7655,7 +7778,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Personal médico no objetor de conciencia`=sum(`Objetor de conciencia: (SI/NO)`, na.rm = T),
                 `Total de personal médico debidamente capacitado`= n(),
-                `Indicador`=scales::percent(sum(`Personal médico no objetor de conciencia`/`Total de personal médico debidamente capacitado`), 0.1)) -> tabla_23
+                # `Indicador`=scales::percent(sum(`Personal médico no objetor de conciencia`/`Total de personal médico debidamente capacitado`), 0.1)
+                ) -> tabla_23
     
     
     tabla_23 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -7723,10 +7847,11 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 24",
            color = "Clasificación") +
       theme_minimal()+   
+      facet_wrap(.~Clasificación, scales = "free_y") +
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(`Actualizan` = "#C91682",
@@ -7751,7 +7876,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(Actualizan=sum(Actualizan, na.rm=T),
                 Instancia=sum(Instancia, na.rm=T),
-                `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)) -> tabla_24
+                # `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)
+                ) -> tabla_24
     
     
     tabla_24 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -7812,7 +7938,8 @@ server <- function(input, output) {
                 
                 `Personas debidamente capacitadas de alimentar BANAVIM`=sum(`Personas debidamente capacitadas de alimentar BANAVIM`),
                 
-                `Indicador`=scales::percent(sum(`Personas debidamente capacitadas de alimentar BANAVIM`/`Personal responsable de la actualización de datos`), 0.1))%>% 
+                # `Indicador`=scales::percent(sum(`Personas debidamente capacitadas de alimentar BANAVIM`/`Personal responsable de la actualización de datos`), 0.1)
+                )%>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Personal responsable de la actualización de datos",
@@ -7824,7 +7951,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Periodo, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 25",
            color = "Clasificación") +
       theme_minimal()+   
@@ -7854,7 +7981,8 @@ server <- function(input, output) {
                 
                 `Personas debidamente capacitadas de alimentar BANAVIM`=sum(`Personas debidamente capacitadas de alimentar BANAVIM`),
                 
-                `Indicador`=scales::percent(sum(`Personas debidamente capacitadas de alimentar BANAVIM`/`Personal responsable de la actualización de datos`), 0.1)) -> tabla_25 
+                # `Indicador`=scales::percent(sum(`Personas debidamente capacitadas de alimentar BANAVIM`/`Personal responsable de la actualización de datos`), 0.1)
+                ) -> tabla_25 
     
     tabla_25 %>%  datatable(filter="top", extensions = 'Buttons',
                             options = list(dom = 'Blfrtip',
@@ -7915,7 +8043,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Periodo, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 26",
            color = "Clasificación") +
       theme_minimal()+   
@@ -7942,7 +8070,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Instancias que sí actualización`=sum(Actualización, na.rm=T),
                 `Total de instancias estatales responsables`=n(),
-                `Indicador`=scales::percent(sum(Actualización/`Total de instancias estatales responsables`), 0.1, na.rm=T)) -> tabla_26
+                # `Indicador`=scales::percent(sum(Actualización/`Total de instancias estatales responsables`), 0.1, na.rm=T)
+                ) -> tabla_26
     
     
     tabla_26 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -8001,7 +8130,8 @@ server <- function(input, output) {
                Delito) %>% 
       summarise(`Número de casos analizados`=sum(`Número de casos analizados`),
                 `Total opiniones técnicas`=sum(`Total opiniones técnicas`),
-                `Indicador`=scales::percent(sum(`Número de casos analizados`/`Total opiniones técnicas`), 0.1)) %>% 
+                # `Indicador`=scales::percent(sum(`Número de casos analizados`/`Total opiniones técnicas`), 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Número de casos analizados",
@@ -8014,7 +8144,7 @@ server <- function(input, output) {
       aes(x = Año , y = Total, fill = Delito,
           colour = Delito, group=Delito,
           text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
 
     labs(x="", y="", title = "Indicador 27",
          color = "Delito",  fill = "Delito") +
@@ -8122,7 +8252,8 @@ server <- function(input, output) {
       summarise(`Mujeres que realizan una denuncia por el delito de violacion`=sum(`Mujeres que realizan una denuncia por el delito de violacion`, na.rm=T),
                 `Mujeres atendidas en el CJM`=sum(`Mujeres atendidas en el CJM`, na.rm=T),
                 `Mujeres que realizan una denuncia por el delito de violencia familiar`=sum(`Mujeres que realizan una denuncia por el delito de violencia familiar`, na.rm=T),
-                `Indicador`=scales::percent(sum((`Mujeres que realizan una denuncia por el delito de violacion`+ `Mujeres que realizan una denuncia por el delito de violencia familiar`)/`Mujeres atendidas en el CJM`), 0.1)) %>% 
+                # `Indicador`=scales::percent(sum((`Mujeres que realizan una denuncia por el delito de violacion`+ `Mujeres que realizan una denuncia por el delito de violencia familiar`)/`Mujeres atendidas en el CJM`), 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Mujeres atendidas en el CJM",
@@ -8134,7 +8265,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Año, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 28",
            color = "Clasificación") +
       theme_minimal()+   
@@ -8168,7 +8299,8 @@ server <- function(input, output) {
       summarise(`Mujeres atendidas en el CJM`=sum(`Mujeres atendidas en el CJM`, na.rm=T),
                 `Mujeres que realizan una denuncia por el delito de violacion`=sum(`Mujeres que realizan una denuncia por el delito de violacion`, na.rm=T),
                 `Mujeres que realizan una denuncia por el delito de violencia familiar`=sum(`Mujeres que realizan una denuncia por el delito de violencia familiar`, na.rm=T),
-                `Indicador`=scales::percent(sum((`Mujeres que realizan una denuncia por el delito de violacion`+ `Mujeres que realizan una denuncia por el delito de violencia familiar`)/`Mujeres atendidas en el CJM`), 0.1, na.rm=T)) -> tabla_28
+                # `Indicador`=scales::percent(sum((`Mujeres que realizan una denuncia por el delito de violacion`+ `Mujeres que realizan una denuncia por el delito de violencia familiar`)/`Mujeres atendidas en el CJM`), 0.1, na.rm=T)
+                ) -> tabla_28
     
     
     
@@ -8245,21 +8377,21 @@ server <- function(input, output) {
     ind_29_reactive() %>%
     # indicador_29 %>% 
       filter(Carpeta=="Judicializada") %>% 
-      group_by(Año, Mes, 
-               Periodo 
+      group_by(Año, #Mes, 
+               # Periodo 
                 , Delito
                ) %>% 
       summarise(`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`=sum(Registro, na.rm=T)) %>%   
       mutate(text = paste("Año: ", Año,
-                          "\nMes: ", Mes,
+                          # "\nMes: ", Mes,
                           "\n`Casos denunciados que llegan a la etapa de judicialización` : ",  `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`  ,
                            "\nDelito : ",  Delito, 
                           sep="")) %>%
       ggplot() +
-      aes(x = Periodo, y = `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`, 
+      aes(x = Año, y = `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`, 
           colour = Delito, group=Delito, 
           text=text) +
-      geom_line(linewidth = 1.5) + geom_point(size = 3)+
+      geom_line(linewidth = 1.2) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 29",
            color = "Delito") +
       scale_y_continuous(labels = scales::comma) +
@@ -8294,8 +8426,9 @@ server <- function(input, output) {
                 Judicializada=sum(Judicializada, na.rm=T),
                 `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`=sum(Judicializada, na.rm = T),
                 `Total de casos por violencia por razón de género denunciados`=sum(Iniciada + Judicializada),
-                `Indicador`=scales::percent(sum((`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`)/
-                                                   `Total de casos por violencia por razón de género denunciados`), 0.1)) %>% 
+                # `Indicador`=scales::percent(sum((`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`)/
+                #                                    `Total de casos por violencia por razón de género denunciados`), 0.1)
+                ) %>% 
       select(!c(Iniciada, Judicializada))->tabla_29
     
     
@@ -8369,7 +8502,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Periodo, y = Total, 
           colour = `Tipo de sentencia (absolutoria, condenatoria y en proceso)`, group=`Tipo de sentencia (absolutoria, condenatoria y en proceso)`, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 30",
            color = "Clasificación") +
       theme_minimal()+   
@@ -8406,7 +8539,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Total de sentencias`=sum(`Año de sentencia`, na.rm = T),           
                 `Total de casos vinculados a procesos`=n(),
-                `Indicador`=scales::percent(sum(`Total de sentencias`/n()), 0.1)) -> tabla_30
+                # `Indicador`=scales::percent(sum(`Total de sentencias`/n()), 0.1)
+                ) -> tabla_30
     
     
     tabla_30 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -8481,10 +8615,11 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 32",
            color = "Clasificación") +
       theme_minimal()+   
+      facet_wrap(.~Clasificación, scales = "free_y", ncol=1) +
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
@@ -8492,7 +8627,7 @@ server <- function(input, output) {
           `Número de cédulas de Alerta Amber emitidas` = "#d98cbc",
           `Número de cédulas de Protocolo Alba emitidas`= "#7e3794",
           `Número de informes de factor de riesgo elaborados` = "#c91682"))+
-      theme(legend.position = "bottom") +
+      theme(legend.position = "none") +
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
             axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr32
@@ -8623,7 +8758,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Total de cédulas únicas de difusión emitidas`=sum(`Total de cédulas únicas de difusión emitidas`),
                 `Cédulas únicas de difusión emitidas que son remitidas al comité técnico de colaboración`=sum(`Cédulas únicas de difusión emitidas que son remitidas al comité técnico de colaboración`),
-                `Indicador`=scales::percent(sum((`Cédulas únicas de difusión emitidas que son remitidas al comité técnico de colaboración`)/`Total de cédulas únicas de difusión emitidas`), 0.1)) -> tabla_33
+                # `Indicador`=scales::percent(sum((`Cédulas únicas de difusión emitidas que son remitidas al comité técnico de colaboración`)/`Total de cédulas únicas de difusión emitidas`), 0.1)
+                ) -> tabla_33
     
     
     
@@ -8685,7 +8821,8 @@ server <- function(input, output) {
       summarise(`Número de casos de localización`=sum(`Número de casos de localización`),
                 `Número de casos de búsqueda`=sum(`Número de casos de búsqueda`),
                 `Número de casos de aplicación a cabalidad del protocolo alba`=sum(`Número de casos de aplicación a cabalidad del Protocolo Alba`),
-                `Indicador`=scales::percent(sum((`Número de casos de localización`)/`Número de casos de aplicación a cabalidad del Protocolo Alba`), 0.1)) %>% 
+                `Indicador`=scales::percent(sum((`Número de casos de localización`)/`Número de casos de aplicación a cabalidad del Protocolo Alba`), 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=4:6) %>% 
@@ -8758,7 +8895,8 @@ server <- function(input, output) {
       summarise(`Número de casos de localización`=sum(`Número de casos de localización`),
                 `Número de casos de búsqueda`=sum(`Número de casos de búsqueda`),
                 `Número de casos de aplicación a cabalidad del protocolo alba`=sum(`Número de casos de aplicación a cabalidad del Protocolo Alba`),
-                `Indicador`=scales::percent(sum(`Número de casos de aplicación a cabalidad del Protocolo Alba`/(`Número de casos de localización`+ `Número de casos de búsqueda`)), 0.1)) -> tabla_34
+                # `Indicador`=scales::percent(sum(`Número de casos de aplicación a cabalidad del Protocolo Alba`/(`Número de casos de localización`+ `Número de casos de búsqueda`)), 0.1)
+                ) -> tabla_34
     
     tabla_34 %>% datatable(filter="top", extensions = 'Buttons',
                            options = list(dom = 'Blfrtip',
@@ -8805,7 +8943,8 @@ server <- function(input, output) {
       group_by(Año, Mes, Periodo) %>% 
       summarise(`Cédulas de difusión activas`=sum(`Cédulas de difusión activas`),
                 `Total de cédulas de difusión emitidas`=sum(`Total de cédulas de difusión emitidas`),
-                `Indicador`=scales::percent(sum((`Cédulas de difusión activas`)/`Total de cédulas de difusión emitidas`), 0.1)) %>% 
+                # `Indicador`=scales::percent(sum((`Cédulas de difusión activas`)/`Total de cédulas de difusión emitidas`), 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Cédulas de difusión activas",
@@ -8816,7 +8955,7 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Periodo , y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 35",
            color = "Clasificación") +
       theme_minimal()+   
@@ -8845,7 +8984,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Cédulas de difusión activas`=sum(`Cédulas de difusión activas`),
                 `Total de cédulas de difusión emitidas`=sum(`Total de cédulas de difusión emitidas`),
-                `Indicador`=scales::percent(sum((`Cédulas de difusión activas`)/`Total de cédulas de difusión emitidas`), 0.1)) -> tabla_35
+                # `Indicador`=scales::percent(sum((`Cédulas de difusión activas`)/`Total de cédulas de difusión emitidas`), 0.1)
+                ) -> tabla_35
     
     
     tabla_35 %>%  datatable(filter="top", extensions = 'Buttons',
@@ -8903,7 +9043,8 @@ server <- function(input, output) {
       group_by(Trimestre, `Rango de edad`) %>% 
       summarise(`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`=sum(`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`),
                 `Total de casos de desaparición de niñas y adolescentes`=sum(`Total de casos de desaparición de niñas y adolescentes`),
-                `Indicador`=scales::percent(sum((`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`)/`Total de casos de desaparición de niñas y adolescentes`), 0.1)) %>% 
+                # `Indicador`=scales::percent(sum((`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`)/`Total de casos de desaparición de niñas y adolescentes`), 0.1)
+                ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=3:4) %>% 
@@ -8965,7 +9106,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`=sum(`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`),
                 `Total de casos de desaparición de niñas y adolescentes`=sum(`Total de casos de desaparición de niñas y adolescentes`),
-                `Indicador`=scales::percent(sum((`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`)/`Total de casos de desaparición de niñas y adolescentes`), 0.1)) -> tabla_36 
+                # `Indicador`=scales::percent(sum((`Número de casos en los que se activa, de conformidad con la normatividad y en el tiempo establecido el protocolo de la Alerta Amber`)/`Total de casos de desaparición de niñas y adolescentes`), 0.1)
+                ) -> tabla_36 
     
     tabla_36 %>%  datatable(filter="top", extensions = 'Buttons',
                             options = list(dom = 'Blfrtip',
@@ -9021,7 +9163,8 @@ server <- function(input, output) {
       group_by(Año, Personal) %>% 
       summarise(`Personal de la fiscalía debidamente formado en el funcionamiento del Protocolo Alba`=sum(`Personal de la fiscalía debidamente formado en el funcionamiento del Protocolo Alba`),
                 `Total personal de la fiscalía`=sum(`Total personal de la fiscalía`),
-                `Indicador`=scales::percent(sum((`Personal de la fiscalía debidamente formado en el funcionamiento del Protocolo Alba`)/`Total personal de la fiscalía`), 0.1)) -> tabla_37 
+                # `Indicador`=scales::percent(sum((`Personal de la fiscalía debidamente formado en el funcionamiento del Protocolo Alba`)/`Total personal de la fiscalía`), 0.1)
+                ) -> tabla_37 
     tabla_37 %>%  datatable(filter="top", extensions = 'Buttons',
                             options = list(dom = 'Blfrtip',
                                            buttons = c('copy', 'excel', 'print'),
@@ -9087,7 +9230,7 @@ server <- function(input, output) {
       aes(x = Trimestre, y = `Rango de edad`, size=Total,
           fill = Total, group=Clasificación, text=text) +
       # geom_line(size = 1.5) + 
-      # geom_point(size = 3)+
+      # geom_point(size = 2)+
       geom_tile(color = "white",
                 lwd = 1,
                 linetype = 1) +
@@ -9140,7 +9283,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Casos de desaparición denunciados`=sum(`Casos de desaparición denunciados`),
                 `Total de casos resueltos en etapa de investigación`=sum(`Total de casos resueltos en etapa de investigación`),
-                `Indicador`=scales::percent(sum((`Total de casos resueltos en etapa de investigación`)/`Casos de desaparición denunciados`), 0.1)) -> tabla_38
+                # `Indicador`=scales::percent(sum((`Total de casos resueltos en etapa de investigación`)/`Casos de desaparición denunciados`), 0.1)
+                ) -> tabla_38
     
     tabla_38 %>%  datatable(filter="top", extensions = 'Buttons',
                             options = list(dom = 'Blfrtip',
@@ -9198,7 +9342,8 @@ server <- function(input, output) {
       group_by(Trimestre, `Rango de edad`) %>% 
       summarise(`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`=sum(`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`),
                 `Total de casos de desaparición denunciados`=sum(`Total de casos de desaparición denunciados`),
-                `Indicador`=scales::percent(sum((`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`)/`Total de casos de desaparición denunciados`), 0.1)) %>% 
+                `Indicador`=scales::percent(sum((`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`)/`Total de casos de desaparición denunciados`), 0.1)
+    ) %>% 
       pivot_longer(names_to = "Clasificación",
                    values_to = "Total",
                    cols=c("Casos de desaparición que reciben seguimiento por parte de Protocolo Alba",
@@ -9211,7 +9356,7 @@ server <- function(input, output) {
       aes(x = Trimestre, y = `Rango de edad`, size=Total,
           fill = Total, group=Clasificación, text=text) +
       # geom_line(size = 1.5) + 
-      # geom_point(size = 3)+
+      # geom_point(size = 2)+
       geom_tile(color = "white",
                 lwd = 1,
                 linetype = 1) +
@@ -9264,7 +9409,8 @@ server <- function(input, output) {
       group_by(Año) %>% 
       summarise(`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`=sum(`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`),
                 `Total de casos de desaparición denunciados`=sum(`Total de casos de desaparición denunciados`),
-                `Indicador`=scales::percent(sum((`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`)/`Total de casos de desaparición denunciados`), 0.1)) -> tabla_39
+                # `Indicador`=scales::percent(sum((`Casos de desaparición que reciben seguimiento por parte de Protocolo Alba`)/`Total de casos de desaparición denunciados`), 0.1)
+                ) -> tabla_39
     
     tabla_39 %>%  datatable(filter="top", extensions = 'Buttons',
                             options = list(dom = 'Blfrtip',
@@ -9336,9 +9482,10 @@ server <- function(input, output) {
       ggplot() +
       aes(x = Periodo, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
-      geom_line(size = 1.5) + geom_point(size = 3)+
+      geom_line(size = 1.5) + geom_point(size = 2)+
       labs(x="", y="", title = "Indicador 40",
            color = "Clasificación") +
+      facet_wrap(.~Clasificación, scales = "free_y", ncol = 1) +
       theme_minimal()+   
       scale_y_continuous(labels = scales::comma, limits = c(0,30)) +
       scale_color_manual(
