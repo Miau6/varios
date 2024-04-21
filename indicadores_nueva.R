@@ -1,20 +1,6 @@
 library(tidyverse)
-library(DT)
-library(shiny)
-library(shinydashboard)
-library(shinyWidgets)
-library(shinyjs)
-library(shinybusy)
-
-library(googledrive)
-library(googlesheets4)
-library(shiny)
-library(readxl)
 library(readr)
-library(ggplot2)
 library(scales)
-library(dplyr)
-library(tidyverse)
 library(DT)
 library(plotly)
 library(lubridate)
@@ -23,12 +9,9 @@ library(janitor)
 library(mxmaps)
 library(stringr)
 library(wordcloud2)
-library(RColorBrewer)
 library(shinydashboard)
 library(wordcloud)
-library(shinydashboard)
 library(shiny)
-library(plotly)
 library(dashboardthemes)
 library(shinythemes)
 library(shinybusy)
@@ -38,1575 +21,1582 @@ library(jsonlite)
 library(data.table)
 library(shinyjs)
 library(leaflet)
-library(mxmaps)
 library(shinyWidgets)
-library(shiny)
 library(shiny.router)
 
-nb.cols <- 25
-mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 
-
-# Indicador 1: ----------------------------------------------------------------#
-indicador_1 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 1")%>% suppressWarnings()
-
-indicador_1$Fecha <- format(as.Date(indicador_1$Fecha, format = "%d/%m/%Y"))
-#indicador_1$Mes <- format(as.Date(indicador_1$Fecha, format="%Y-%m-%d"), "%B")
-indicador_1$Periodo <- format(as.Date(indicador_1$Fecha, format="%Y-%m-%d"), "%Y-%m")
-
-
-indicador_1 %>%
-  filter(`Muerte violenta`=="Violenta") %>%
-  mutate(Mes = case_when(
-    Mes == 1 ~ "Enero",
-    Mes == 2 ~ "Febrero",
-    Mes == 3 ~ "Marzo",
-    Mes == 4 ~ "Abril",
-    Mes == 5 ~ "Mayo",
-    Mes == 6 ~ "Junio",
-    Mes == 7 ~ "Julio",
-    Mes == 8 ~ "Agosto",
-    Mes == 9 ~ "Septiembre",
-    Mes == 10 ~ "Octubre",
-    Mes == 11 ~ "Noviembre",
-    Mes == 12 ~ "Diciembre",
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")))->indicador_1
-
-indicador_1 %>% 
-  mutate(`Total de muertes violentas`=case_when(
-    `Muerte violenta`=="Violenta"~1, T~0)) %>% 
-  pivot_longer(cols = 7:12,
-               names_to = "Servicios forenses",
-               values_to = "Aplicado")->indicador_1
-
-
-id_violenta <- indicador_1 %>% 
-  filter(!duplicated(Folio)) %>% pull(Folio)
-
-# Indicador 2: ----------------------------------------------------------------#
-
-indicador_2 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 2")%>% suppressWarnings
-
-indicador_2$Fecha   <- format(as.Date(indicador_2$Fecha, format = "%d/%m/%Y"))
-#indicador_2$Mes     <- format(as.Date(indicador_2$Fecha, format="%Y-%m-%d"), "%B")
-indicador_2$Periodo <- format(as.Date(indicador_2$Fecha, format="%Y-%m-%d"), "%Y-%m")
-
-indicador_2 %>%
-  filter(
-    Folio %in% id_violenta,
-    !Año=="NA") %>%
-  mutate(Mes = case_when(
-    Mes == 1 ~ "Enero",
-    Mes == 2 ~ "Febrero",
-    Mes == 3 ~ "Marzo",
-    Mes == 4 ~ "Abril",
-    Mes == 5 ~ "Mayo",
-    Mes == 6 ~ "Junio",
-    Mes == 7 ~ "Julio",
-    Mes == 8 ~ "Agosto",
-    Mes == 9 ~ "Septiembre",
-    Mes == 10 ~ "Octubre",
-    Mes == 11 ~ "Noviembre",
-    Mes == 12 ~ "Diciembre",
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  `Total de muertes violentas`= c(1))->indicador_2
-
-
-
-
-
-# Indicador 3: ----------------------------------------------------------------#
-indicador_3 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 3")%>% suppressWarnings()
-
-indicador_3$Fecha   <- format(as.Date(indicador_3$Fecha, format = "%d/%m/%Y"))
-# indicador_3$Mes     <- format(as.Date(indicador_3$Fecha, format="%Y-%m-%d"), "%B")
-indicador_3$Periodo <- format(as.Date(indicador_3$Fecha, format="%Y-%m-%d"), "%Y-%m")
-
-indicador_3 %>% 
-  filter(!Año=="NA",
-         !`Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)` %in% c("Imp.", "Inf.", NA, "NA"),
-         !`Toma de huellas decadactilares` %in% c("Imp.", "Inf.", NA, "NA"),
-         Folio %in% id_violenta) %>% 
-  
-  mutate(
-    Mes = case_when(
-      Mes == 1 ~ "Enero",
-      Mes == 2 ~ "Febrero",
-      Mes == 3 ~ "Marzo",
-      Mes == 4 ~ "Abril",
-      Mes == 5 ~ "Mayo",
-      Mes == 6 ~ "Junio",
-      Mes == 7 ~ "Julio",
-      Mes == 8 ~ "Agosto",
-      Mes == 9 ~ "Septiembre",
-      Mes == 10 ~ "Octubre",
-      Mes == 11 ~ "Noviembre",
-      Mes == 12 ~ "Diciembre",
-    ),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    `Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)` = as.numeric(`Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)`),
-    `Toma de huellas decadactilares` = as.numeric(`Toma de huellas decadactilares`),
-    `Total de muertes violentas`= c(1)) ->indicador_3
-
-indicador_3 <- indicador_3 %>% 
-  filter(Folio %in% id_violenta)
-
-# Indicador 4: ----------------------------------------------------------------#
-indicador_4 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 4")%>% suppressWarnings()
-
-
-indicador_4$Fecha   <- format(as.Date(indicador_4$Fecha, format = "%d/%m/%Y"))
-# indicador_4$Mes     <- format(as.Date(indicador_4$Fecha, format="%Y-%m-%d"), "%B")
-indicador_4$Periodo <- format(as.Date(indicador_4$Fecha, format="%Y-%m-%d"), "%Y-%m")
-
-indicador_4 %>%
-  filter(Folio %in% id_violenta) %>% 
-  filter(!Año=="NA") %>%
-  mutate(Mes = case_when(
-    Mes == 1 ~ "Enero",
-    Mes == 2 ~ "Febrero",
-    Mes == 3 ~ "Marzo",
-    Mes == 4 ~ "Abril",
-    Mes == 5 ~ "Mayo",
-    Mes == 6 ~ "Junio",
-    Mes == 7 ~ "Julio",
-    Mes == 8 ~ "Agosto",
-    Mes == 9 ~ "Septiembre",
-    Mes == 10 ~ "Octubre",
-    Mes == 11 ~ "Noviembre",
-    Mes == 12 ~ "Diciembre"),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    `Total de muertes violentas`= c(1))->indicador_4
-
-
-
-
-
-
-# Indicador 6: ----------------------------------------------------------------#
-indicador_6 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 6")%>% suppressWarnings()
-
-indicador_6 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_6
-
-
-indicador_6$Fecha   <- format(as.Date(indicador_6$Periodo, format = "%d-%m-%Y"))
-indicador_6$Fecha   <- format(as.Date(indicador_6$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_6$Fecha   <- as.Date(indicador_6$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_6 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Mujeres víctimas de violencia de género`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
-            `Medidas de protección aceptadas`=sum(`Medida de protección aceptada`),
-            `Medidas de protección rechazadas`=sum(`Medida de protección rechazada`),
-            `Órdenes de protección aceptadas`=sum(`Orden de protección aceptada`),
-            `Órdenes de protección rechazadas`=sum(`Orden de protección rechazada`))->estatal_6
-
-indicador_6 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Mujeres víctimas de violencia de género`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
-            `Medidas de protección aceptadas`=sum(`Medida de protección aceptada`),
-            `Medidas de protección rechazadas`=sum(`Medida de protección rechazada`),
-            `Órdenes de protección aceptadas`=sum(`Orden de protección aceptada`),
-            `Órdenes de protección rechazadas`=sum(`Orden de protección rechazada`))->municipal_6
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_6)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_6)->indicador_6
-
-
-# Indicador 7: ----------------------------------------------------------------#
-indicador_7 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 7")%>% suppressWarnings()
-
-indicador_7 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_7
-
-
-indicador_7$Fecha   <- format(as.Date(indicador_7$Periodo, format = "%d-%m-%Y"))
-indicador_7$Fecha   <- format(as.Date(indicador_7$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_7$Fecha   <- as.Date(indicador_7$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_7 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total de mujeres víctimas de violencia de género atendidas`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
-            `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`),
-            `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`),
-            `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)/`Total de mujeres víctimas de violencia de género atendidas`))->estatal_7
-
-indicador_7 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total de mujeres víctimas de violencia de género atendidas`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
-            `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`),
-            `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`),
-            `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)
-                                        /`Total de mujeres víctimas de violencia de género atendidas`)) ->municipal_7
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_7)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_7)->indicador_7
-
-# Indicador 9: ----------------------------------------------------------------#
-indicador_9 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 9")%>% suppressWarnings()
-
-indicador_9 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_9
-
-
-indicador_9$Fecha   <- format(as.Date(indicador_9$Periodo, format = "%d-%m-%Y"))
-indicador_9$Fecha   <- format(as.Date(indicador_9$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_9$Fecha   <- as.Date(indicador_9$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_9 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total de medidas de protección emitidas por violencia por razón de género vigentes`=sum(`Total de medidas de protección emitidas por violencia por razón de género vigentes`),
-            `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`=sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`),
-            `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
-            `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/
-                                          `Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1))->estatal_9
-
-indicador_9 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total de medidas de protección emitidas por violencia por razón de género vigentes`=sum(`Total de medidas de protección emitidas por violencia por razón de género vigentes`),
-            `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`=sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`),
-            `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
-            `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/
-                                          `Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1))->municipal_9
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_9)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_9)->indicador_9
-
-
-# Indicador 10: ----------------------------------------------------------------#
-indicador_10 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 10")%>% suppressWarnings()
-
-indicador_10 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_10
-
-
-indicador_10$Fecha   <- format(as.Date(indicador_10$Periodo, format = "%d-%m-%Y"))
-indicador_10$Fecha   <- format(as.Date(indicador_10$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_10$Fecha   <- as.Date(indicador_10$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_10 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total de órdenes de protección emitidas por violencia por razón de género`=sum(`Total de órdenes de protección emitidas por violencia por razón de género`),
-            
-            `Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`=sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`),
-            
-            `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=
-              sum(`Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)) ->estatal_10
-
-indicador_10 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total de órdenes de protección emitidas por violencia por razón de género`=sum(`Total de órdenes de protección emitidas por violencia por razón de género`),
-            
-            `Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`=sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`),
-            
-            `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=
-              sum(`Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)) ->municipal_10
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_10)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_10)->indicador_10
-
-
-# Indicador 11: ----------------------------------------------------------------#
-indicador_11 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 11")%>% suppressWarnings()
-
-indicador_11 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_11
-
-
-indicador_11$Fecha   <- format(as.Date(indicador_11$Periodo, format = "%d-%m-%Y"))
-indicador_11$Fecha   <- format(as.Date(indicador_11$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_11$Fecha   <- as.Date(indicador_11$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_11 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Mujeres con medidas de protección vigentes que han recibido seguimiento`=sum(`Mujeres con medidas de protección vigentes que han recibido seguimiento`),
-            
-            `Mujeres con órdenes de protección vigentes que han recibido seguimiento`=sum(`Mujeres con órdenes de protección vigentes que han recibido seguimiento`),
-            
-            `Total de mujeres con medidas de protección vigentes`=sum(`Total de mujeres con medidas de protección vigentes`),
-            
-            `Total de mujeres con órdenes de protección vigentes`=sum(`Total de mujeres con órdenes de protección vigentes`))->estatal_11
-
-indicador_11 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Mujeres con medidas de protección vigentes que han recibido seguimiento`=sum(`Mujeres con medidas de protección vigentes que han recibido seguimiento`),
-            
-            `Mujeres con órdenes de protección vigentes que han recibido seguimiento`=sum(`Mujeres con órdenes de protección vigentes que han recibido seguimiento`),
-            
-            `Total de mujeres con medidas de protección vigentes`=sum(`Total de mujeres con medidas de protección vigentes`),
-            
-            `Total de mujeres con órdenes de protección vigentes`=sum(`Total de mujeres con órdenes de protección vigentes`))->municipal_11
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_11)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_11)->indicador_11
-
-# Indicador 12: ----------------------------------------------------------------#
-indicador_12 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 12")%>% suppressWarnings()
-
-indicador_12 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_12
-
-
-indicador_12$Fecha   <- format(as.Date(indicador_12$Periodo, format = "%d-%m-%Y"))
-indicador_12$Fecha   <- format(as.Date(indicador_12$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_12$Fecha   <- as.Date(indicador_12$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_12 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total de medidas de protección emitidas vigentes`=sum(`Total de medidas de protección emitidas vigentes`),
-            `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`),
-            
-            `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
-            
-            `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`))->estatal_12
-
-indicador_12 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total de medidas de protección emitidas vigentes`=sum(`Total de medidas de protección emitidas vigentes`),
-            `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`),
-            
-            `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
-            
-            `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`))->municipal_12
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_12)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_12)->indicador_12
-
-
-
-
-
-# Indicador 13: ----------------------------------------------------------------#
-indicador_13 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 13")%>% suppressWarnings()
-
-indicador_13 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_13
-
-
-indicador_13$Fecha   <- format(as.Date(indicador_13$Periodo, format = "%d-%m-%Y"))
-indicador_13$Fecha   <- format(as.Date(indicador_13$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_13$Fecha   <- as.Date(indicador_13$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_13 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total medidas de protección emitidas vigentes`=sum(`Total medidas de protección emitidas vigentes`),
-            `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-            `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
-            `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-            `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1))->estatal_13
-
-indicador_13 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total medidas de protección emitidas vigentes`=sum(`Total medidas de protección emitidas vigentes`),
-            `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-            `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
-            `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
-            `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1))->municipal_13
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_13)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_13)->indicador_13
-
-
-# Indicador 16: ----------------------------------------------------------------#
-indicador_16 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 16")%>% suppressWarnings()
-
-indicador_16 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12),
-    # Trimestre = case_when(
-    #     Mes == "Enero" ~ "ene - mar",
-    #     Mes == "Febrero" ~ "ene - mar",
-    #     Mes == "Marzo" ~ "ene - mar",
-    #     Mes == "Abril" ~ "abr - jun",
-    #     Mes == "Mayo" ~ "abr - jun",
-    #     Mes == "Junio" ~ "abr - jun",
-    #     Mes == "Julio" ~ "jul - sep",
-    #     Mes == "Agosto" ~ "jul - sep",
-    #     Mes == "Septiembre" ~ "jul - sep",
-    #     Mes == "Octubre" ~ "oct - dic",
-    #     Mes == "Noviembre" ~ "oct - dic",
-    #     Mes == "Diciembre" ~ "oct - dic"),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    #  Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
-    `Rango de edad`=factor(`Rango de edad`, levels = c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
-                                                       "36 a 45 años", "46 a 59 años", "60 en adelante", "No especifica")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01"))#,
-    #Trimestre = paste0(Año, " ", Trimestre)
-  ) ->indicador_16
-
-
-# indicador_16$Fecha   <- format(as.Date(indicador_16$Periodo, format = "%d-%m-%Y"))
-# indicador_16$Fecha   <- format(as.Date(indicador_16$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-# indicador_16$Fecha<- as.character(indicador_16$Fecha)
-
-
-# Indicador 17: ----------------------------------------------------------------#
-indicador_17 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 17")%>% suppressWarnings()
-
-# indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`<-as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`,format="%d/%m/%y")
-# indicador_17$Mes     <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%B")
-# indicador_17$Month     <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
-
-# indicador_17$Periodo <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%Y-%m-%d")
-
-#indicador_17$Periodo <- indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`
-
-indicador_17 %>% 
-  filter(Año >=2019) %>% 
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-  Rango= case_when(
-    `Edad (0-99)` <= 2 ~ "0 a 2 años",
-    `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
-    `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
-    `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
-    `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
-    `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
-    `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
-    `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
-    `Edad (0-99)` >= 60  ~ "60 en adelante"),
-  Rango=factor(Rango,
-               levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
-                        "36 a 45 años", "46 a 59 años", "60 en adelante")))->indicador_17
-
-
-indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="ABUSO SEXUAL INTANTIL"]<- "Abuso sexual infantil"
-indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="VIOLACIÓN"]<- "Violación"      
-# indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="VIOLENCIA SEXUAL"]<- "Violencia sexual"
-
-
-# indicador_17$Fecha   <- format(as.Date(indicador_17$Periodo, format = "%d-%m-%Y"))
-# indicador_17$Fecha   <- format(as.Date(indicador_17$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-# indicador_17$Fecha   <- as.Date(indicador_17$Periodo, format = "%d-%m-%Y")
+#####
+#como se metían anteriormente las bases de datos
+ nb.cols <- 25
+ mycolors <- colorRampPalette(brewer.pal(8, "Set2"))(nb.cols)
 # 
-# indicador_17$Fecha<-as.character(indicador_17$Periodo)
-
-
-# Indicador 18: ----------------------------------------------------------------#
-indicador_18 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 18")%>% suppressWarnings()
-
 # 
-# indicador_18$`Fecha (dd-mm-aa)`<-as.Date(indicador_18$`Fecha (dd-mm-aa)`,format="%d/%m/%Y")
-# indicador_18$Año<-format(as.Date(indicador_18$`Fecha (dd-mm-aa)` , format="%d/%m/%Y"), "%Y")
-# indicador_18$Mes<-format(as.Date(indicador_18$`Fecha (dd-mm-aa)` , format="%d/%m/%Y"), "%B")
-# indicador_18$Month  <-format(as.Date(indicador_18$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
-
-
-
-indicador_18 %>% 
-  # mutate(Fecha=case_when(
-  #   Mes=="Enero" ~ 1,
-  #   Mes=="Febrero" ~ 2,
-  #   Mes=="Marzo" ~ 3,
-  #   Mes=="Abril" ~ 4,
-  #   Mes=="Mayo" ~ 5,
-  #   Mes=="Junio" ~ 6,
-  #   Mes=="Julio" ~ 7,
-  #   Mes=="Agosto" ~ 8,
-  #   Mes=="Septiembre" ~ 9,
-  #   Mes=="Octubre" ~ 10,
-#   Mes=="Noviembre" ~ 11,
-#   Mes=="Diciembre" ~ 12,
+# # Indicador 1: ----------------------------------------------------------------#
+# indicador_1 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 1")%>% suppressWarnings()
+# 
+# indicador_1$Fecha <- format(as.Date(indicador_1$Fecha, format = "%d/%m/%Y"))
+# #indicador_1$Mes <- format(as.Date(indicador_1$Fecha, format="%Y-%m-%d"), "%B")
+# indicador_1$Periodo <- format(as.Date(indicador_1$Fecha, format="%Y-%m-%d"), "%Y-%m")
+# 
+# 
+# indicador_1 %>%
+#   filter(`Muerte violenta`=="Violenta") %>%
+#   mutate(Mes = case_when(
+#     Mes == 1 ~ "Enero",
+#     Mes == 2 ~ "Febrero",
+#     Mes == 3 ~ "Marzo",
+#     Mes == 4 ~ "Abril",
+#     Mes == 5 ~ "Mayo",
+#     Mes == 6 ~ "Junio",
+#     Mes == 7 ~ "Julio",
+#     Mes == 8 ~ "Agosto",
+#     Mes == 9 ~ "Septiembre",
+#     Mes == 10 ~ "Octubre",
+#     Mes == 11 ~ "Noviembre",
+#     Mes == 12 ~ "Diciembre",
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")))->indicador_1
+# 
+# indicador_1 %>% 
+#   mutate(`Total de muertes violentas`=case_when(
+#     `Muerte violenta`=="Violenta"~1, T~0)) %>% 
+#   pivot_longer(cols = 7:12,
+#                names_to = "Servicios forenses",
+#                values_to = "Aplicado")->indicador_1
+# 
+# 
+# id_violenta <- indicador_1 %>% 
+#   filter(!duplicated(Folio)) %>% pull(Folio)
+# 
+# # Indicador 2: ----------------------------------------------------------------#
+# 
+# indicador_2 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 2")%>% suppressWarnings
+# 
+# indicador_2$Fecha   <- format(as.Date(indicador_2$Fecha, format = "%d/%m/%Y"))
+# #indicador_2$Mes     <- format(as.Date(indicador_2$Fecha, format="%Y-%m-%d"), "%B")
+# indicador_2$Periodo <- format(as.Date(indicador_2$Fecha, format="%Y-%m-%d"), "%Y-%m")
+# 
+# indicador_2 %>%
+#   filter(
+#     Folio %in% id_violenta,
+#     !Año=="NA") %>%
+#   mutate(Mes = case_when(
+#     Mes == 1 ~ "Enero",
+#     Mes == 2 ~ "Febrero",
+#     Mes == 3 ~ "Marzo",
+#     Mes == 4 ~ "Abril",
+#     Mes == 5 ~ "Mayo",
+#     Mes == 6 ~ "Junio",
+#     Mes == 7 ~ "Julio",
+#     Mes == 8 ~ "Agosto",
+#     Mes == 9 ~ "Septiembre",
+#     Mes == 10 ~ "Octubre",
+#     Mes == 11 ~ "Noviembre",
+#     Mes == 12 ~ "Diciembre",
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   `Total de muertes violentas`= c(1))->indicador_2
+# 
+# 
+# 
+# 
+# 
+# # Indicador 3: ----------------------------------------------------------------#
+# indicador_3 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 3")%>% suppressWarnings()
+# 
+# indicador_3$Fecha   <- format(as.Date(indicador_3$Fecha, format = "%d/%m/%Y"))
+# # indicador_3$Mes     <- format(as.Date(indicador_3$Fecha, format="%Y-%m-%d"), "%B")
+# indicador_3$Periodo <- format(as.Date(indicador_3$Fecha, format="%Y-%m-%d"), "%Y-%m")
+# 
+# indicador_3 %>% 
+#   filter(!Año=="NA",
+#          !`Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)` %in% c("Imp.", "Inf.", NA, "NA"),
+#          !`Toma de huellas decadactilares` %in% c("Imp.", "Inf.", NA, "NA"),
+#          Folio %in% id_violenta) %>% 
 #   
-# ),
-# Mes=factor(Mes,
-#            levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-#                     "Septiembre", "Octubre","Noviembre", "Diciembre")),
-# Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-mutate(
-  Rango= case_when(
-    `Edad (0-99)` <= 2 ~ "0 a 2 años",
-    `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
-    `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
-    `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
-    `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
-    `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
-    `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
-    `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
-    `Edad (0-99)` >= 60  ~ "60 en adelante"),
-  Rango=factor(Rango,
-               levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
-                        "36 a 45 años", "46 a 59 años", "60 en adelante")))->indicador_18
-
-
-# indicador_18$Fecha<-as.character(indicador_18$Periodo)
-
-indicador_18$`Causal: (violacion/ salud/ riesgo)`[indicador_18$`Causal: (violacion/ salud/ riesgo)`=="Violación"]<- "Violación"
-indicador_18$`Causal: (violacion/ salud/ riesgo)`[indicador_18$`Causal: (violacion/ salud/ riesgo)`=="Salud|SALUD|salud"]<- "Violación"
-
-
-# indicador_18$Fecha   <- format(as.Date(indicador_18$Periodo, format = "%d-%m-%Y"))
-# indicador_18$Fecha   <- format(as.Date(indicador_18$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-# indicador_18$Fecha   <- as.Date(indicador_18$Periodo, format = "%d-%m-%Y")
-
-
-
-# Indicador 19: ----------------------------------------------------------------#
-indicador_19 <- read_excel("indicadores_salud.xlsx",sheet = "Ind 19")%>% suppressWarnings()
-
-# indicador_19$Fecha   <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)` , format = "%d/%m/%Y"))
-# indicador_19$Año     <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%Y")
-# indicador_19$Mes     <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%B")
-# indicador_19$Month   <-format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
+#   mutate(
+#     Mes = case_when(
+#       Mes == 1 ~ "Enero",
+#       Mes == 2 ~ "Febrero",
+#       Mes == 3 ~ "Marzo",
+#       Mes == 4 ~ "Abril",
+#       Mes == 5 ~ "Mayo",
+#       Mes == 6 ~ "Junio",
+#       Mes == 7 ~ "Julio",
+#       Mes == 8 ~ "Agosto",
+#       Mes == 9 ~ "Septiembre",
+#       Mes == 10 ~ "Octubre",
+#       Mes == 11 ~ "Noviembre",
+#       Mes == 12 ~ "Diciembre",
+#     ),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     `Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)` = as.numeric(`Procesamiento del lugar de los hechos (levantamiento de cadáver, indicios y fotografía)`),
+#     `Toma de huellas decadactilares` = as.numeric(`Toma de huellas decadactilares`),
+#     `Total de muertes violentas`= c(1)) ->indicador_3
 # 
-
-#indicador_19$Periodo <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%Y-%m")
-
-indicador_19 %>%
-  # filter(Año >= 2021) %>%
-  mutate(
-    # Fecha=case_when(
-    #   Mes=="Enero" ~ 1,
-    #   Mes=="Febrero" ~ 2,
-    #   Mes=="Marzo" ~ 3,
-    #   Mes=="Abril" ~ 4,
-    #   Mes=="Mayo" ~ 5,
-    #   Mes=="Junio" ~ 6,
-    #   Mes=="Julio" ~ 7,
-    #   Mes=="Agosto" ~ 8,
-    #   Mes=="Septiembre" ~ 9,
-    #   Mes=="Octubre" ~ 10,
-    #   Mes=="Noviembre" ~ 11,
-    #   Mes=="Diciembre" ~ 12),
-    # Mes=factor(Mes,
-    #            levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-    #                     "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    # Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-    `Causal: (salud/riesgo)`= case_when(
-      `Causal: (salud/riesgo)`== "Salud" ~ "Daño a la salud",
-      `Causal: (salud/riesgo)`== "Causal no legal" ~ "Causal no legal",
-      `Causal: (salud/riesgo)`== "Violación" ~ "Causal de violación"),
-    
-    # 
-    # `Causal: (salud/riesgo)`== "4.Riesgo a la salud" ~ "Daño a la salud",
-    # `Causal: (salud/riesgo)`== "5.Riesgo de muerte" ~ "Peligro de muerte",
-    # `Causal: (salud/riesgo)`== "1. Violación Sexual (IVE)" ~ "Causal de violación",
-    # `Causal: (salud/riesgo)`== "4.       Grave daño salud"  ~ "Daño a la salud",
-    # `Causal: (salud/riesgo)`== "5.       Peligro de muerte" ~ "Peligro de muerte",
-    # 
-    # `Causal: (salud/riesgo)`== "4.       Grave daño salud"  ~ "Daño a la salud",
-    # `Causal: (salud/riesgo)`== "5.       Peligro de muerte" ~ "Peligro de muerte"),
-    Rango= case_when(
-      `Edad (0-99)` <= 2 ~ "0 a 2 años",
-      `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
-      `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
-      `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
-      `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
-      `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
-      `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
-      `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
-      `Edad (0-99)` >= 60  ~ "60 en adelante"),
-    Rango=factor(Rango,
-                 levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
-                          "36 a 45 años", "46 a 59 años", "60 en adelante")),
-    `¿Se realizó el procedimiento? (sí/no)`=case_when(
-      `¿Se realizó el procedimiento? (sí/no)`== "NA"~0,
-      `¿Se realizó el procedimiento? (sí/no)`== "SI"~1))->indicador_19
-
-
-
-
-# Indicador 20: ----------------------------------------------------------------#
-indicador_20 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 20")%>% suppressWarnings()
-
-indicador_20 %>% 
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-    
-    `Notificadas al mp: (si/no)` = case_when(
-      `Notificadas al mp: (si/no)`== "SI" ~ 1,
-      `Notificadas al mp: (si/no)`== "NO" ~ 0,
-      T~0),
-    `Tipo de violencia: (violencia familiar / sexual)`=case_when(
-      str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "psic|PSIC|Psic") ~ "Violencia psicológica", 
-      str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "eco|ECO|Eco") ~ "Violencia económica",
-      str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "fami|FAMI|Fami") ~ "Violencia familiar",
-      str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "física|Física|FÍSICA|FISICA|Fisica|fisica") ~ "Violencia física",
-      str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "sex|SEX|Sex") ~ "Violencia sexual",
-      T~"Otro tipo"))-> indicador_20
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="SE IGNORA"] <- "NO ESPECIFICADO"
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`== NA] <- "NO ESPECIFICADO"
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="NA"] <- "NO ESPECIFICADO"
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="LUGAR No especificado"] <- "NO ESPECIFICADO"
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="GRANJA"] <- "NO ESPECIFICADO"
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)` <- toupper(indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`)
-
-
-
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="LUGAR NO ESPECIFICADO"] <- "NO ESPECIFICADO"
-indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="OTRO LUGAR"] <- "NO ESPECIFICADO"
-
-
-# Indicador 21: ----------------------------------------------------------------#
-indicador_21 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 21")%>% suppressWarnings()
-
-indicador_21 %>% 
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-    `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)` = case_when(
-      `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)`== "SI" ~ 1,
-      `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)`== "NO" ~ 0,
-      T~0))->indicador_21
-
-
-
-# Indicador 22: ----------------------------------------------------------------#
-indicador_22 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 22")%>% suppressWarnings()
-
-
-indicador_22 %>% 
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_22
-
-indicador_22$Formación <- toupper(indicador_22$Formación)
-
-
-# Indicador 23: ----------------------------------------------------------------#
-indicador_23 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 23")%>% suppressWarnings()
-
-indicador_23 %>% 
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
-  mutate(`Objetor de conciencia: (SI/NO)` =case_when(
-    `Objetor de conciencia: (SI/NO)`=="SI"~0,
-    `Objetor de conciencia: (SI/NO)`=="NO"~1)) %>% 
-  mutate(Función =toupper(Función)) %>% 
-  mutate(Función=case_when(
-    str_detect(`Función`, "MEDIC|ADSC|GINE")~"Personal médico",
-    str_detect(`Función`, "ENFER")~"Personal de enfermería",
-    T~"No se especifica"))->indicador_23
-
-indicador_23$Formación <- toupper(indicador_23$Formación)
-unique(indicador_23$Función)
-
-
-# Indicador 24: ----------------------------------------------------------------#
-indicador_24 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 24")%>% suppressWarnings()
-
-indicador_24 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
-  mutate(Actualizan=case_when(
-    Actualizan=="Si"~1,
-    Actualizan=="No"~0)) %>% 
-  
-  mutate(Instancia=case_when(
-    Instancia==NA ~ 0,
-    Instancia==NA_character_~ 0,
-    T~1))->indicador_24
-
-
-
-indicador_24$Fecha   <- format(as.Date(indicador_24$Periodo, format = "%d-%m-%Y"))
-indicador_24$Fecha   <- format(as.Date(indicador_24$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_24$Fecha   <- as.Date(indicador_24$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_24 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(Actualizan=sum(Actualizan),
-            Instancia=sum(Instancia),
-            `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)) ->estatal_24
-
-indicador_24 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(Actualizan=sum(Actualizan),
-            Instancia=sum(Instancia),
-            `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)) ->municipal_24
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_24)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_24)->indicador_24
-
-
-# Indicador 25: ----------------------------------------------------------------#
-indicador_25 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 25")%>% suppressWarnings()
-
-indicador_25 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) ->indicador_25
-
-
-
-indicador_25$Fecha   <- format(as.Date(indicador_25$Periodo, format = "%d-%m-%Y"))
-indicador_25$Fecha   <- format(as.Date(indicador_25$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_25$Fecha   <- as.Date(indicador_25$Periodo, format = "%d-%m-%Y")
-
-
-
-# Indicador 26: ----------------------------------------------------------------#
-indicador_26 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 26")%>% suppressWarnings()
-
-indicador_26 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
-  mutate(Actualización=case_when(
-    Actualización=="Si"~1,
-    Actualización=="No"~0))->indicador_26
-
-
-
-indicador_26$Fecha   <- format(as.Date(indicador_26$Periodo, format = "%d-%m-%Y"))
-indicador_26$Fecha   <- format(as.Date(indicador_26$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_26$Fecha   <- as.Date(indicador_26$Periodo, format = "%d-%m-%Y")
-
-
-# Indicador 27: ----------------------------------------------------------------#
-indicador_27 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 27")%>% suppressWarnings()
-
-indicador_27 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_27
-
-
-
-indicador_27$Fecha   <- format(as.Date(indicador_27$Periodo, format = "%d-%m-%Y"))
-indicador_27$Fecha   <- format(as.Date(indicador_27$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_27$Fecha   <- as.Date(indicador_27$Periodo, format = "%d-%m-%Y")
-
-
-
-# Indicador 28: ----------------------------------------------------------------#
-indicador_28 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 28")%>% suppressWarnings()
-
-indicador_28 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  `Mujeres atendidas en el CJM`=as.numeric(`Mujeres atendidas en el CJM`),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_28
-
-
-
-indicador_28$Fecha   <- format(as.Date(indicador_28$Periodo, format = "%d-%m-%Y"))
-indicador_28$Fecha   <- format(as.Date(indicador_28$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_28$Fecha   <- as.Date(indicador_28$Periodo, format = "%d-%m-%Y")
-
-
-
-
-
-# Indicador 29: ----------------------------------------------------------------#
-indicador_29 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 29")%>% suppressWarnings()
-
-indicador_29 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12
-    # Mes=="Enero a Junio"~1,
-    # Mes=="Julio a Diciembre"~6,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre", "Enero a Junio", "Julio a Diciembre"
-             )),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_29
-
-
-
-indicador_29$Fecha   <- format(as.Date(indicador_29$Periodo, format = "%d-%m-%Y"))
-indicador_29$Fecha   <- format(as.Date(indicador_29$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_29$Fecha   <- as.Date(indicador_29$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de Contra la Dignidad"] <- "Delitos contra la dignidad"
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nCORRUPCIÓN DE MENORES"] <- "Corrupción de menores"
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de CORRUPCIÓN DE MENORES"] <- "Corrupción de menores"
-
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nPROSTITUCIÓN INFANTIL"] <- "Prostitución infantil"
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de PROSTITUCIÓN INFANTIL"] <- "Prostitución infantil"
-
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nULTRAJES A LA MORAL"] <- "Ultrajes a la moral"
-indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de ULTRAJES A LA MORAL"] <- "Ultrajes a la moral"
-
-
-indicador_29$Delito[indicador_29$Delito=="Desobediencia o Resistencia de Particulares"] <- "Desobediencia o resistencia de particulares"
-indicador_29$Delito[indicador_29$Delito=="Homicidio (muerte violenta de una mujer)"] <- "Muertes violentas (aún en investigación)"
-indicador_29$Delito[indicador_29$Delito=="Instigación o ayuda al suicidio feminicida"] <- "Suicidio feminicida"
-indicador_29$Delito[indicador_29$Delito=="NAM bajo los protocolos de perspectiva y violencia de género"] <- "Por el delito que resulte"
-# indicador_29$Delito[indicador_29$Delito==""] <- ""
-
-# unique(sort(indicador_29$Delito)) %>% as.tibble() %>%  View()
-
-
-# indicador_29 %>% 
-#   group_by(Año,Mes, Periodo, Carpeta, Delito) %>% 
-#   summarise(`Total de casos por violencia por razón de género denunciados`=sum(Registro, na.rm=T))-> estatal_29
+# indicador_3 <- indicador_3 %>% 
+#   filter(Folio %in% id_violenta)
 # 
-# indicador_29 %>% 
-#   group_by(Año,Mes, Periodo, Delito, Carpeta, Municipio) %>% 
-#   filter(Carpeta=="Judicializada") %>% 
-#   summarise(`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`=sum(Registro, na.rm=T))->municipal_29
-
-
+# # Indicador 4: ----------------------------------------------------------------#
+# indicador_4 <- read_excel("indicadores_ijcf.xlsx",sheet = "Ind 4")%>% suppressWarnings()
+# 
+# 
+# indicador_4$Fecha   <- format(as.Date(indicador_4$Fecha, format = "%d/%m/%Y"))
+# # indicador_4$Mes     <- format(as.Date(indicador_4$Fecha, format="%Y-%m-%d"), "%B")
+# indicador_4$Periodo <- format(as.Date(indicador_4$Fecha, format="%Y-%m-%d"), "%Y-%m")
+# 
+# indicador_4 %>%
+#   filter(Folio %in% id_violenta) %>% 
+#   filter(!Año=="NA") %>%
+#   mutate(Mes = case_when(
+#     Mes == 1 ~ "Enero",
+#     Mes == 2 ~ "Febrero",
+#     Mes == 3 ~ "Marzo",
+#     Mes == 4 ~ "Abril",
+#     Mes == 5 ~ "Mayo",
+#     Mes == 6 ~ "Junio",
+#     Mes == 7 ~ "Julio",
+#     Mes == 8 ~ "Agosto",
+#     Mes == 9 ~ "Septiembre",
+#     Mes == 10 ~ "Octubre",
+#     Mes == 11 ~ "Noviembre",
+#     Mes == 12 ~ "Diciembre"),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     `Total de muertes violentas`= c(1))->indicador_4
+# 
+# 
+# 
+# 
+# 
+# 
+# # Indicador 6: ----------------------------------------------------------------#
+# indicador_6 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 6")%>% suppressWarnings()
+# 
+# indicador_6 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_6
+# 
+# 
+# indicador_6$Fecha   <- format(as.Date(indicador_6$Periodo, format = "%d-%m-%Y"))
+# indicador_6$Fecha   <- format(as.Date(indicador_6$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_6$Fecha   <- as.Date(indicador_6$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_6 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Mujeres víctimas de violencia de género`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
+#             `Medidas de protección aceptadas`=sum(`Medida de protección aceptada`),
+#             `Medidas de protección rechazadas`=sum(`Medida de protección rechazada`),
+#             `Órdenes de protección aceptadas`=sum(`Orden de protección aceptada`),
+#             `Órdenes de protección rechazadas`=sum(`Orden de protección rechazada`))->estatal_6
+# 
+# indicador_6 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Mujeres víctimas de violencia de género`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
+#             `Medidas de protección aceptadas`=sum(`Medida de protección aceptada`),
+#             `Medidas de protección rechazadas`=sum(`Medida de protección rechazada`),
+#             `Órdenes de protección aceptadas`=sum(`Orden de protección aceptada`),
+#             `Órdenes de protección rechazadas`=sum(`Orden de protección rechazada`))->municipal_6
+# 
+# 
 # entidad<- c("Estado de Jalisco")
-# cbind(entidad, estatal_29)->Estatal_total
+# cbind(entidad, estatal_6)->Estatal_total
 # names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_6)->indicador_6
 # 
 # 
-# merge(Estatal_total, municipal_29,
-#       by.x = "Periodo",
-#       by.y = "Periodo") %>%
-#   select(Periodo, Año.x, Mes.x, Municipio.x, Delito.x,Carpeta.x, `Total de casos por violencia por razón de género denunciados`,
-#          `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`)->tabla_29_3
+# # Indicador 7: ----------------------------------------------------------------#
+# indicador_7 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 7")%>% suppressWarnings()
 # 
-# names(tabla_29_3)[names(tabla_29_3) == "Año.x"] <- "Año"
-# names(tabla_29_3)[names(tabla_29_3) == "Mes.x"] <- "Mes"
-# names(tabla_29_3)[names(tabla_29_3) == "Municipio.x"] <- "Municipio"
-# names(tabla_29_3)[names(tabla_29_3) == "Delito.x"] <- "Delito"
-# names(tabla_29_3)[names(tabla_29_3) == "Carpeta.x"] <- "Carpeta"
+# indicador_7 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_7
+# 
+# 
+# indicador_7$Fecha   <- format(as.Date(indicador_7$Periodo, format = "%d-%m-%Y"))
+# indicador_7$Fecha   <- format(as.Date(indicador_7$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_7$Fecha   <- as.Date(indicador_7$Periodo, format = "%d-%m-%Y")
 # 
 # 
 # 
-# tabla_29_3->indicador_29
+# indicador_7 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total de mujeres víctimas de violencia de género atendidas`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
+#             `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`),
+#             `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`),
+#             `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)/`Total de mujeres víctimas de violencia de género atendidas`))->estatal_7
 # 
-
-
-# Indicador 30: ----------------------------------------------------------------#
-indicador_30 <- read_excel("indicadores_fiscalia.xlsx", 
-                           sheet = "Ind 30", col_types = c("numeric", 
-                                                           "text", "text", "text", "date", "numeric", 
-                                                           "text", "text", "numeric"))
-indicador_30 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
-  mutate(`Año de sentencia`=case_when(
-    `Año de sentencia`==2023~1,
-    `Año de sentencia`==2022~1,
-    `Año de sentencia`==2021~1,
-    `Año de sentencia`==2020~1, 
-    T~0))->indicador_30
-
-
-
-indicador_30$Fecha   <- format(as.Date(indicador_30$Periodo, format = "%d-%m-%Y"))
-indicador_30$Fecha   <- format(as.Date(indicador_30$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_30$Fecha   <- as.Date(indicador_30$Periodo, format = "%d-%m-%Y")
-
-
-
-# Indicador 32: ----------------------------------------------------------------#
-indicador_32 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 32")%>% suppressWarnings()
-
-indicador_32 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_32
-
-
-
-indicador_32$Fecha   <- format(as.Date(indicador_32$Periodo, format = "%d-%m-%Y"))
-indicador_32$Fecha   <- format(as.Date(indicador_32$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_32$Fecha   <- as.Date(indicador_32$Periodo, format = "%d-%m-%Y")
-
-
-
-indicador_32 %>% 
-  group_by(Año, Mes, Fecha) %>% 
-  summarise(`Total de número de denuncias de niñas, adolescentes y mujeres desaparecidas`= sum(
-    `0 a 2 años`+
-      `3 a 5 años`+
-      `6 a 12 años`+
-      `13 a 17 años`+
-      `18 a 25 años`+
-      `26 a 35 años`+
-      `36 a 45 años`+
-      `46 a 59 años`+
-      `60  años en adelante`+
-      `Sin datos`, na.rm = T),
-    `Número de cédulas de Alerta Amber emitidas` = sum(`Número de cédulas de Alerta Amber emitidas`, na.rm = T),
-    `Número de cédulas de Protocolo Alba emitidas` =sum(`Número de cédulas de Protocolo Alba emitidas`, na.rm = T),
-    `Número de informes de factor de riesgo elaborados` =sum(`Número de informes de factor de riesgo elaborados`, na.rm = T))->estatal_32
-
-indicador_32 %>% 
-  group_by(Año, Mes, Fecha, Municipio) %>% 
-  summarise(`Total de número de denuncias de niñas, adolescentes y mujeres desaparecidas`= sum(
-    `0 a 2 años`+
-      `3 a 5 años`+
-      `6 a 12 años`+
-      `13 a 17 años`+
-      `18 a 25 años`+
-      `26 a 35 años`+
-      `36 a 45 años`+
-      `46 a 59 años`+
-      `60  años en adelante`+
-      `Sin datos`, na.rm = T),
-    `Número de cédulas de Alerta Amber emitidas` = sum(`Número de cédulas de Alerta Amber emitidas`, na.rm = T),
-    `Número de cédulas de Protocolo Alba emitidas` =sum(`Número de cédulas de Protocolo Alba emitidas`, na.rm = T),
-    `Número de informes de factor de riesgo elaborados` =sum(`Número de informes de factor de riesgo elaborados`, na.rm = T))->municipal_32
-
-
-entidad<- c("Estado de Jalisco")
-cbind(entidad, estatal_32)->Estatal_total
-names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
-rbind(Estatal_total, municipal_32)->indicador_32
-
-
-
-# Indicador 33: ----------------------------------------------------------------#
-indicador_33 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 33")%>% suppressWarnings()
-
-indicador_33 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_33
-
-
-
-indicador_33$Fecha   <- format(as.Date(indicador_33$Periodo, format = "%d-%m-%Y"))
-indicador_33$Fecha   <- format(as.Date(indicador_33$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_33$Fecha   <- as.Date(indicador_33$Periodo, format = "%d-%m-%Y")
-
-
-# Indicador 34: ----------------------------------------------------------------#
-indicador_34 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 34")%>% suppressWarnings()
-
-indicador_34 %>%
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-    Trimestre = case_when(
-      Mes == "Enero" ~ "ene - mar",
-      Mes == "Febrero" ~ "ene - mar",
-      Mes == "Marzo" ~ "ene - mar",
-      Mes == "Abril" ~ "abr - jun",
-      Mes == "Mayo" ~ "abr - jun",
-      Mes == "Junio" ~ "abr - jun",
-      Mes == "Julio" ~ "jul - sep",
-      Mes == "Agosto" ~ "jul - sep",
-      Mes == "Septiembre" ~ "jul - sep",
-      Mes == "Octubre" ~ "oct - dic",
-      Mes == "Noviembre" ~ "oct - dic",
-      Mes == "Diciembre" ~ "oct - dic"),
-    Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
-    Trimestre = paste0(Año, " ", Trimestre))->indicador_34
-
-
-
-# Indicador 35: ----------------------------------------------------------------#
-indicador_35 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 35")%>% suppressWarnings()
-
-indicador_35 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12,
-    
-  ),
-  Mes=factor(Mes,
-             levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                      "Septiembre", "Octubre","Noviembre", "Diciembre")),
-  Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_35
-
-
-
-indicador_35$Fecha   <- format(as.Date(indicador_35$Periodo, format = "%d-%m-%Y"))
-indicador_35$Fecha   <- format(as.Date(indicador_35$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_35$Fecha   <- as.Date(indicador_35$Periodo, format = "%d-%m-%Y")
-
-# Indicador 36: ----------------------------------------------------------------#
-indicador_36 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 36")%>% suppressWarnings()
-
-indicador_36 %>%
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
-    Trimestre = case_when(
-      Mes == "Enero" ~ "ene - mar",
-      Mes == "Febrero" ~ "ene - mar",
-      Mes == "Marzo" ~ "ene - mar",
-      Mes == "Abril" ~ "abr - jun",
-      Mes == "Mayo" ~ "abr - jun",
-      Mes == "Junio" ~ "abr - jun",
-      Mes == "Julio" ~ "jul - sep",
-      Mes == "Agosto" ~ "jul - sep",
-      Mes == "Septiembre" ~ "jul - sep",
-      Mes == "Octubre" ~ "oct - dic",
-      Mes == "Noviembre" ~ "oct - dic",
-      Mes == "Diciembre" ~ "oct - dic"),
-    Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
-    Trimestre = paste0(Año, " ", Trimestre),
-    Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
-                                           "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
-                                           "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
-    `Rango de edad`=factor(`Rango de edad`,
-                           levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años", "Sin datos")))->indicador_36
-
-
-# Indicador 37: ----------------------------------------------------------------#
-indicador_37 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 37")%>% suppressWarnings()
-
-indicador_37 %>%
-  mutate(
-    Fecha=case_when(
-      Mes=="Enero" ~ 1,
-      Mes=="Febrero" ~ 2,
-      Mes=="Marzo" ~ 3,
-      Mes=="Abril" ~ 4,
-      Mes=="Mayo" ~ 5,
-      Mes=="Junio" ~ 6,
-      Mes=="Julio" ~ 7,
-      Mes=="Agosto" ~ 8,
-      Mes=="Septiembre" ~ 9,
-      Mes=="Octubre" ~ 10,
-      Mes=="Noviembre" ~ 11,
-      Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_37
-
-
-# Indicador 38: ----------------------------------------------------------------#
-indicador_38 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 38")%>% suppressWarnings()
-
-indicador_38 %>%
-  mutate(Mes=factor(Mes,
-                    levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                             "Septiembre","Octubre", "Noviembre", "Diciembre")),
-         Trimestre = case_when(
-           Mes == "Enero" ~ "ene - mar",
-           Mes == "Febrero" ~ "ene - mar",
-           Mes == "Marzo" ~ "ene - mar",
-           Mes == "Abril" ~ "abr - jun",
-           Mes == "Mayo" ~ "abr - jun",
-           Mes == "Junio" ~ "abr - jun",
-           Mes == "Julio" ~ "jul - sep",
-           Mes == "Agosto" ~ "jul - sep",
-           Mes == "Septiembre" ~ "jul - sep",
-           Mes == "Octubre" ~ "oct - dic",
-           Mes == "Noviembre" ~ "oct - dic",
-           Mes == "Diciembre" ~ "oct - dic"),
-         Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
-         Periodo = ymd(paste0(Año, "-", Mes, "-01")),
-         Trimestre = paste0(Año, " ", Trimestre),
-         Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
-                                                "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
-                                                "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
-         `Rango de edad`=factor(`Rango de edad`,
-                                levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años",
-                                         "18 a 25 años", "26 a 35", "36 a 45 años", "46 a 59 años", "60 en adelante", "Sin datos")))->indicador_38
-
-
-# Indicador 39: ----------------------------------------------------------------#
-indicador_39 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 39")%>% suppressWarnings()
-
-indicador_39 %>%
-  mutate(Mes=factor(Mes,
-                    levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                             "Septiembre","Octubre", "Noviembre", "Diciembre")),
-         Trimestre = case_when(
-           Mes == "Enero" ~ "ene - mar",
-           Mes == "Febrero" ~ "ene - mar",
-           Mes == "Marzo" ~ "ene - mar",
-           Mes == "Abril" ~ "abr - jun",
-           Mes == "Mayo" ~ "abr - jun",
-           Mes == "Junio" ~ "abr - jun",
-           Mes == "Julio" ~ "jul - sep",
-           Mes == "Agosto" ~ "jul - sep",
-           Mes == "Septiembre" ~ "jul - sep",
-           Mes == "Octubre" ~ "oct - dic",
-           Mes == "Noviembre" ~ "oct - dic",
-           Mes == "Diciembre" ~ "oct - dic"),
-         Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
-         Periodo = ymd(paste0(Año, "-", Mes, "-01")),
-         Trimestre = paste0(Año, " ", Trimestre),
-         Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
-                                                "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
-                                                "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
-         `Rango de edad`=factor(`Rango de edad`,
-                                levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años",
-                                         "18 a 25 años", "26 a 35", "36 a 45 años", "46 a 59 años", "60 en adelante", "Sin datos")))->indicador_39
-
-
-
-
-# Indicador 40: ----------------------------------------------------------------#
-indicador_40 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 40")%>% suppressWarnings()
-
-indicador_40 %>%
-  mutate(Fecha=case_when(
-    Mes=="Enero" ~ 1,
-    Mes=="Febrero" ~ 2,
-    Mes=="Marzo" ~ 3,
-    Mes=="Abril" ~ 4,
-    Mes=="Mayo" ~ 5,
-    Mes=="Junio" ~ 6,
-    Mes=="Julio" ~ 7,
-    Mes=="Agosto" ~ 8,
-    Mes=="Septiembre" ~ 9,
-    Mes=="Octubre" ~ 10,
-    Mes=="Noviembre" ~ 11,
-    Mes=="Diciembre" ~ 12),
-    Mes=factor(Mes,
-               levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
-                        "Septiembre", "Octubre","Noviembre", "Diciembre")),
-    Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_40
-
-
-
-indicador_40$Fecha   <- format(as.Date(indicador_40$Periodo, format = "%d-%m-%Y"))
-indicador_40$Fecha   <- format(as.Date(indicador_40$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
-indicador_40$Fecha   <- as.Date(indicador_40$Periodo, format = "%d-%m-%Y")
-
+# indicador_7 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total de mujeres víctimas de violencia de género atendidas`=sum(`Total de mujeres víctimas de violencia de género atendidas`),
+#             `Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal`),
+#             `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`=sum(`Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`),
+#             `Indicador`=scales::percent(sum(`Total de mujeres víctimas de violencia de género que solicitaron una medida de protección sin tener una canalización formal` + `Total de mujeres víctimas de violencia de género que solicitaron una orden de protección sin tener una canalización formal`)
+#                                         /`Total de mujeres víctimas de violencia de género atendidas`)) ->municipal_7
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_7)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_7)->indicador_7
+# 
+# # Indicador 9: ----------------------------------------------------------------#
+# indicador_9 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 9")%>% suppressWarnings()
+# 
+# indicador_9 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_9
+# 
+# 
+# indicador_9$Fecha   <- format(as.Date(indicador_9$Periodo, format = "%d-%m-%Y"))
+# indicador_9$Fecha   <- format(as.Date(indicador_9$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_9$Fecha   <- as.Date(indicador_9$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_9 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total de medidas de protección emitidas por violencia por razón de género vigentes`=sum(`Total de medidas de protección emitidas por violencia por razón de género vigentes`),
+#             `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`=sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`),
+#             `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
+#             `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/
+#                                           `Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1))->estatal_9
+# 
+# indicador_9 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total de medidas de protección emitidas por violencia por razón de género vigentes`=sum(`Total de medidas de protección emitidas por violencia por razón de género vigentes`),
+#             `Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`=sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`),
+#             `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=sum(`Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`),
+#             `Indicador`=scales::percent(sum(`Medidas de protección emitidas por violencia por razón de género vigentes que fueron trabajadas`+ `Medidas de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)/
+#                                           `Total de medidas de protección emitidas por violencia por razón de género vigentes`, 0.1))->municipal_9
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_9)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_9)->indicador_9
+# 
+# 
+# # Indicador 10: ----------------------------------------------------------------#
+# indicador_10 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 10")%>% suppressWarnings()
+# 
+# indicador_10 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_10
+# 
+# 
+# indicador_10$Fecha   <- format(as.Date(indicador_10$Periodo, format = "%d-%m-%Y"))
+# indicador_10$Fecha   <- format(as.Date(indicador_10$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_10$Fecha   <- as.Date(indicador_10$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_10 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total de órdenes de protección emitidas por violencia por razón de género`=sum(`Total de órdenes de protección emitidas por violencia por razón de género`),
+#             
+#             `Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`=sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`),
+#             
+#             `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=
+#               sum(`Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)) ->estatal_10
+# 
+# indicador_10 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total de órdenes de protección emitidas por violencia por razón de género`=sum(`Total de órdenes de protección emitidas por violencia por razón de género`),
+#             
+#             `Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`=sum(`Órdenes de protección emitidas por violencia por razón de género que fueron trabajadas`),
+#             
+#             `Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`=
+#               sum(`Órdenes de protección emitidas por violencia por razón de género que fueron notificadas efectiva y personalmente a la persona agresora`)) ->municipal_10
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_10)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_10)->indicador_10
+# 
+# 
+# # Indicador 11: ----------------------------------------------------------------#
+# indicador_11 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 11")%>% suppressWarnings()
+# 
+# indicador_11 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_11
+# 
+# 
+# indicador_11$Fecha   <- format(as.Date(indicador_11$Periodo, format = "%d-%m-%Y"))
+# indicador_11$Fecha   <- format(as.Date(indicador_11$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_11$Fecha   <- as.Date(indicador_11$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_11 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Mujeres con medidas de protección vigentes que han recibido seguimiento`=sum(`Mujeres con medidas de protección vigentes que han recibido seguimiento`),
+#             
+#             `Mujeres con órdenes de protección vigentes que han recibido seguimiento`=sum(`Mujeres con órdenes de protección vigentes que han recibido seguimiento`),
+#             
+#             `Total de mujeres con medidas de protección vigentes`=sum(`Total de mujeres con medidas de protección vigentes`),
+#             
+#             `Total de mujeres con órdenes de protección vigentes`=sum(`Total de mujeres con órdenes de protección vigentes`))->estatal_11
+# 
+# indicador_11 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Mujeres con medidas de protección vigentes que han recibido seguimiento`=sum(`Mujeres con medidas de protección vigentes que han recibido seguimiento`),
+#             
+#             `Mujeres con órdenes de protección vigentes que han recibido seguimiento`=sum(`Mujeres con órdenes de protección vigentes que han recibido seguimiento`),
+#             
+#             `Total de mujeres con medidas de protección vigentes`=sum(`Total de mujeres con medidas de protección vigentes`),
+#             
+#             `Total de mujeres con órdenes de protección vigentes`=sum(`Total de mujeres con órdenes de protección vigentes`))->municipal_11
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_11)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_11)->indicador_11
+# 
+# # Indicador 12: ----------------------------------------------------------------#
+# indicador_12 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 12")%>% suppressWarnings()
+# 
+# indicador_12 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_12
+# 
+# 
+# indicador_12$Fecha   <- format(as.Date(indicador_12$Periodo, format = "%d-%m-%Y"))
+# indicador_12$Fecha   <- format(as.Date(indicador_12$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_12$Fecha   <- as.Date(indicador_12$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_12 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total de medidas de protección emitidas vigentes`=sum(`Total de medidas de protección emitidas vigentes`),
+#             `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`),
+#             
+#             `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
+#             
+#             `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`))->estatal_12
+# 
+# indicador_12 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total de medidas de protección emitidas vigentes`=sum(`Total de medidas de protección emitidas vigentes`),
+#             `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de medidas de protección`),
+#             
+#             `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
+#             
+#             `Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`=sum(`Total de carpetas de investigación iniciadas contra personas agresoras derivados del incumplimiento de órdenes de protección`))->municipal_12
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_12)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_12)->indicador_12
+# 
+# 
+# 
+# 
+# 
+# # Indicador 13: ----------------------------------------------------------------#
+# indicador_13 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 13")%>% suppressWarnings()
+# 
+# indicador_13 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_13
+# 
+# 
+# indicador_13$Fecha   <- format(as.Date(indicador_13$Periodo, format = "%d-%m-%Y"))
+# indicador_13$Fecha   <- format(as.Date(indicador_13$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_13$Fecha   <- as.Date(indicador_13$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_13 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total medidas de protección emitidas vigentes`=sum(`Total medidas de protección emitidas vigentes`),
+#             `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
+#             `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
+#             `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
+#             `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1))->estatal_13
+# 
+# indicador_13 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total medidas de protección emitidas vigentes`=sum(`Total medidas de protección emitidas vigentes`),
+#             `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
+#             `Total de órdenes de protección emitidas vigentes`=sum(`Total de órdenes de protección emitidas vigentes`),
+#             `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`=sum(`Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`),
+#             `Indicador`=scales::percent(sum((`Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`+ `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)`)/(`Total medidas de protección emitidas vigentes` +`Total de órdenes de protección emitidas vigentes`)-1)*-1, 0.1))->municipal_13
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_13)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_13)->indicador_13
+# 
+# 
+# # Indicador 16: ----------------------------------------------------------------#
+# indicador_16 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 16")%>% suppressWarnings()
+# 
+# indicador_16 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12),
+#     # Trimestre = case_when(
+#     #     Mes == "Enero" ~ "ene - mar",
+#     #     Mes == "Febrero" ~ "ene - mar",
+#     #     Mes == "Marzo" ~ "ene - mar",
+#     #     Mes == "Abril" ~ "abr - jun",
+#     #     Mes == "Mayo" ~ "abr - jun",
+#     #     Mes == "Junio" ~ "abr - jun",
+#     #     Mes == "Julio" ~ "jul - sep",
+#     #     Mes == "Agosto" ~ "jul - sep",
+#     #     Mes == "Septiembre" ~ "jul - sep",
+#     #     Mes == "Octubre" ~ "oct - dic",
+#     #     Mes == "Noviembre" ~ "oct - dic",
+#     #     Mes == "Diciembre" ~ "oct - dic"),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     #  Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
+#     `Rango de edad`=factor(`Rango de edad`, levels = c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
+#                                                        "36 a 45 años", "46 a 59 años", "60 en adelante", "No especifica")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01"))#,
+#     #Trimestre = paste0(Año, " ", Trimestre)
+#   ) ->indicador_16
+# 
+# 
+# # indicador_16$Fecha   <- format(as.Date(indicador_16$Periodo, format = "%d-%m-%Y"))
+# # indicador_16$Fecha   <- format(as.Date(indicador_16$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# # indicador_16$Fecha<- as.character(indicador_16$Fecha)
+# 
+# 
+# # Indicador 17: ----------------------------------------------------------------#
+# indicador_17 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 17")%>% suppressWarnings()
+# 
+# # indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`<-as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`,format="%d/%m/%y")
+# # indicador_17$Mes     <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%B")
+# # indicador_17$Month     <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
+# 
+# # indicador_17$Periodo <-format(as.Date(indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`, format="%Y-%m-%d"), "%Y-%m-%d")
+# 
+# #indicador_17$Periodo <- indicador_17$`Fecha de referidas por fiscalía (dd-mm-aa)`
+# 
+# indicador_17 %>% 
+#   filter(Año >=2019) %>% 
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#   Rango= case_when(
+#     `Edad (0-99)` <= 2 ~ "0 a 2 años",
+#     `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
+#     `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
+#     `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
+#     `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
+#     `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
+#     `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
+#     `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
+#     `Edad (0-99)` >= 60  ~ "60 en adelante"),
+#   Rango=factor(Rango,
+#                levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
+#                         "36 a 45 años", "46 a 59 años", "60 en adelante")))->indicador_17
+# 
+# 
+# indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="ABUSO SEXUAL INTANTIL"]<- "Abuso sexual infantil"
+# indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="VIOLACIÓN"]<- "Violación"      
+# # indicador_17$`Tipo: (abuso sexual infantil / violación)`[indicador_17$`Tipo: (abuso sexual infantil / violación)`=="VIOLENCIA SEXUAL"]<- "Violencia sexual"
+# 
+# 
+# # indicador_17$Fecha   <- format(as.Date(indicador_17$Periodo, format = "%d-%m-%Y"))
+# # indicador_17$Fecha   <- format(as.Date(indicador_17$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# # indicador_17$Fecha   <- as.Date(indicador_17$Periodo, format = "%d-%m-%Y")
+# # 
+# # indicador_17$Fecha<-as.character(indicador_17$Periodo)
+# 
+# 
+# # Indicador 18: ----------------------------------------------------------------#
+# indicador_18 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 18")%>% suppressWarnings()
+# 
+# # 
+# # indicador_18$`Fecha (dd-mm-aa)`<-as.Date(indicador_18$`Fecha (dd-mm-aa)`,format="%d/%m/%Y")
+# # indicador_18$Año<-format(as.Date(indicador_18$`Fecha (dd-mm-aa)` , format="%d/%m/%Y"), "%Y")
+# # indicador_18$Mes<-format(as.Date(indicador_18$`Fecha (dd-mm-aa)` , format="%d/%m/%Y"), "%B")
+# # indicador_18$Month  <-format(as.Date(indicador_18$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
+# 
+# 
+# 
+# indicador_18 %>% 
+#   # mutate(Fecha=case_when(
+#   #   Mes=="Enero" ~ 1,
+#   #   Mes=="Febrero" ~ 2,
+#   #   Mes=="Marzo" ~ 3,
+#   #   Mes=="Abril" ~ 4,
+#   #   Mes=="Mayo" ~ 5,
+#   #   Mes=="Junio" ~ 6,
+#   #   Mes=="Julio" ~ 7,
+#   #   Mes=="Agosto" ~ 8,
+#   #   Mes=="Septiembre" ~ 9,
+#   #   Mes=="Octubre" ~ 10,
+# #   Mes=="Noviembre" ~ 11,
+# #   Mes=="Diciembre" ~ 12,
+# #   
+# # ),
+# # Mes=factor(Mes,
+# #            levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+# #                     "Septiembre", "Octubre","Noviembre", "Diciembre")),
+# # Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+# mutate(
+#   Rango= case_when(
+#     `Edad (0-99)` <= 2 ~ "0 a 2 años",
+#     `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
+#     `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
+#     `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
+#     `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
+#     `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
+#     `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
+#     `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
+#     `Edad (0-99)` >= 60  ~ "60 en adelante"),
+#   Rango=factor(Rango,
+#                levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
+#                         "36 a 45 años", "46 a 59 años", "60 en adelante")))->indicador_18
+# 
+# 
+# # indicador_18$Fecha<-as.character(indicador_18$Periodo)
+# 
+# indicador_18$`Causal: (violacion/ salud/ riesgo)`[indicador_18$`Causal: (violacion/ salud/ riesgo)`=="Violación"]<- "Violación"
+# indicador_18$`Causal: (violacion/ salud/ riesgo)`[indicador_18$`Causal: (violacion/ salud/ riesgo)`=="Salud|SALUD|salud"]<- "Violación"
+# 
+# 
+# # indicador_18$Fecha   <- format(as.Date(indicador_18$Periodo, format = "%d-%m-%Y"))
+# # indicador_18$Fecha   <- format(as.Date(indicador_18$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# # indicador_18$Fecha   <- as.Date(indicador_18$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# # Indicador 19: ----------------------------------------------------------------#
+# indicador_19 <- read_excel("indicadores_salud.xlsx",sheet = "Ind 19")%>% suppressWarnings()
+# 
+# # indicador_19$Fecha   <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)` , format = "%d/%m/%Y"))
+# # indicador_19$Año     <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%Y")
+# # indicador_19$Mes     <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%B")
+# # indicador_19$Month   <-format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%m")
+# # 
+# 
+# #indicador_19$Periodo <- format(as.Date(indicador_19$`Fecha (dd-mm-aa)`, format="%Y-%m-%d"), "%Y-%m")
+# 
+# indicador_19 %>%
+#   # filter(Año >= 2021) %>%
+#   mutate(
+#     # Fecha=case_when(
+#     #   Mes=="Enero" ~ 1,
+#     #   Mes=="Febrero" ~ 2,
+#     #   Mes=="Marzo" ~ 3,
+#     #   Mes=="Abril" ~ 4,
+#     #   Mes=="Mayo" ~ 5,
+#     #   Mes=="Junio" ~ 6,
+#     #   Mes=="Julio" ~ 7,
+#     #   Mes=="Agosto" ~ 8,
+#     #   Mes=="Septiembre" ~ 9,
+#     #   Mes=="Octubre" ~ 10,
+#     #   Mes=="Noviembre" ~ 11,
+#     #   Mes=="Diciembre" ~ 12),
+#     # Mes=factor(Mes,
+#     #            levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#     #                     "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     # Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#     `Causal: (salud/riesgo)`= case_when(
+#       `Causal: (salud/riesgo)`== "Salud" ~ "Daño a la salud",
+#       `Causal: (salud/riesgo)`== "Causal no legal" ~ "Causal no legal",
+#       `Causal: (salud/riesgo)`== "Violación" ~ "Causal de violación"),
+#     
+#     # 
+#     # `Causal: (salud/riesgo)`== "4.Riesgo a la salud" ~ "Daño a la salud",
+#     # `Causal: (salud/riesgo)`== "5.Riesgo de muerte" ~ "Peligro de muerte",
+#     # `Causal: (salud/riesgo)`== "1. Violación Sexual (IVE)" ~ "Causal de violación",
+#     # `Causal: (salud/riesgo)`== "4.       Grave daño salud"  ~ "Daño a la salud",
+#     # `Causal: (salud/riesgo)`== "5.       Peligro de muerte" ~ "Peligro de muerte",
+#     # 
+#     # `Causal: (salud/riesgo)`== "4.       Grave daño salud"  ~ "Daño a la salud",
+#     # `Causal: (salud/riesgo)`== "5.       Peligro de muerte" ~ "Peligro de muerte"),
+#     Rango= case_when(
+#       `Edad (0-99)` <= 2 ~ "0 a 2 años",
+#       `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
+#       `Edad (0-99)` >= 6 & `Edad (0-99)` <= 12 ~ "6 a 12 años",
+#       `Edad (0-99)` >= 13 & `Edad (0-99)` <= 17 ~ "13 a 17 años",
+#       `Edad (0-99)` >= 18 & `Edad (0-99)` <= 25 ~ "18 a 25 años",
+#       `Edad (0-99)` >= 26 & `Edad (0-99)`  <= 35 ~ "26 a 35 años",
+#       `Edad (0-99)` >= 36 & `Edad (0-99)` <= 45 ~ "36 a 45 años",
+#       `Edad (0-99)` >= 46 & `Edad (0-99)` <= 59 ~ "46 a 59 años",
+#       `Edad (0-99)` >= 60  ~ "60 en adelante"),
+#     Rango=factor(Rango,
+#                  levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
+#                           "36 a 45 años", "46 a 59 años", "60 en adelante")),
+#     `¿Se realizó el procedimiento? (sí/no)`=case_when(
+#       `¿Se realizó el procedimiento? (sí/no)`== "NA"~0,
+#       `¿Se realizó el procedimiento? (sí/no)`== "SI"~1))->indicador_19
+# 
+# 
+# 
+# 
+# # Indicador 20: ----------------------------------------------------------------#
+# indicador_20 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 20")%>% suppressWarnings()
+# 
+# indicador_20 %>% 
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#     
+#     `Notificadas al mp: (si/no)` = case_when(
+#       `Notificadas al mp: (si/no)`== "SI" ~ 1,
+#       `Notificadas al mp: (si/no)`== "NO" ~ 0,
+#       T~0),
+#     `Tipo de violencia: (violencia familiar / sexual)`=case_when(
+#       str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "psic|PSIC|Psic") ~ "Violencia psicológica", 
+#       str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "eco|ECO|Eco") ~ "Violencia económica",
+#       str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "fami|FAMI|Fami") ~ "Violencia familiar",
+#       str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "física|Física|FÍSICA|FISICA|Fisica|fisica") ~ "Violencia física",
+#       str_detect(`Tipo de violencia: (violencia familiar / sexual)`, "sex|SEX|Sex") ~ "Violencia sexual",
+#       T~"Otro tipo"))-> indicador_20
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="SE IGNORA"] <- "NO ESPECIFICADO"
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`== NA] <- "NO ESPECIFICADO"
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="NA"] <- "NO ESPECIFICADO"
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="LUGAR No especificado"] <- "NO ESPECIFICADO"
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="GRANJA"] <- "NO ESPECIFICADO"
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)` <- toupper(indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`)
+# 
+# 
+# 
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="LUGAR NO ESPECIFICADO"] <- "NO ESPECIFICADO"
+# indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`[indicador_20$`Modalidad de violencia (familiar/ laboral y docente/ comunitaria/ institucional/ feminicida)`=="OTRO LUGAR"] <- "NO ESPECIFICADO"
+# 
+# 
+# # Indicador 21: ----------------------------------------------------------------#
+# indicador_21 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 21")%>% suppressWarnings()
+# 
+# indicador_21 %>% 
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#     `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)` = case_when(
+#       `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)`== "SI" ~ 1,
+#       `Se cuenta con equipo y material para procedimiento ile/ive: (si/no)`== "NO" ~ 0,
+#       T~0))->indicador_21
+# 
+# 
+# 
+# # Indicador 22: ----------------------------------------------------------------#
+# indicador_22 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 22")%>% suppressWarnings()
+# 
+# 
+# indicador_22 %>% 
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_22
+# 
+# indicador_22$Formación <- toupper(indicador_22$Formación)
+# 
+# 
+# # Indicador 23: ----------------------------------------------------------------#
+# indicador_23 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 23")%>% suppressWarnings()
+# 
+# indicador_23 %>% 
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
+#   mutate(`Objetor de conciencia: (SI/NO)` =case_when(
+#     `Objetor de conciencia: (SI/NO)`=="SI"~0,
+#     `Objetor de conciencia: (SI/NO)`=="NO"~1)) %>% 
+#   mutate(Función =toupper(Función)) %>% 
+#   mutate(Función=case_when(
+#     str_detect(`Función`, "MEDIC|ADSC|GINE")~"Personal médico",
+#     str_detect(`Función`, "ENFER")~"Personal de enfermería",
+#     T~"No se especifica"))->indicador_23
+# 
+# indicador_23$Formación <- toupper(indicador_23$Formación)
+# unique(indicador_23$Función)
+# 
+# 
+# # Indicador 24: ----------------------------------------------------------------#
+# indicador_24 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 24")%>% suppressWarnings()
+# 
+# indicador_24 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
+#   mutate(Actualizan=case_when(
+#     Actualizan=="Si"~1,
+#     Actualizan=="No"~0)) %>% 
+#   
+#   mutate(Instancia=case_when(
+#     Instancia==NA ~ 0,
+#     Instancia==NA_character_~ 0,
+#     T~1))->indicador_24
+# 
+# 
+# 
+# indicador_24$Fecha   <- format(as.Date(indicador_24$Periodo, format = "%d-%m-%Y"))
+# indicador_24$Fecha   <- format(as.Date(indicador_24$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_24$Fecha   <- as.Date(indicador_24$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_24 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(Actualizan=sum(Actualizan),
+#             Instancia=sum(Instancia),
+#             `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)) ->estatal_24
+# 
+# indicador_24 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(Actualizan=sum(Actualizan),
+#             Instancia=sum(Instancia),
+#             `Indicador`=scales::percent(sum(Actualizan/Instancia), 0.1)) ->municipal_24
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_24)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_24)->indicador_24
+# 
+# 
+# # Indicador 25: ----------------------------------------------------------------#
+# indicador_25 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 25")%>% suppressWarnings()
+# 
+# indicador_25 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) ->indicador_25
+# 
+# 
+# 
+# indicador_25$Fecha   <- format(as.Date(indicador_25$Periodo, format = "%d-%m-%Y"))
+# indicador_25$Fecha   <- format(as.Date(indicador_25$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_25$Fecha   <- as.Date(indicador_25$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# # Indicador 26: ----------------------------------------------------------------#
+# indicador_26 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 26")%>% suppressWarnings()
+# 
+# indicador_26 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
+#   mutate(Actualización=case_when(
+#     Actualización=="Si"~1,
+#     Actualización=="No"~0))->indicador_26
+# 
+# 
+# 
+# indicador_26$Fecha   <- format(as.Date(indicador_26$Periodo, format = "%d-%m-%Y"))
+# indicador_26$Fecha   <- format(as.Date(indicador_26$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_26$Fecha   <- as.Date(indicador_26$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# # Indicador 27: ----------------------------------------------------------------#
+# indicador_27 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 27")%>% suppressWarnings()
+# 
+# indicador_27 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_27
+# 
+# 
+# 
+# indicador_27$Fecha   <- format(as.Date(indicador_27$Periodo, format = "%d-%m-%Y"))
+# indicador_27$Fecha   <- format(as.Date(indicador_27$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_27$Fecha   <- as.Date(indicador_27$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# # Indicador 28: ----------------------------------------------------------------#
+# indicador_28 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 28")%>% suppressWarnings()
+# 
+# indicador_28 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   `Mujeres atendidas en el CJM`=as.numeric(`Mujeres atendidas en el CJM`),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_28
+# 
+# 
+# 
+# indicador_28$Fecha   <- format(as.Date(indicador_28$Periodo, format = "%d-%m-%Y"))
+# indicador_28$Fecha   <- format(as.Date(indicador_28$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_28$Fecha   <- as.Date(indicador_28$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# 
+# 
+# # Indicador 29: ----------------------------------------------------------------#
+# indicador_29 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 29")%>% suppressWarnings()
+# 
+# indicador_29 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12
+#     # Mes=="Enero a Junio"~1,
+#     # Mes=="Julio a Diciembre"~6,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre", "Enero a Junio", "Julio a Diciembre"
+#              )),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_29
+# 
+# 
+# 
+# indicador_29$Fecha   <- format(as.Date(indicador_29$Periodo, format = "%d-%m-%Y"))
+# indicador_29$Fecha   <- format(as.Date(indicador_29$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_29$Fecha   <- as.Date(indicador_29$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de Contra la Dignidad"] <- "Delitos contra la dignidad"
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nCORRUPCIÓN DE MENORES"] <- "Corrupción de menores"
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de CORRUPCIÓN DE MENORES"] <- "Corrupción de menores"
+# 
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nPROSTITUCIÓN INFANTIL"] <- "Prostitución infantil"
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de PROSTITUCIÓN INFANTIL"] <- "Prostitución infantil"
+# 
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de\nULTRAJES A LA MORAL"] <- "Ultrajes a la moral"
+# indicador_29$Delito[indicador_29$Delito=="Carpetas de Investigación por el delito de ULTRAJES A LA MORAL"] <- "Ultrajes a la moral"
+# 
+# 
+# indicador_29$Delito[indicador_29$Delito=="Desobediencia o Resistencia de Particulares"] <- "Desobediencia o resistencia de particulares"
+# indicador_29$Delito[indicador_29$Delito=="Homicidio (muerte violenta de una mujer)"] <- "Muertes violentas (aún en investigación)"
+# indicador_29$Delito[indicador_29$Delito=="Instigación o ayuda al suicidio feminicida"] <- "Suicidio feminicida"
+# indicador_29$Delito[indicador_29$Delito=="NAM bajo los protocolos de perspectiva y violencia de género"] <- "Por el delito que resulte"
+# # indicador_29$Delito[indicador_29$Delito==""] <- ""
+# 
+# # unique(sort(indicador_29$Delito)) %>% as.tibble() %>%  View()
+# 
+# 
+# # indicador_29 %>% 
+# #   group_by(Año,Mes, Periodo, Carpeta, Delito) %>% 
+# #   summarise(`Total de casos por violencia por razón de género denunciados`=sum(Registro, na.rm=T))-> estatal_29
+# # 
+# # indicador_29 %>% 
+# #   group_by(Año,Mes, Periodo, Delito, Carpeta, Municipio) %>% 
+# #   filter(Carpeta=="Judicializada") %>% 
+# #   summarise(`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`=sum(Registro, na.rm=T))->municipal_29
+# 
+# 
+# # entidad<- c("Estado de Jalisco")
+# # cbind(entidad, estatal_29)->Estatal_total
+# # names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# # 
+# # 
+# # merge(Estatal_total, municipal_29,
+# #       by.x = "Periodo",
+# #       by.y = "Periodo") %>%
+# #   select(Periodo, Año.x, Mes.x, Municipio.x, Delito.x,Carpeta.x, `Total de casos por violencia por razón de género denunciados`,
+# #          `Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`)->tabla_29_3
+# # 
+# # names(tabla_29_3)[names(tabla_29_3) == "Año.x"] <- "Año"
+# # names(tabla_29_3)[names(tabla_29_3) == "Mes.x"] <- "Mes"
+# # names(tabla_29_3)[names(tabla_29_3) == "Municipio.x"] <- "Municipio"
+# # names(tabla_29_3)[names(tabla_29_3) == "Delito.x"] <- "Delito"
+# # names(tabla_29_3)[names(tabla_29_3) == "Carpeta.x"] <- "Carpeta"
+# # 
+# # 
+# # 
+# # tabla_29_3->indicador_29
+# # 
+# 
+# 
+# # Indicador 30: ----------------------------------------------------------------#
+# indicador_30 <- read_excel("indicadores_fiscalia.xlsx", 
+#                            sheet = "Ind 30", col_types = c("numeric", 
+#                                                            "text", "text", "text", "date", "numeric", 
+#                                                            "text", "text", "numeric"))
+# indicador_30 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
+#   mutate(`Año de sentencia`=case_when(
+#     `Año de sentencia`==2023~1,
+#     `Año de sentencia`==2022~1,
+#     `Año de sentencia`==2021~1,
+#     `Año de sentencia`==2020~1, 
+#     T~0))->indicador_30
+# 
+# 
+# 
+# indicador_30$Fecha   <- format(as.Date(indicador_30$Periodo, format = "%d-%m-%Y"))
+# indicador_30$Fecha   <- format(as.Date(indicador_30$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_30$Fecha   <- as.Date(indicador_30$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# # Indicador 32: ----------------------------------------------------------------#
+# indicador_32 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 32")%>% suppressWarnings()
+# 
+# indicador_32 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_32
+# 
+# 
+# 
+# indicador_32$Fecha   <- format(as.Date(indicador_32$Periodo, format = "%d-%m-%Y"))
+# indicador_32$Fecha   <- format(as.Date(indicador_32$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_32$Fecha   <- as.Date(indicador_32$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# 
+# indicador_32 %>% 
+#   group_by(Año, Mes, Fecha) %>% 
+#   summarise(`Total de número de denuncias de niñas, adolescentes y mujeres desaparecidas`= sum(
+#     `0 a 2 años`+
+#       `3 a 5 años`+
+#       `6 a 12 años`+
+#       `13 a 17 años`+
+#       `18 a 25 años`+
+#       `26 a 35 años`+
+#       `36 a 45 años`+
+#       `46 a 59 años`+
+#       `60  años en adelante`+
+#       `Sin datos`, na.rm = T),
+#     `Número de cédulas de Alerta Amber emitidas` = sum(`Número de cédulas de Alerta Amber emitidas`, na.rm = T),
+#     `Número de cédulas de Protocolo Alba emitidas` =sum(`Número de cédulas de Protocolo Alba emitidas`, na.rm = T),
+#     `Número de informes de factor de riesgo elaborados` =sum(`Número de informes de factor de riesgo elaborados`, na.rm = T))->estatal_32
+# 
+# indicador_32 %>% 
+#   group_by(Año, Mes, Fecha, Municipio) %>% 
+#   summarise(`Total de número de denuncias de niñas, adolescentes y mujeres desaparecidas`= sum(
+#     `0 a 2 años`+
+#       `3 a 5 años`+
+#       `6 a 12 años`+
+#       `13 a 17 años`+
+#       `18 a 25 años`+
+#       `26 a 35 años`+
+#       `36 a 45 años`+
+#       `46 a 59 años`+
+#       `60  años en adelante`+
+#       `Sin datos`, na.rm = T),
+#     `Número de cédulas de Alerta Amber emitidas` = sum(`Número de cédulas de Alerta Amber emitidas`, na.rm = T),
+#     `Número de cédulas de Protocolo Alba emitidas` =sum(`Número de cédulas de Protocolo Alba emitidas`, na.rm = T),
+#     `Número de informes de factor de riesgo elaborados` =sum(`Número de informes de factor de riesgo elaborados`, na.rm = T))->municipal_32
+# 
+# 
+# entidad<- c("Estado de Jalisco")
+# cbind(entidad, estatal_32)->Estatal_total
+# names(Estatal_total)[names(Estatal_total) == "...1"] <- "Municipio"
+# rbind(Estatal_total, municipal_32)->indicador_32
+# 
+# 
+# 
+# # Indicador 33: ----------------------------------------------------------------#
+# indicador_33 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 33")%>% suppressWarnings()
+# 
+# indicador_33 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_33
+# 
+# 
+# 
+# indicador_33$Fecha   <- format(as.Date(indicador_33$Periodo, format = "%d-%m-%Y"))
+# indicador_33$Fecha   <- format(as.Date(indicador_33$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_33$Fecha   <- as.Date(indicador_33$Periodo, format = "%d-%m-%Y")
+# 
+# 
+# # Indicador 34: ----------------------------------------------------------------#
+# indicador_34 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 34")%>% suppressWarnings()
+# 
+# indicador_34 %>%
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#     Trimestre = case_when(
+#       Mes == "Enero" ~ "ene - mar",
+#       Mes == "Febrero" ~ "ene - mar",
+#       Mes == "Marzo" ~ "ene - mar",
+#       Mes == "Abril" ~ "abr - jun",
+#       Mes == "Mayo" ~ "abr - jun",
+#       Mes == "Junio" ~ "abr - jun",
+#       Mes == "Julio" ~ "jul - sep",
+#       Mes == "Agosto" ~ "jul - sep",
+#       Mes == "Septiembre" ~ "jul - sep",
+#       Mes == "Octubre" ~ "oct - dic",
+#       Mes == "Noviembre" ~ "oct - dic",
+#       Mes == "Diciembre" ~ "oct - dic"),
+#     Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
+#     Trimestre = paste0(Año, " ", Trimestre))->indicador_34
+# 
+# 
+# 
+# # Indicador 35: ----------------------------------------------------------------#
+# indicador_35 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 35")%>% suppressWarnings()
+# 
+# indicador_35 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12,
+#     
+#   ),
+#   Mes=factor(Mes,
+#              levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                       "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#   Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_35
+# 
+# 
+# 
+# indicador_35$Fecha   <- format(as.Date(indicador_35$Periodo, format = "%d-%m-%Y"))
+# indicador_35$Fecha   <- format(as.Date(indicador_35$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_35$Fecha   <- as.Date(indicador_35$Periodo, format = "%d-%m-%Y")
+# 
+# # Indicador 36: ----------------------------------------------------------------#
+# indicador_36 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 36")%>% suppressWarnings()
+# 
+# indicador_36 %>%
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")),
+#     Trimestre = case_when(
+#       Mes == "Enero" ~ "ene - mar",
+#       Mes == "Febrero" ~ "ene - mar",
+#       Mes == "Marzo" ~ "ene - mar",
+#       Mes == "Abril" ~ "abr - jun",
+#       Mes == "Mayo" ~ "abr - jun",
+#       Mes == "Junio" ~ "abr - jun",
+#       Mes == "Julio" ~ "jul - sep",
+#       Mes == "Agosto" ~ "jul - sep",
+#       Mes == "Septiembre" ~ "jul - sep",
+#       Mes == "Octubre" ~ "oct - dic",
+#       Mes == "Noviembre" ~ "oct - dic",
+#       Mes == "Diciembre" ~ "oct - dic"),
+#     Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
+#     Trimestre = paste0(Año, " ", Trimestre),
+#     Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
+#                                            "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
+#                                            "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
+#     `Rango de edad`=factor(`Rango de edad`,
+#                            levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años", "Sin datos")))->indicador_36
+# 
+# 
+# # Indicador 37: ----------------------------------------------------------------#
+# indicador_37 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 37")%>% suppressWarnings()
+# 
+# indicador_37 %>%
+#   mutate(
+#     Fecha=case_when(
+#       Mes=="Enero" ~ 1,
+#       Mes=="Febrero" ~ 2,
+#       Mes=="Marzo" ~ 3,
+#       Mes=="Abril" ~ 4,
+#       Mes=="Mayo" ~ 5,
+#       Mes=="Junio" ~ 6,
+#       Mes=="Julio" ~ 7,
+#       Mes=="Agosto" ~ 8,
+#       Mes=="Septiembre" ~ 9,
+#       Mes=="Octubre" ~ 10,
+#       Mes=="Noviembre" ~ 11,
+#       Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_37
+# 
+# 
+# # Indicador 38: ----------------------------------------------------------------#
+# indicador_38 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 38")%>% suppressWarnings()
+# 
+# indicador_38 %>%
+#   mutate(Mes=factor(Mes,
+#                     levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                              "Septiembre","Octubre", "Noviembre", "Diciembre")),
+#          Trimestre = case_when(
+#            Mes == "Enero" ~ "ene - mar",
+#            Mes == "Febrero" ~ "ene - mar",
+#            Mes == "Marzo" ~ "ene - mar",
+#            Mes == "Abril" ~ "abr - jun",
+#            Mes == "Mayo" ~ "abr - jun",
+#            Mes == "Junio" ~ "abr - jun",
+#            Mes == "Julio" ~ "jul - sep",
+#            Mes == "Agosto" ~ "jul - sep",
+#            Mes == "Septiembre" ~ "jul - sep",
+#            Mes == "Octubre" ~ "oct - dic",
+#            Mes == "Noviembre" ~ "oct - dic",
+#            Mes == "Diciembre" ~ "oct - dic"),
+#          Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
+#          Periodo = ymd(paste0(Año, "-", Mes, "-01")),
+#          Trimestre = paste0(Año, " ", Trimestre),
+#          Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
+#                                                 "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
+#                                                 "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
+#          `Rango de edad`=factor(`Rango de edad`,
+#                                 levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años",
+#                                          "18 a 25 años", "26 a 35", "36 a 45 años", "46 a 59 años", "60 en adelante", "Sin datos")))->indicador_38
+# 
+# 
+# # Indicador 39: ----------------------------------------------------------------#
+# indicador_39 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 39")%>% suppressWarnings()
+# 
+# indicador_39 %>%
+#   mutate(Mes=factor(Mes,
+#                     levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                              "Septiembre","Octubre", "Noviembre", "Diciembre")),
+#          Trimestre = case_when(
+#            Mes == "Enero" ~ "ene - mar",
+#            Mes == "Febrero" ~ "ene - mar",
+#            Mes == "Marzo" ~ "ene - mar",
+#            Mes == "Abril" ~ "abr - jun",
+#            Mes == "Mayo" ~ "abr - jun",
+#            Mes == "Junio" ~ "abr - jun",
+#            Mes == "Julio" ~ "jul - sep",
+#            Mes == "Agosto" ~ "jul - sep",
+#            Mes == "Septiembre" ~ "jul - sep",
+#            Mes == "Octubre" ~ "oct - dic",
+#            Mes == "Noviembre" ~ "oct - dic",
+#            Mes == "Diciembre" ~ "oct - dic"),
+#          Trimestre=factor(Trimestre, levels = c("ene - mar", "abr - jun", "jul - sep", "oct - dic")),
+#          Periodo = ymd(paste0(Año, "-", Mes, "-01")),
+#          Trimestre = paste0(Año, " ", Trimestre),
+#          Trimestre=factor(Trimestre, levels = c("2020 ene - mar", "2020 abr - jun", "2020 jul - sep", "2020 oct - dic",
+#                                                 "2021 ene - mar", "2021 abr - jun", "2021 jul - sep", "2021 oct - dic",
+#                                                 "2022 ene - mar", "2022 abr - jun", "2022 jul - sep", "2022 oct - dic")),
+#          `Rango de edad`=factor(`Rango de edad`,
+#                                 levels=c("0 a 2 años", "3 a 5 años", "6  a 12 años","13 a 17 años",
+#                                          "18 a 25 años", "26 a 35", "36 a 45 años", "46 a 59 años", "60 en adelante", "Sin datos")))->indicador_39
+# 
+# 
+# 
+# 
+# # Indicador 40: ----------------------------------------------------------------#
+# indicador_40 <- read_excel("indicadores_fiscalia.xlsx", sheet = "Ind 40")%>% suppressWarnings()
+# 
+# indicador_40 %>%
+#   mutate(Fecha=case_when(
+#     Mes=="Enero" ~ 1,
+#     Mes=="Febrero" ~ 2,
+#     Mes=="Marzo" ~ 3,
+#     Mes=="Abril" ~ 4,
+#     Mes=="Mayo" ~ 5,
+#     Mes=="Junio" ~ 6,
+#     Mes=="Julio" ~ 7,
+#     Mes=="Agosto" ~ 8,
+#     Mes=="Septiembre" ~ 9,
+#     Mes=="Octubre" ~ 10,
+#     Mes=="Noviembre" ~ 11,
+#     Mes=="Diciembre" ~ 12),
+#     Mes=factor(Mes,
+#                levels=c("Enero", "Febrero", "Marzo","Abril", "Mayo", "Junio","Julio", "Agosto",
+#                         "Septiembre", "Octubre","Noviembre", "Diciembre")),
+#     Periodo = ymd(paste0(Año, "-", Fecha, "-01")))->indicador_40
+# 
+# 
+# 
+# indicador_40$Fecha   <- format(as.Date(indicador_40$Periodo, format = "%d-%m-%Y"))
+# indicador_40$Fecha   <- format(as.Date(indicador_40$Periodo, format = "%d-%m-%Y"),  "%Y-%m")
+# indicador_40$Fecha   <- as.Date(indicador_40$Periodo, format = "%d-%m-%Y")
+#####
+#como actualmente mete la base de datos
+bases <- read_rds("bases_avgm.rds")
+nombres_bases <- names(bases)
+for (i in nombres_bases) {
+  assign(i, bases[[i]])
+}
 
 # home_page <- div(
 #   titlePanel("Home page"),
@@ -1884,8 +1874,8 @@ tags$script('
                                          label = "Seleccione el mes",
                                          choices = unique(sort(indicador_3$Mes)),
                                         multiple = TRUE))),
-                              fluidRow(column(4,dataTableOutput("t_3", height = "1200px", width = "auto")),
-                                       column(8, offset = 0, plotlyOutput("gr3",  height = "1200px", width = "auto"))),
+                              fluidRow(dataTableOutput("t_3", height = "400px", width = "auto")),
+                              fluidRow(plotlyOutput("gr3",  height = "900px", width = "auto")),
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                        ))),
                  
@@ -2209,8 +2199,8 @@ box(
       selected = "Estado de Jalisco"
     ))),
   fluidRow(
-    column(5,dataTableOutput("t_13", height = "auto", width = "auto")),
-    column(7,plotlyOutput("gr13",  height = "700px", width = "auto"))),
+    dataTableOutput("t_13", height = "auto", width = "auto")),
+  fluidRow(plotlyOutput("gr13",  height = "600px", width = "auto")),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
   ))),
@@ -2830,7 +2820,7 @@ box(
 
 # Protocolo alba----------------------------------------------------------------
 navbarMenu(title = p("Protocolo Alba", style ="font-weight:bold; color: #ffffff;"),
-tabPanel(title=h6("PENDIENTE: Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas", style="break-spaces: pre-line", class="p-2"),
+tabPanel(title=h6("PENDIENTE: Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas", style="break-spaces: pre-line", class="p-2")),
 tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas", style="break-spaces: pre-line", class="p-2"),
          tabItem(tabName = "Ind32",
                  fluidRow(width=10,
@@ -2870,12 +2860,12 @@ tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes 
                      ))),
                    
                    fluidRow(
-                     column(4,dataTableOutput("t_32", height = "auto", width = "auto")),
-                     column(6,  offset = 2, 
-                            plotlyOutput("gr32",  height = "700px", width = "auto"))),
+                     dataTableOutput("t_32", height = "auto", width = "auto")),
+                     fluidRow( 
+                              plotlyOutput("gr32",  height = "600px", width = "auto")),
                    fluidRow(column(8, offset = 1,
                                    h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-                            )))))),
+                            ))))),
 
 tabPanel(title = h6("Indicador 33: Porcentaje de cédulas únicas de difusión que son remitidas al Comité Técnico de Colaboración", 
                     style="break-spaces: pre-line", class="p-2"),
@@ -2949,9 +2939,9 @@ tabPanel(title = h6("Indicador 34: Porcentaje de casos de búsqueda y localizaci
       multiple = TRUE
     ))),
   fluidRow(
-    column(4,dataTableOutput("t_34", height = "1000px", width = "auto")),
-    column(7, offset=1, 
-           plotlyOutput("gr34",  height = "1000px", width = "auto"))),
+    dataTableOutput("t_34", height = "400px", width = "auto")),
+  fluidRow(
+           plotlyOutput("gr34",  height = "700px", width = "auto")),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
            ))),
@@ -3172,8 +3162,8 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
                                      choices = unique(sort(indicador_39$Mes)),
                                      multiple = TRUE
                                      ))),
-                          fluidRow(column(4,dataTableOutput("t_40", height = "1200px", width = "auto")),
-                                   column(6, offset=2, plotlyOutput("gr40",  height = "1000px", width = "auto"))),
+                          fluidRow(dataTableOutput("t_40", height = "350px", width = "auto")),
+                          fluidRow(plotlyOutput("gr40",  height = "800px", width = "auto")),
                           fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br())
              )),
              tabPanel(title = h6("PENDIENTE: Indicador 41: Porcentaje de casos judicializados como feminicidios juzgados con perspectiva de género"),
@@ -4304,7 +4294,7 @@ server <- function(input, output, session) {
       aes(x = Fecha, y = Total, 
           colour = Clasificación, group=Clasificación, text=text) +
       geom_line(size = 1.5) + geom_point(size = 2)+
-      labs(x="", y="", title = "Indicador 12",
+      labs(x="", y="", #title = "Indicador 12",
            color = "Clasificación") +
       theme_minimal()+   
       facet_wrap(.~Clasificación, scales = "free_y", ncol=1)+
@@ -4323,7 +4313,7 @@ server <- function(input, output, session) {
     
     
     ggplotly(gr12, tooltip = "text") %>% 
-      layout(title = list(text = paste0(" Indicador 12: ",ind_12_reactive()$Municipio)),
+      layout(#title = list(text = paste0(" Indicador 12: ",ind_12_reactive()$Municipio)),
              legend = list(orientation = 'v',  x = 0, y = -1), 
              xaxis = list(side = "bottom"),legend = list(side="bottom"))
     
@@ -4429,10 +4419,10 @@ server <- function(input, output, session) {
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
-          `Casos en los que la medida de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)` = "#b58cd9",
-          `Casos en los que la orden de protección no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)` = "#d98cbc",
-          `Total de órdenes de protección emitidas vigentes` = "#7e3794",
-          `Total medidas de protección emitidas vigentes` = "#c91682"))+
+          `Casos en los que la medida de protección\nno resultó ser adecuada y efectiva para\nla víctima (casos de reincidencia)` = "#b58cd9",
+          `Casos en los que la orden de protección\nno resultó ser adecuada y efectiva para\nla víctima (casos de reincidencia)` = "#d98cbc",
+          `Total de órdenes de protección emitidas\nvigentes` = "#7e3794",
+          `Total medidas de protección emitidas\nvigentes` = "#c91682"))+
       theme(legend.position = "none")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
