@@ -920,7 +920,6 @@ indicador_22$Formación <- toupper(indicador_22$Formación)
 # Indicador 23: ----------------------------------------------------------------#
 indicador_23 <- read_excel("indicadores_salud.xlsx", sheet = "Ind 23")%>% suppressWarnings()
 
-
 indicador_23 %>% 
   mutate(
     Fecha=case_when(
@@ -942,10 +941,15 @@ indicador_23 %>%
     Periodo = ymd(paste0(Año, "-", Fecha, "-01"))) %>% 
   mutate(`Objetor de conciencia: (SI/NO)` =case_when(
     `Objetor de conciencia: (SI/NO)`=="SI"~0,
-    `Objetor de conciencia: (SI/NO)`=="NO"~1))->indicador_23
+    `Objetor de conciencia: (SI/NO)`=="NO"~1)) %>% 
+  mutate(Función =toupper(Función)) %>% 
+  mutate(Función=case_when(
+    str_detect(`Función`, "MEDIC|ADSC|GINE")~"Personal médico",
+    str_detect(`Función`, "ENFER")~"Personal de enfermería",
+    T~"No se especifica"))->indicador_23
 
 indicador_23$Formación <- toupper(indicador_23$Formación)
-
+unique(indicador_23$Función)
 
 
 # Indicador 24: ----------------------------------------------------------------#
@@ -1635,6 +1639,7 @@ ui <- shinyUI(
                         
   .p{                    
   font-family: Nutmeg-Regular;
+  white-space: normal;
   color: #ffffff;
   }
   
@@ -1767,7 +1772,7 @@ tags$script('
                       # style="margin-top: -20px;
                       #          padding-left:-20px;
                       #          padding-bottom:0px",
-                      # height = 60, width=50)),
+                      # height = 60, width=50)),  
       #theme = "journal",
       header= busy_start_up(
         loader = spin_epic("flower", color = "#8F5199"),
@@ -1779,18 +1784,20 @@ tags$script('
       
 # Inicio -----------------------------------------------------------------------
 
-      tabPanel(icon = icon("home"),
-               title=p(" Indicadores AVGM", style ="font-weight:bold"), id="Inicio",
-               uiOutput('box'),
-               actionLink("ling_indicador_1", "Indicador 1: Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género"), hr(),
-               actionLink("link_indicadores", "Volver al inicio")),
+      tabPanel(#icon = icon("home"),
+               title=p(" Indicadores AVGM", style ="font-weight:bold; color: #ffffff;"), id="Inicio",
+               htmlOutput("filecontainer")),
+               
+               # uiOutput('box'),
+               # actionLink("ling_indicador_1", "Indicador 1: Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género"), hr(),
+               # actionLink("link_indicadores", "Volver al inicio")),
 
 # Servicios forenses------------------------------------------------------------
 
-      navbarMenu(title = p("Servicios forenses", style ="font-weight:bold"), 
+      navbarMenu(title = p("Servicios forenses", style ="font-weight:bold; color: #ffffff;"), 
                  tabPanel(
                    id="Ind_1", 
-                   title=h6("Indicador 1: Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género", style="white-space: pre-line;", class="p-2"),
+                   title=h6("Indicador 1: Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género", style="white-space: pre-line"), class="p-2",
                           h3(align="center","Indicador 1:", style="color:black"),
                           h4(p(align="center", "Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género.")),
                           box(width=12, div(class="row d-flex", #Replicar
@@ -1798,7 +1805,7 @@ tags$script('
                                             valueBox("61.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
                                             valueBox("55.7%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
                                             valueBox("57.7%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
-                              br(), br(), br(),
+                               br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                               fluidRow(column(4,selectInput(
                                 inputId = "ind_1_año",
@@ -1827,7 +1834,7 @@ tags$script('
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                        ))),
                  
-                 tabPanel(title=h6("Indicador 2: Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen", style="white-space: pre-line;", class="p-2"),
+                 tabPanel(title=h6("Indicador 2: Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 2:", style="color:black"),
                           h4(p(align="center", "Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen.")),
                           box(width=12, div(class="row d-flex", #Replicar
@@ -1835,7 +1842,7 @@ tags$script('
                                             valueBox("62%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
                                             valueBox("65%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
                                             valueBox("66%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
-                              br(), br(), br(),
+                               br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                               fluidRow(column(6, align="center", offset = 0, selectInput(
                                          inputId = "ind_2_año",
@@ -1855,7 +1862,7 @@ tags$script('
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                        ))),
                  
-                 tabPanel(title=h6("Indicador 3: Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF", style="white-space: pre-line;", class="p-2"),
+                 tabPanel(title=h6("Indicador 3: Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 3:", style="color:black"),
                           h4(p(align="center", "Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF.")),
                           box(width=12,  div(class="row d-flex", #Replicar
@@ -1863,7 +1870,7 @@ tags$script('
                                              valueBox("47.1%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
                                              valueBox("46.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
                                              valueBox("46.9%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
-                              br(), br(), br(),
+                               br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                               fluidRow(column(6, align="center", offset = 0,
                                               selectInput(
@@ -1882,7 +1889,7 @@ tags$script('
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                        ))),
                  
-                 tabPanel(title=h6("Indicador 4: Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio", style="white-space: pre-line;", class="p-2"),
+                 tabPanel(title=h6("Indicador 4: Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio", style="white-space: pre-linebold", class="p-2"),
                           h3(align="center","Indicador 4:", style="color:black"), 
                           h4(p(align="center", "Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio.")),
                           box(width=12, div(class="row d-flex", #Replicar
@@ -1890,7 +1897,7 @@ tags$script('
                                             valueBox("30.8", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
                                             valueBox("34.8%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
                                             valueBox("37%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
-                              br(), br(), br(),
+                               br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                               fluidRow(column(6, align="center", offset = 0, 
                                               selectInput(
@@ -1914,8 +1921,8 @@ tags$script('
       
 # Órdenes y medidas -----------------------------------------------------------
 
-      navbarMenu(title= p('Órdenes y medidas', style ="font-weight:bold"),
-                 tabPanel(title=h6("Indicador 6: Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección", style="white-space: pre-line;", class="p-2"),
+      navbarMenu(title= p('Órdenes y medidas', style ="font-weight:bold; color: #ffffff;"),
+                 tabPanel(title=h6("Indicador 6: Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 6:", style="color:black"),
                           h4(p(align="center", h5("Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección." , style="white-space: pre-line")),
                           box(width=12, div(class="row d-flex", #Replicar
@@ -1923,7 +1930,7 @@ tags$script('
                                             valueBox("60.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
                                             valueBox("55.3%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
                                             valueBox("61.0%","Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
-                              br(), br(), br(), 
+                               br(), 
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                               fluidRow(column(4,
                                               selectInput(
@@ -1955,7 +1962,7 @@ tags$script('
       valueBox("37%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
       valueBox("50%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
       valueBox("62%","Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
-      br(), br(), br(),
+       br(),
       fluidRow(column(12, offset = 5,"Seleccione algunas características")),
       fluidRow(
         column(4,
@@ -1987,7 +1994,7 @@ tags$script('
                       h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
                ))),
       
-      tabPanel(title=h6("PÉNDIENTE: Indicador 8: Porcentaje de personal capacitado en la adecuada aplicación del Modelo de Atención, Otorgamiento y Seguimiento de Órdenes de Protección.", style="break-spaces: pre-line;width: 75%;", class="p-2")),
+      tabPanel(title=h6("PÉNDIENTE: Indicador 8: Porcentaje de personal capacitado en la adecuada aplicación del Modelo de Atención, Otorgamiento y Seguimiento de Órdenes de Protección.", style="break-spaces: pre-line;width: 75%", class="p-2")),
       
       
       tabPanel(title=h6("Indicador 9: Porcentaje de medidas de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total", style="break-spaces: pre-line", class="p-2"),
@@ -1998,7 +2005,7 @@ tags$script('
                        valueBox("86.9%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("101.8%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("101.1%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,selectInput(
@@ -2027,7 +2034,7 @@ tags$script('
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco."))))), br(),
 
-tabPanel(title=h6("Indicador 10: Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total." , style="break-spaces: pre-line", class="p-2"),
+tabPanel(title=h6("Indicador 10: Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total." , style="break-spaces: pre-line;font-weight:bold", class="p-2"),
          h3(align="center","Indicador 10:", style="color:black"),
          h4(p(align="center", "Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.")),
 box(
@@ -2036,7 +2043,7 @@ box(
       valueBox("85.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("92.5%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("102.0%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
@@ -2088,7 +2095,7 @@ box(
       valueBox("97.3%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("95.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("103.2%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2130,7 +2137,7 @@ box(
       valueBox("7.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("0.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("1.8%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
@@ -2178,7 +2185,7 @@ box(
       valueBox("99.9%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("99.7%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("95.1", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2213,7 +2220,7 @@ box(
 )),
 # ILE IVE ----------------------------------------------------------------------
 
-navbarMenu(title = p("ILE / IVE", style ="font-weight:bold"),
+navbarMenu(title = p("ILE / IVE", style ="font-weight:bold; color: #ffffff;"),
 tabPanel(title = h6("Indicador 16: Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 16:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total.")),
@@ -2223,33 +2230,40 @@ box(
       valueBox("37.9%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("42.7%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("33.3%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(6,
            selectInput(
              inputId = "ind_16_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_16$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
-      inputId = "ind_16_mes",
-      label = "Seleccione el mes",
-      choices = unique(sort(indicador_16$Mes)),
-      multiple = TRUE
-    )),
-    column(4,selectInput(
+    # column(4,selectInput(
+    #   inputId = "ind_16_mes",
+    #   label = "Seleccione el mes",
+    #   choices = unique(sort(indicador_16$Mes)),
+    #   multiple = TRUE
+    # )),
+    column(6,selectInput(
       inputId = "ind_16_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_16$`Rango de edad`)),
       multiple = TRUE
     ))),
   fluidRow(
-    fluidRow(column(11,dataTableOutput("t_16", height = "400px", width = "auto"))),
-    fluidRow(
-      plotlyOutput("gr16",  height = "1000px", width = "auto"))),
-  fluidRow(column(8, offset = 1,
+    # splitLayout(cellWidths = c("40%", "60%"),
+    #             dataTableOutput("t_1"),
+    #             plotlyOutput("gr1"))),
+    column(6,dataTableOutput("t_16", height = "auto", width = "auto")),
+    column(6, plotlyOutput("gr16",  height = "auto", width = "auto"))),
+  
+  # fluidRow(
+  #   fluidRow(column(6,dataTableOutput("t_16", height = "auto", width = "auto")),#),
+  #   # fluidRow(
+  #     plotlyOutput("gr16",  height = "auto", width = "auto"))),
+  fluidRow(column(6, offset = 1,
                   h6("Fuente: Datos proporcionados por IJCF.")), br()
 ))),
 
@@ -2259,42 +2273,49 @@ tabPanel(title=h6("Indicador 17: Porcentaje de mujeres atendidas por violación 
 box(
   width=12,
   div(class="row d-flex", #Replicar
-      valueBox("46.4%", "Atenciones por violación en 2023", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
+      valueBox("46.4%", "Indicador 2023", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
       valueBox("100%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
-      valueBox("46.4%", "Atenciones por violación en 2022",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
+      valueBox("46.4%", "Indicador 2022",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
       valueBox("100%", "Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(6,
            selectInput(
              inputId = "ind_17_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_17$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
-      inputId = "ind_17_mes",
-      label = "Seleccione el mes",
-      choices = unique(sort(indicador_17$Mes)),
-      multiple = TRUE
-    )),
-    column(4,selectInput(
+    # column(4,selectInput(
+    #   inputId = "ind_17_mes",
+    #   label = "Seleccione el mes",
+    #   choices = unique(sort(indicador_17$Mes)),
+    #   multiple = TRUE
+    # )),
+    column(6,selectInput(
       inputId = "ind_17_edad",
       label = "Selecciona el rango de edad",
-      choices = unique(sort(indicador_17$`Rango de edad`)),
+      choices = unique(sort(indicador_17$`Rango`)),
       multiple = TRUE
     ))),
   fluidRow(
-    fluidRow(column(11,dataTableOutput("t_17", height = "400px", width = "auto"))),
-    fluidRow(
-      plotlyOutput("gr17",  height = "450px", width = "auto"))),
-  fluidRow(column(8, offset = 1,
+    # splitLayout(cellWidths = c("40%", "60%"),
+    #             dataTableOutput("t_1"),
+    #             plotlyOutput("gr1"))),
+    column(6,dataTableOutput("t_17", height = "auto", width = "auto")),
+    column(6, plotlyOutput("gr17",  height = "auto", width = "auto"))),
+  
+  # fluidRow(
+  #   fluidRow(column(11,dataTableOutput("t_17", height = "400px", width = "auto"))),
+  #   fluidRow(
+  #     plotlyOutput("gr17",  height = "450px", width = "auto"))),
+  fluidRow(column(10, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()))),
 
 tabPanel(title = h6("Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 18:", style="color:black"),
-         h4(p(align="center", "Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total.")),
+         h4(p(align="center", "Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento.")),
 box(
   width=12,
   div(class="row d-flex", #Replicar
@@ -2303,45 +2324,44 @@ box(
       valueBox("46.4%", "Atenciones por violación en 2022",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
       valueBox("100%", "Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(6,
            selectInput(
              inputId = "ind_18_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_18$Año)),
              multiple = T
            )),
-    column(4,selectInput(
-      inputId = "ind_18_mes",
-      label = "Seleccione el mes",
-      choices = unique(sort(indicador_18$Mes)),
-      multiple = TRUE
-    )),
-    column(4,selectInput(
+    # column(4,selectInput(
+    #   inputId = "ind_18_mes",
+    #   label = "Seleccione el mes",
+    #   choices = unique(sort(indicador_18$Mes)),
+    #   multiple = TRUE
+    # )),
+    column(6,selectInput(
       inputId = "ind_18_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_18$Rango)),
       multiple = TRUE
     ))),
   fluidRow(
-    column(4,dataTableOutput("t_18", height = "auto", width = "auto")),
-    column(6, offset = 2,
-           plotlyOutput("gr18",  height = "auto", width = "auto"))),
+    column(6,dataTableOutput("t_18", height = "auto", width = "auto")),
+    column(6,plotlyOutput("gr18",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
            ))),
 tabPanel(title = h6("Indicador 19: Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 19:", style="color:black"),
-         h4(p(align="center", "Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total.")),
+         h4(p(align="center", "Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco.")),
 box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("99.1%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 6), # actualizar
       valueBox("0%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 6)), # actualizar
   
-  br(), br(), br(),
+   br(),
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
@@ -2384,33 +2404,33 @@ tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Sal
       valueBox("40.2%", "Indicador 2020", icon=icon("wave-square"),color="maroon", width = 2), # actualizar
       valueBox("73.5%", "Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 2), # actualizar
       valueBox("75.6%", "Indicador 2018", icon=icon("wave-square"),color="red", width = 3)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(6,
            selectInput(
              inputId = "ind_20_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_20$Año)),
-             multiple = T)
+             multiple = T, selected = c(2020,2021,2022,2023))
     ),
-    column(4,selectInput(
-      inputId = "ind_20_causal",
-      label = "Selecciona la causal",
-      choices = unique(sort(indicador_20$`Causal: (salud/riesgo)`)),
-      multiple = TRUE)
-    ),
-    column(4,selectInput(
-      inputId = "ind_20_edad",
-      label = "Selecciona el rango de edad",
-      choices = unique(sort(indicador_20$Rango)),
+    # column(4,selectInput(
+    #   inputId = "ind_20_causal",
+    #   label = "Selecciona la causal",
+    #   choices = unique(sort(indicador_20$`Causal: (salud/riesgo)`)),
+    #   multiple = TRUE)
+    # ),
+    column(6,selectInput(
+      inputId = "ind_20_tipo",
+      label = "Selecciona el tipo de violencia",
+      choices = unique(sort(indicador_20$`Tipo de violencia: (violencia familiar / sexual)`)),
       multiple = TRUE
     ))),
   
   fluidRow(
-    fluidRow(column(11,dataTableOutput("t_20", height = "400px", width = "auto"))),
+    fluidRow(column(12,dataTableOutput("t_20", height = "auto", width = "auto"))),
     fluidRow(
-      plotlyOutput("gr20",  height = "700px", width = "auto"))),
+      plotlyOutput("gr20",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
            ))),
@@ -2418,7 +2438,7 @@ tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Sal
 tabPanel(title = h6("Indicador 21: Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE",
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 21:", style="color:black"),
-         h4(p(align="center", "Porcentaje de casos atendidos en el Sector Salud por violencia familiar y/o sexual que se notifican al Ministerio Público de Fiscalía.")),
+         h4(p(align="center", "Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE.")),
          box(width=12,
   div(class="row d-flex", #Replicar
       valueBox("79.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
@@ -2426,17 +2446,17 @@ tabPanel(title = h6("Indicador 21: Porcentaje de establecimientos estatales prov
       valueBox("40.2%", "Indicador 2020", icon=icon("wave-square"),color="maroon", width = 2), # actualizar
       valueBox("73.5%", "Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 2), # actualizar
       valueBox("75.6%", "Indicador 2018", icon=icon("wave-square"),color="red", width = 3)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4, offset = 2, 
+    column(6, offset = 2, 
            selectInput(
              inputId = "ind_21_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_21$Año)),
              multiple = T
            )),
-    column(4,offset = 2,selectInput(
+    column(6,offset = 2,selectInput(
       inputId = "ind_21_establecimiento",
       label = "Seleccione el hospital",
       choices = unique(sort(indicador_21$Establecimiento)),
@@ -2456,25 +2476,26 @@ tabPanel(title = h6("Indicador 22: Porcentaje del personal de salud relacionado 
   div(class="row d-flex", #Replicar
       valueBox("100%", "Indicador 2020", icon=icon("equals"),color="fuchsia", width = 6), # actualizar
       valueBox("100%", "Indicador 2019", icon=icon("wave-square"),color="purple", width = 6)),# actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4, offset = 2,
+    column(6, offset = 2,
            selectInput(
              inputId = "ind_22_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_22$Año)),
              multiple = T)
     ),
-    column(4, offset = 2, selectInput(
+    column(6, offset = 2, selectInput(
       inputId = "ind_22_formación",
       label = "Seleccione la formación del personal",
       choices = unique(sort(indicador_22$Formación)),
       multiple = TRUE))),
   fluidRow(
-    fluidRow(column(11,dataTableOutput("t_22", height = "400px", width = "auto"))),
-    fluidRow(
-      plotlyOutput("gr22",  height = "700px", width = "auto"))),
+    fluidRow(column(12,dataTableOutput("t_22", height = "auto", width = "auto")))
+    # fluidRow(
+    #   plotlyOutput("gr22",  height = "700px", width = "auto"))
+    ),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
            ))),
@@ -2489,7 +2510,7 @@ tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente ca
       valueBox("78.4%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("6.1%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("0%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2508,7 +2529,7 @@ tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente ca
     column(4,selectInput(
       inputId = "ind_23_formación",
       label = "Selecciona la formación del personal medicx",
-      choices = unique(sort(indicador_23$Formación)),
+      choices = unique(sort(indicador_23$Función)),
       multiple = TRUE)
     )),
   fluidRow(
@@ -2521,7 +2542,7 @@ tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente ca
 
 # Baedavim ---------------------------------------------------------------------
 
-navbarMenu(title = p("BAEDAVIM", style ="font-weight:bold"),
+navbarMenu(title = p("BAEDAVIM", style ="font-weight:bold; color: #ffffff;"),
 tabPanel(h6("Indicador 24: Porcentaje de municipios que actualizan la información sobre atención a mujeres víctimas de violencia con respecto al total", 
             style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 24:", style="color:black"),
@@ -2533,7 +2554,7 @@ tabPanel(h6("Indicador 24: Porcentaje de municipios que actualizan la informaci�
       valueBox("6.4%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("5.0%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2574,7 +2595,7 @@ tabPanel(h6("Indicador 25: Porcentaje del personal responsable de la actualizaci
       valueBox("187.4%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("50%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2617,7 +2638,7 @@ tabPanel(h6("Indicador 26: Porcentaje de instancias estatales responsables de al
       valueBox("69.0%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("85.7%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2643,7 +2664,7 @@ tabPanel(h6("Indicador 26: Porcentaje de instancias estatales responsables de al
   
 # Delitos por razón de género---------------------------------------------------
 
-navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold"),
+navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; color: #ffffff;"),
            tabPanel(h6("Indicador 27: Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio y desaparición de niñas, adolescentes y mujeres",style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 27:", style="color:black"),
          h4(p(align="center",
@@ -2653,7 +2674,7 @@ navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold")
       valueBox("974", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("523", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("392","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4, offset = 2, 
@@ -2689,7 +2710,7 @@ box(
       valueBox("83.0%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("50.8%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("92.4%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
@@ -2731,7 +2752,7 @@ box(
       valueBox("20.2%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("16.1%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("11.0%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(3,
@@ -2778,7 +2799,7 @@ box(
       valueBox("23.4%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("30.6%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,  
@@ -2808,7 +2829,7 @@ box(
 )))),
 
 # Protocolo alba----------------------------------------------------------------
-navbarMenu(title = p("Protocolo Alba", style ="font-weight:bold"),
+navbarMenu(title = p("Protocolo Alba", style ="font-weight:bold; color: #ffffff;"),
 tabPanel(title=h6("PENDIENTE: Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas", style="break-spaces: pre-line", class="p-2"),
 tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas", style="break-spaces: pre-line", class="p-2"),
          tabItem(tabName = "Ind32",
@@ -2822,7 +2843,7 @@ tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes 
                        valueBox("942", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
                        valueBox("1,065", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
                    
-                   br(), br(), br(),
+                    br(),
                    fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                    fluidRow(
                      column(4,
@@ -2866,7 +2887,7 @@ tabPanel(title = h6("Indicador 33: Porcentaje de cédulas únicas de difusión q
       valueBox("10.5%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("93.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("66.7%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2905,7 +2926,7 @@ tabPanel(title = h6("Indicador 34: Porcentaje de casos de búsqueda y localizaci
       valueBox("55.6%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("55.2%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -2948,7 +2969,7 @@ box(
       valueBox("36.4%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3), # actualizar
       valueBox("29.2%","Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
   
-  br(), br(), br(),
+   br(),
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
@@ -2985,7 +3006,7 @@ tabPanel(title = h6("Indicador 36: Porcentaje de casos de investigación de desa
       valueBox("100%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("100%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4, 
@@ -3025,7 +3046,7 @@ tabPanel(title = h6("Indicador 37: Porcentaje de personal capacitado en el Proto
       valueBox("96.4%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("76.7%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
   
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -3060,7 +3081,7 @@ tabPanel(title = h6("Indicador 38: Porcentaje de casos resueltos en etapa de inv
       valueBox("92.7%%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("80.6%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("81.2","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
   column(4,
@@ -3098,7 +3119,7 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
       valueBox("100%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
       valueBox("100%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
       valueBox("100%", "Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 4)), # actualizar
-  br(), br(), br(),
+   br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
     column(4,
@@ -3128,7 +3149,7 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
   )))),
 
 # Generales---------------------------------------------------------------------
-  navbarMenu(title = p("Generales", style ="font-weight:bold"),
+  navbarMenu(title = p("Generales", style ="font-weight:bold; color: #ffffff;"),
              tabPanel(title = h6("Indicador 40: Porcentaje de muertes violentas de mujeres registradas, en relación al año anterior",
                                  style="break-spaces: pre-line", class="p-2"),
                       h3(align="center","Indicador 40:", style="color:black"),
@@ -3137,7 +3158,7 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
                                         valueBox("-14.1%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
                                         valueBox("39.8%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 4), # actualizar
                                         valueBox("-10.7%", "Indicador 2020", icon=icon("wave-square"),color="maroon", width = 4)), # actualizar
-                          br(), br(), br(),
+                           br(),
                           fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                           fluidRow(column(4, offset = 2,
                                           selectInput(
@@ -3165,6 +3186,12 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
 # Server - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 server <- function(input, output, session) {
+  
+  output$filecontainer <- renderUI({
+    tags$iframe(src="//rstudio-pubs-static.s3.amazonaws.com/1083902_d0b2a08d8b944627aed0720cb7a08291.html",
+                style="border: 0px solid white; width: 1400px; height: 700px;")
+  })
+  
 
   observeEvent(input$ling_indicador_1, {
     newvalue <- "Ind_1"
@@ -3194,11 +3221,12 @@ server <- function(input, output, session) {
             updateTabItems(session, inputId = 'navbarID', selected = 'Tab 2'))
   })
   
-  output$filecontainer <- renderUI({
-    tags$iframe(src="//rstudio-pubs-static.s3.amazonaws.com/1083902_d0b2a08d8b944627aed0720cb7a08291.html",
-                style="border: 0px solid white; width: 900px; height: 750px;" )#height = 600, width = 1200)
-  })
-  
+  # output$filecontainer <- renderUI({
+  #   tags$iframe(src="//rstudio-pubs-static.s3.amazonaws.com/1083902_d0b2a08d8b944627aed0720cb7a08291.html",
+  #               style="border: 0px solid white"#; width: 900px; height: 750px;" 
+  #               )#height = 600, width = 1200)
+  # })
+  # 
   
   # Indicador 1: -----------------------------------------------------------------  
   
@@ -4486,8 +4514,10 @@ server <- function(input, output, session) {
   output$gr16 <-renderPlotly ({
     
     ind_16_reactive() %>%
-      #indicador_16 %>%
-      group_by(Año, Mes, Periodo, `Rango de edad`) %>%
+      # indicador_16 %>%
+      filter(!is.na(`Rango de edad`)) %>% 
+      group_by(Año,# Mes, Periodo, 
+               `Rango de edad`) %>%
       summarise(`Total de NA que denuncian ASI`=sum(`Total de mujeres que denuncian abuso sexual infantil`),
                 
                 `Total de NA canalizadas a Salud para atención integral por ASI`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
@@ -4503,29 +4533,31 @@ server <- function(input, output, session) {
                           "Total de mujeres canalizadas a salud para atención integral por violación")) %>%
       
       mutate(text = paste("Año: ", Año,
-                          "\nMes: ", Mes,
+                          # "\nMes: ", Mes,
                           "\nTotal : ", scales::comma(Total), sep="")) %>%
       filter(!Total==0) %>%
       ggplot() +
-      aes(x = Periodo, y =`Rango de edad`, size=Total,
+      aes(x = Año, y =`Rango de edad`, size=Total,
           fill = Total, group=Clasificación, text=text) +
       # geom_line(size = 1.5) + geom_point()+
       geom_tile(color = "white",
                 lwd = 1,
                 linetype = 1) +
-      labs(x="", y="", #title = "Indicador 16\n\n\n",
-           color = "Clasificación") +
+      labs(x="", y="", title = "Indicador 16:",
+           color = "Total", fill= "Total", size=NULL) +
       geom_text(aes(label=comma(Total, accuracy = 1)),#hjust=.5, vjust=-.8,
                 size=2, color="ghostwhite")+
       scale_size_continuous(range = c(3,15))+
       scale_fill_gradient(low = "#dba9c8", high = "#7e3794") +
-      facet_wrap(~ Clasificación, ncol = 1,
-                 labeller = label_wrap_gen(width = 50, multi_line = TRUE)) +
+      # guides(size = FALSE)+
+      
+      facet_wrap(~ Clasificación, ncol = 2,
+                 labeller = label_wrap_gen(width = 40, multi_line = TRUE)) +
       theme_minimal()+
       theme(legend.position = "bottom")+
       theme(text=element_text(size=10, family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light",  hjust=.5),
-            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family="Nutmeg-Light"))  -> gr16
+            axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, family="Nutmeg-Light")) -> gr16
     
     
     
@@ -4549,11 +4581,11 @@ server <- function(input, output, session) {
   output$t_16 <- renderDataTable ({
     
     ind_16_reactive() %>%
-      #indicador_16 %>%
+      # indicador_16 %>%
       rename(`Total de niñas que denuncian abuso sexual infantil`=`Total de mujeres que denuncian abuso sexual infantil`, 
              `Total de adolescentes canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`=`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`) %>% 
       group_by(Año) %>%
-      summarise(`Total de NA que denuncian ASI`=sum(`Total de niñas que denuncian abuso sexual infantil`),
+      summarise(`Total de NA que denuncian ASI`=sum(round(`Total de niñas que denuncian abuso sexual infantil`, digits = 2)),
                 
                 `Total de NA canalizadas a Salud para atención integral por ASI`=sum(`Total de adolescentes canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
                 
@@ -4569,11 +4601,16 @@ server <- function(input, output, session) {
                             options = list(dom = 'Blfrtip',
                                            buttons = c('copy', 'excel', 'print'),
                                            lengthMenu = list(c(6,10,20, -1),
-                                                             c(6,10,20,"Todo"))))
+                                                             c(6,10,20,"Todo")),
+                                           headerCallback = DT::JS(
+                                             "function(thead) {",
+                                             "  $(thead).css('font-size', '0.8em');",
+                                             "}"
+                                           ))) %>% 
+      formatCurrency(c(2:4),currency = "", interval = 3, mark = ",", digits = 0) %>% 
+      DT::formatStyle(columns = colnames(.), fontSize = '70%')
     
-    
-    
-  })
+    })
   
   
   
@@ -4626,8 +4663,8 @@ server <- function(input, output, session) {
   
   output$gr17 <-renderPlotly ({
     
-    ind_17_reactive() %>%
-      # indicador_17 %>%
+     ind_17_reactive() %>%
+    # indicador_17 %>%
       # mutate(Rango= case_when(
       #   `Edad (0-99)` <= 2 ~ "0 a 2 años",
       #   `Edad (0-99)` >= 3 & `Edad (0-99)` <= 5 ~ "3 a 5 años",
@@ -4641,14 +4678,15 @@ server <- function(input, output, session) {
     #   Rango=factor(Rango,
     #                levels=c("0 a 2 años", "3 a 5 años", "6 a 12 años", "13 a 17 años", "18 a 25 años", "26 a 35 años",
     #                         "36 a 45 años", "46 a 59 años", "60 en adelante"))) %>%
-    group_by(Año, Mes, Periodo, `Tipo: (abuso sexual infantil / violación)`, Rango) %>%
+    group_by(Año,# Mes, Periodo, 
+             `Tipo: (abuso sexual infantil / violación)`, Rango) %>%
       summarise(`Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud`= n()) %>%
       mutate(text = paste("Año: ", Año,
-                          "\nMes: ",  Mes,
+                          # "\nMes: ",  Mes,
                           "\nRango de edad: ", Rango,
                           "\nTotal: ", scales::comma(`Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud`), sep=""))%>%
       ggplot() +
-      aes(x = Periodo, y =Rango, text=text,
+      aes(x = Año, y =Rango, text=text,
           size =`Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud`,
           colour = `Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud`)+
       geom_point(mapping=aes(colour=`Tipo: (abuso sexual infantil / violación)`, group=`Tipo: (abuso sexual infantil / violación)`))+
@@ -4657,7 +4695,7 @@ server <- function(input, output, session) {
                 size=3, color="ghostwhite")+
       # scale_y_discrete(limits = rev ,
       #                  labels = function(x) str_wrap(x, width = 25)) +
-      scale_size_continuous(range = c(2,5))+
+      scale_size_continuous(range = c(5,10))+
       scale_color_manual(
         values = c(
           `Abuso sexual infantil` = "#7e3794",
@@ -4665,8 +4703,8 @@ server <- function(input, output, session) {
           #`Violencia sexual` = "#7e3794"
         ))+
       
-      #facet_grid(.~ Año, space = 'free_x', scales = 'free_x', switch = 'x') +
-      labs(x="", y="", title = "Indicador 17", fill="Delito", colour="Delito")+
+      # facet_grid(.~ Año, space = 'free_x', scales = 'free_x', switch = 'x') +
+      labs(x="", y="", title = "Indicador 17", fill="Delito", colour="Delito", size=NULL)+
       theme_minimal()+
       theme(legend.position = "bottom")+
       theme(text=element_text(size=10, family="Nutmeg-Light"),
@@ -4679,19 +4717,11 @@ server <- function(input, output, session) {
       layout(title = list(text = paste0("Indicador 17: "#,ind_17_reactive()$Rango
       )
       ),
-      legend = list(orientation = 'v',  x = 0, y = -1),
+      legend = list(orientation = 'h',  x = 0, y = -0.3),
       xaxis = list(side = "bottom"),legend = list(side="bottom"))
-    #
-    # ggplotly(gr17, tooltip = "text") %>%
-    #   layout(title = "Indicador 17",
-    #          #legend = list(orientation = 'v', x = 0, y = -.1),
-    #
-    #          legend = list(orientation = "h", x = 0, y=-.50, font = list(size = 10, bgcolor = 'rgb(251)')),
-    #          xaxis = list(side = "bottom"),legend = list(side="bottom"))
-    
   })
   
-  output$t_17 <- DT::renderDataTable ({
+    output$t_17 <- DT::renderDataTable ({
     
     ind_16_reactive <- reactive({
       
@@ -4704,7 +4734,7 @@ server <- function(input, output, session) {
       
     })
     
-    
+    # indicador_16 %>% 
     ind_16_reactive() %>% 
       group_by(Año) %>%
       summarise(`Referidas por abuso sexual`=sum(`Total de mujeres canalizadas para atención integral de la salud (nom 46) por abuso sexual infantil`),
@@ -4713,8 +4743,8 @@ server <- function(input, output, session) {
     
     
     
-    ind_17_reactive() %>%
-      # indicador_17 %>%
+     ind_17_reactive() %>%
+    # indicador_17 %>%
       filter(!Año== 2019) %>% 
       group_by(Año,`Tipo: (abuso sexual infantil / violación)`) %>%
       summarise(`Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud`= n()) %>% 
@@ -4722,9 +4752,10 @@ server <- function(input, output, session) {
                   values_from = "Total de mujeres víctimas de violación o abuso sexual canalizadas al sector salud") %>% 
       cbind(total_referida) %>% 
       select(1:3,5:6) %>% 
-      mutate(`% de atención por abuso sexual`= scales::percent(`Abuso sexual infantil`/`Referidas por abuso sexual`),
+      mutate(Año=`Año...1`,
+        `% de atención por abuso sexual`= scales::percent(`Abuso sexual infantil`/`Referidas por abuso sexual`),
              `% de atención por violación`= scales::percent(`Violación`/`Referidas por violación`)) %>% 
-      select(`Referidas por abuso sexual`,`Referidas por violación`, `Abuso sexual infantil`,`Violación`, `% de atención por abuso sexual`,`% de atención por violación`)->tabla_17
+      select(Año,`Referidas por abuso sexual`,`Referidas por violación`, `Abuso sexual infantil`,`Violación`, `% de atención por abuso sexual`,`% de atención por violación`)->tabla_17
     
     
     
@@ -4733,7 +4764,15 @@ server <- function(input, output, session) {
                            options = list(dom = 'Blfrtip',
                                           buttons = c('copy', 'excel', 'print'),
                                           lengthMenu = list(c(6,10,20, -1),
-                                                            c(6,10,20,"Todo"))))
+                                                            c(6,10,20,"Todo")),
+                                          headerCallback = DT::JS(
+                                            "function(thead) {",
+                                            "  $(thead).css('font-size', '0.8em');",
+                                            "}"
+                                          ))) %>% 
+      formatCurrency(c(2:4),currency = "", interval = 3, mark = ",", digits = 0) %>% 
+      DT::formatStyle(columns = colnames(.), fontSize = '90%')
+    
   })
   
   
@@ -4778,7 +4817,7 @@ server <- function(input, output, session) {
   output$gr18 <-renderPlotly ({
     
     ind_18_reactive() %>%
-      # indicador_18 %>% 
+    # indicador_18 %>% 
       filter(!is.na(Año)) %>% 
       group_by(Año, Rango, `Causal: (violacion/ salud/ riesgo)`) %>%
       summarise(`Total de mujeres víctimas de violación que recibieron el procedimiento`= n()) %>%
@@ -4786,9 +4825,9 @@ server <- function(input, output, session) {
                           "\nRango de edad: ", Rango,
                           "\nTotal: ", scales::comma(`Total de mujeres víctimas de violación que recibieron el procedimiento`), sep="")) %>%
       ggplot() +
-      aes(x = Año, y =Rango,
+      aes(x = as.factor(Año), y =Rango,
           size =`Total de mujeres víctimas de violación que recibieron el procedimiento`,
-          colour = `Total de mujeres víctimas de violación que recibieron el procedimiento`, text=text) +
+          colour = `Causal: (violacion/ salud/ riesgo)`, text=text) +
       geom_point(mapping=aes(colour=`Total de mujeres víctimas de violación que recibieron el procedimiento`, group=`Causal: (violacion/ salud/ riesgo)`))+
       theme(panel.grid.major = element_line(colour = "grey"))+
       #scale_y_continuous(labels = scales::comma, limits = c(0, 1500)) +
@@ -4804,7 +4843,7 @@ server <- function(input, output, session) {
       scale_fill_gradient(low = "#dba9c8", high = "#7e3794") +
       scale_colour_gradient(low = "#dba9c8", high = "#7e3794") +
       
-      #facet_grid(.~ Año, space = 'free_x', scales = 'free_x', switch = 'x') +
+      facet_wrap(~`Causal: (violacion/ salud/ riesgo)`, ncol = 1) +
       labs(x="", y="", title = "Indicador 18", fill="", colour="")+
       theme_minimal()+
       theme(legend.position = "bottom")+
@@ -4827,7 +4866,7 @@ server <- function(input, output, session) {
     
     ind_18_reactive() %>%
       # indicador_18 %>%
-      filter(Año %in% c(2022,2023)) %>% 
+      filter(Año %in% c(2021,2022,2023)) %>% 
       # pivot_longer(cols = 6:30,
       #             names_to = "peritaje",
       #             values_to = "total de peritajes")%>%
@@ -5070,8 +5109,9 @@ server <- function(input, output, session) {
           `Violencia económica`= "#82263d",
           `Violencia familiar`= "#a544ff",
           `Otro tipo`= "#597dff")) +
-      facet_grid(.~ `Tipo de violencia: (violencia familiar / sexual)`, 
-                 space = 'free_x', scales = 'free_x', switch = 'x',
+      facet_wrap(~ `Tipo de violencia: (violencia familiar / sexual)`, ncol = 6, 
+                 scales = "free_x",
+                 # space = 'free_x', scales = 'free_x', switch = 'x',
                  labeller = label_wrap_gen(width = 5, multi_line = TRUE)) +
       labs(x="", y="", title = "indicador 20")+
       theme_minimal()+
@@ -5280,10 +5320,10 @@ server <- function(input, output, session) {
   })
   
   
-  output$ind_23_formación <- renderUI({
+  output$ind_23_Función <- renderUI({
     selectInput("ind_23_formación",
-                label =  "Selecciona la formación del personal medicx",
-                choices = sort(unique(indicador_23$Formación)),
+                label =  "Selecciona la función del personal medicx",
+                choices = sort(unique(indicador_23$Función)),
                 multiple = T)
   })
   
@@ -5294,7 +5334,7 @@ server <- function(input, output, session) {
       filter(
         if(!is.null(input$ind_23_año))               Año %in% input$ind_23_año       else Año != "",
         if(!is.null(input$ind_23_mes))               Mes %in% input$ind_23_mes       else Mes != "",
-        if(!is.null(input$ind_23_formación))   Formación %in% input$ind_23_formación else Formación != ""
+        if(!is.null(input$Función))              Función %in% input$ind_23_Función   else Función != ""
       )
     
   })
@@ -5308,11 +5348,12 @@ server <- function(input, output, session) {
       group_by(Año, Mes, Periodo, Función) %>% 
       summarise(`Personal médico no objetor de conciencia`=sum(`Objetor de conciencia: (SI/NO)`, na.rm = T),
                 `Total de personal médico debidamente capacitado`= n()) %>% 
-      mutate(Función=case_when(
-        Función=="ADSCRITO"~"Medicx adscritx",
-        Función=="Medico Adscrito "~"Médicx Adscritx",
-        Función=="Enfermería"~"Enfermera",
-        T~"Otro")) %>% 
+    
+      # mutate(Función=case_when(
+      #   Función=="ADSCRITO"~"Medicx adscritx",
+      #   Función=="Medico Adscrito "~"Médicx Adscritx",
+      #   Función=="Enfermería"~"Enfermera",
+      #   T~"Otro")) %>% 
       mutate(text = paste("Año: ", Año,
                           "\nPeriodo: ",  format(as_date(Periodo), "%B de %Y"),
                           "\nFunción del personal : ", Función, sep="")) %>% 
@@ -5329,9 +5370,9 @@ server <- function(input, output, session) {
       scale_y_continuous(labels = scales::comma) +
       scale_color_manual(
         values = c(
-          `Medicx adscritx` = "#D98CBC",
-          `Enfermera` = "#7E3794",
-          `Otro` = "#C91682"))+
+          `Personal médico` = "#D98CBC",
+          `Personal de enfermería` = "#7E3794",
+          `No se especifica` = "#C91682"))+
       theme(legend.position = "bottom")+
       theme(text=element_text(size=12,  family="Nutmeg-Light"),
             plot.title = element_text(family="Nutmeg-Light"),
@@ -5954,7 +5995,7 @@ server <- function(input, output, session) {
       filter(Carpeta=="Judicializada") %>% 
       group_by(Año, #Mes, 
                # Periodo 
-               , Delito
+               Delito
       ) %>% 
       summarise(`Casos denunciados por violencia por razón de género que llegan a la etapa de judicialización`=sum(Registro, na.rm=T)) %>%   
       mutate(text = paste("Año: ", Año,
