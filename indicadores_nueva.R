@@ -14,7 +14,6 @@ library(wordcloud)
 library(shiny)
 library(dashboardthemes)
 library(shinythemes)
-library(shinybusy)
 library(extrafont)
 library(showtext)
 library(jsonlite)
@@ -23,6 +22,7 @@ library(shinyjs)
 library(leaflet)
 library(shinyWidgets)
 library(shiny.router)
+library(shinybusy)
 
 
 #####
@@ -1618,11 +1618,15 @@ header_img <- div(
 
 # UI - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ui <- shinyUI(
+  #####
   tagList(
     includeCSS("./www/style.css"),
+    
     fluidPage(
       class = 'p-2',
+      # Estilo ------------------- 
       tags$head(
+     
         tags$style(HTML("
   .nav.navbar-nav .form-group.shiny-input-container {margin-bottom: 0; height: 38px;}
   .nav.navbar-nav .form-group.shiny-input-container > label {display: inline;}                      
@@ -1739,7 +1743,7 @@ ui <- shinyUI(
     } 
 
     return;
-});")),
+  });")),
 tags$script('
            var dimension = [0, 0];
                         $(document).on("shiny:connected", function(e) {
@@ -1753,7 +1757,7 @@ tags$script('
                         Shiny.onInputChange("dimension", dimension);
                         });
                         ')),
-  
+# Termina estilo -------  
       
       
     add_busy_spinner(onstart = F, spin = "fading-circle", color = "#E34F70"),
@@ -1785,6 +1789,7 @@ tags$script('
 # Servicios forenses------------------------------------------------------------
 
       navbarMenu(title = p("Servicios forenses", style ="font-weight:bold; color: #ffffff;"), 
+                 #####
                  tabPanel(
                    id="Ind_1", 
                    title=h6("Indicador 1: Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género", style="white-space: pre-line"), class="p-2",
@@ -1797,24 +1802,27 @@ tags$script('
                                             valueBox("57.7%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
                                br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                              fluidRow(column(4,selectInput(
+                              fluidRow(column(3,selectInput(
                                 inputId = "ind_1_año",
                                 label = "Seleccione el año",
                                 choices = unique(sort(indicador_1$Año)),
                                 multiple = T 
                                  )),
-                                column(4, align="center",selectInput(
+                                column(3, align="center",selectInput(
                                   inputId = "ind_1_mes",
                                   label = "Seleccione el mes",
                                   choices = unique(sort(indicador_1$Mes)),
                                   multiple = TRUE
                                  )),
-                                column(4, align="center",selectInput(
+                                column(3, align="center",selectInput(
                                   inputId = "ind_1_servicio",
                                   label = "Selecciona el tipo de acción forense",
                                   choices = unique(sort(indicador_1$`Servicios forenses`)),
                                   multiple = TRUE
-                                 ))),
+                                 )),
+                                column(2, offset = 1, align="bottom", 
+                                       downloadButton("downloadData_ind_1", "Descarga (.csv)"))
+                                ),
                               fluidRow(
                                 # splitLayout(cellWidths = c("40%", "60%"),
                                 #             dataTableOutput("t_1"),
@@ -1823,7 +1831,7 @@ tags$script('
                                 column(8, plotlyOutput("gr1",  height = "auto", width = "auto"))),
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
                                        ))),
-                 
+                 #####
                  tabPanel(title=h6("Indicador 2: Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 2:", style="color:black"),
                           h4(p(align="center", "Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen.")),
@@ -1834,24 +1842,27 @@ tags$script('
                                             valueBox("66%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
                                br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                              fluidRow(column(6, align="center", offset = 0, selectInput(
+                              fluidRow(column(4, align="center", offset = 0, selectInput(
                                          inputId = "ind_2_año",
                                          label = "Seleccione el año",
                                          choices = unique(sort(indicador_2$Año)),
                                          multiple = T
                                        )),
-                                column(6, align="center", offset = 0,selectInput(
+                                column(4, align="center", offset = 0,selectInput(
                                   inputId = "ind_2_mes",
                                   label = "Seleccione el mes",
                                   choices = unique(sort(indicador_2$Mes)),
                                   multiple = TRUE
-                                  ))),
+                                  )), 
+                                column(3, offset = 1, align="bottom", 
+                                       downloadButton("downloadData_ind_2", "Descarga (.csv)"))
+                              )),
                               fluidRow(
                                 column(6,dataTableOutput("t_2", height = "auto", width = "auto")),
                                 column(6,plotlyOutput("gr2",  height = "auto", width = "auto"))),
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
-                                       ))),
-                 
+                                       )),
+                 #####
                  tabPanel(title=h6("Indicador 3: Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 3:", style="color:black"),
                           h4(p(align="center", "Porcentaje de peritajes en servicios forenses con perspectiva de género aplicados conforme a instrumentos de operación del IJCF.")),
@@ -1862,23 +1873,27 @@ tags$script('
                                              valueBox("46.9%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
                                br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                              fluidRow(column(6, align="center", offset = 0,
+                              fluidRow(column(4, align="center", offset = 0,
                                               selectInput(
                                                 inputId = "ind_3_año",
                                                  label = "Seleccione el año",
                                                  choices = unique(sort(indicador_3$Año)),
                                                  multiple = T
                                                 )),
-                                       column(6, align="center", offset = 0, selectInput(
+                                       column(4, align="center", offset = 0, selectInput(
                                          inputId = "ind_3_mes",
                                          label = "Seleccione el mes",
                                          choices = unique(sort(indicador_3$Mes)),
-                                        multiple = TRUE))),
+                                        multiple = TRUE)), 
+                                       column(3, offset = 1, align="bottom", 
+                                              downloadButton("downloadData_ind_3", "Descarga (.csv)"))
+                              )),
                               fluidRow(dataTableOutput("t_3", height = "400px", width = "auto")),
-                              fluidRow(plotlyOutput("gr3",  height = "900px", width = "auto")),
+                              fluidRow(plotlyOutput("gr3",  height = "700px", width = "auto")),
                               fluidRow(column(12, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
-                                       ))),
-                 
+                                       )),
+
+                 #####
                  tabPanel(title=h6("Indicador 4: Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio", style="white-space: pre-linebold", class="p-2"),
                           h3(align="center","Indicador 4:", style="color:black"), 
                           h4(p(align="center", "Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio.")),
@@ -1889,32 +1904,39 @@ tags$script('
                                             valueBox("37%","Indicador 2020",  icon=icon("ellipsis"), color="maroon", width = 3)), # actualizar
                                br(),
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                              fluidRow(column(6, align="center", offset = 0, 
+                              fluidRow(column(4, align="center", offset = 0, 
                                               selectInput(
                                                 inputId = "ind_4_año",
                                                 label = "Seleccione el año",
                                                 choices = unique(sort(indicador_4$Año)),
                                                 multiple = T)),
-                                       column(6, align="center", offset = 0,selectInput(
+                                       column(4, align="center", offset = 0,selectInput(
                                          inputId = "ind_4_mes",
                                          label = "Seleccione el mes",
                                          choices = unique(sort(indicador_4$Mes)),
-                                         multiple = TRUE))),
+                                         multiple = TRUE)), 
+                                       column(3, offset = 1, align="bottom", 
+                                              downloadButton("downloadData_ind_4", "Descarga (.csv)"))
+                              )),
                               fluidRow(
                                 column(5,dataTableOutput("t_4", height = "auto", width = "auto")),
-                                column(7,plotlyOutput("gr4",  height = "700px", width = "auto"))),
+                                column(7,plotlyOutput("gr4",  height = "900px", width = "auto"))),
                               fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
-                                       ))), 
+                                       )), 
                  
-                 
-                 tabPanel(title=h6("PENDIENTE: Indicador 5: Porcentaje del personal de la Unidad Multidisciplinaria* adecuadamente capacitado sobre el Protocolo de Actuación con Perspectiva de Género para la Investigación del Delito de Feminicidio.", style="break-spaces: pre-line;", class="p-2"))),
+                 #####
+                 tabPanel(title=h6("PENDIENTE: Indicador 5: Porcentaje del personal de la Unidad Multidisciplinaria* adecuadamente capacitado sobre el Protocolo de Actuación con Perspectiva de Género para la Investigación del Delito de Feminicidio.", style="break-spaces: pre-line;", class="p-2"))
+      ),
       
 # Órdenes y medidas -----------------------------------------------------------
 
       navbarMenu(title= p('Órdenes y medidas', style ="font-weight:bold; color: #ffffff;"),
+                 #####
                  tabPanel(title=h6("Indicador 6: Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección", style="white-space: pre-line", class="p-2"),
                           h3(align="center","Indicador 6:", style="color:black"),
-                          h4(p(align="center", h5("Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección." , style="white-space: pre-line")),
+                          h4(p(align="center", h5("Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección." , style="white-space: pre-line")
+                               )
+                             ),
                           box(width=12, div(class="row d-flex", #Replicar
                                             valueBox("76.6%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
                                             valueBox("60.3%", "Indicador 2021", icon=icon("wave-square"),color="purple", width = 3), # actualizar
@@ -1922,27 +1944,33 @@ tags$script('
                                             valueBox("61.0%","Indicador 2019",  icon=icon("ellipsis"), color="light-blue", width = 3)), # actualizar
                                br(), 
                               fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                              fluidRow(column(4,
+                              fluidRow(column(3,
                                               selectInput(
                                                 inputId = "ind_6_año",
                                                 label = "Seleccione el año",
                                                 choices = unique(sort(indicador_6$Año)),
                                                 multiple = T)),
-                                       column(4,selectInput(
+                                       column(3,selectInput(
                                          inputId = "ind_6_mes",
                                          label = "Seleccione el mes",
                                          choices = unique(sort(indicador_6$Mes)),
                                          multiple = TRUE)),
-                                       column(4,selectInput(
+                                       column(3,selectInput(
                                          inputId = "ind_1_servicio",
                                          label = "Selecciona el tipo de acción forense",
                                          choices = unique(sort(indicador_6$`Servicios forenses`)),
                                          multiple = TRUE
-                                        ))),
+                                        )), 
+                                       column(2, offset = 1, align="bottom", 
+                                              downloadButton("downloadData_ind_6", "Descarga (.csv)"))
+                              )),
                               fluidRow(column(5,dataTableOutput("t_6", height = "auto", width = "auto")),
-                                       column(7,plotlyOutput("gr6",  height = "600px", width = "auto"))), 
-                              fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br())))),
+                                       column(7,plotlyOutput("gr6",  height = "700px", width = "auto"))), 
+                              fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por IJCF.")), br()
+                                       )
+                          ),
                  
+                 #####
                  tabPanel(title=h6("Indicador 7: Porcentaje de mujeres víctimas de violencia por razones de género que solicitaron y obtuvieron orden y/o medida de protección." , style="break-spaces: pre-line", class="p-2"),
                           h3(align="center","Indicador 7:", style="color:black"),
                           h4(p(align="center", "Porcentaje de mujeres víctimas de violencia por razones de género que solicitaron y obtuvieron orden y/o medida de protección.")),
@@ -1955,26 +1983,28 @@ tags$script('
        br(),
       fluidRow(column(12, offset = 5,"Seleccione algunas características")),
       fluidRow(
-        column(4,
+        column(3,
                selectInput(
                  inputId = "ind_7_año",
                  label = "Seleccione el año",
                  choices = unique(sort(indicador_7$Año)),
                  multiple = T)
         ),
-        column(4,selectInput(
+        column(3,selectInput(
           inputId = "ind_7_mes",
           label = "Seleccione el mes",
           choices = unique(sort(indicador_7$Mes)),
           multiple = TRUE
         )),
-        column(4,selectInput(
+        column(3,selectInput(
           inputId = "ind_7_municipio",
           label = "Selecciona el municipio",
           choices = unique(sort(indicador_7$Municipio)),
           multiple = FALSE,
           selected = "Estado de Jalisco"
-        ))
+        )), 
+        column(2, offset = 1, align="bottom", 
+               downloadButton("downloadData_ind_7", "Descarga (.csv)"))
       ),
       fluidRow(
         column(4,dataTableOutput("t_7", height = "auto", width = "auto")),
@@ -1982,11 +2012,13 @@ tags$script('
                plotlyOutput("gr7",  height = "600px", width = "auto"))),
       fluidRow(column(8, offset = 1,
                       h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-               ))),
-      
+               )
+      )
+      ),
+      #####
       tabPanel(title=h6("PÉNDIENTE: Indicador 8: Porcentaje de personal capacitado en la adecuada aplicación del Modelo de Atención, Otorgamiento y Seguimiento de Órdenes de Protección.", style="break-spaces: pre-line;width: 75%", class="p-2")),
       
-      
+      #####
       tabPanel(title=h6("Indicador 9: Porcentaje de medidas de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total", style="break-spaces: pre-line", class="p-2"),
                h3(align="center","Indicador 9:", style="color:black"),
                h4(p(align="center", "Porcentaje de medidas de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.")),
@@ -1998,36 +2030,40 @@ tags$script('
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,selectInput(
+    column(3,selectInput(
              inputId = "ind_9_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_9$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_9_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_9$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_9_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_9$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_9", "Descarga (.csv)"))
+  ),
   fluidRow(
     column(4,dataTableOutput("t_9", height = "auto", width = "auto")),
-    column(8, offset=0, 
+    column(8, offset=1, 
            plotlyOutput("gr9",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
-                  h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco."))))), br(),
-
-tabPanel(title=h6("Indicador 10: Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total." , style="break-spaces: pre-line;font-weight:bold", class="p-2"),
+                  h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")))
+  )), br(),
+#####
+  tabPanel(title=h6("Indicador 10: Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total." , style="break-spaces: pre-line;font-weight:bold", class="p-2"),
          h3(align="center","Indicador 10:", style="color:black"),
          h4(p(align="center", "Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("85.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2037,7 +2073,7 @@ box(
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_10_año",
              label = "Seleccione el año",
@@ -2045,41 +2081,44 @@ box(
              multiple = T
            )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_10_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_10$Mes)),
       multiple = TRUE
     )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_10_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_10$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
     )
-    )#,
-    #downloadButton("downloadData_ind_1", "Descarga (.csv)")
+    ),
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_10", "Descarga (.csv)"))
+  
   ),
   
   fluidRow(
     # div(class="display dataTable no-footer",
     column(4,dataTableOutput("t_10", height = "auto", width = "auto")),
     # h6("Fuente: Datos proporcionados por IJCF."),br(),
-    column(8, offset=0, 
+    column(8, offset=1, 
            plotlyOutput("gr10",  height = "auto", width = "auto"))
   ),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
   
-))),
-
-tabPanel(title=h6("Indicador 11: Porcentaje de mujeres que han recibido seguimiento después de otorgada su orden y/o medida de protección en relación al total."
+  ))
+  ),
+#####
+  tabPanel(title=h6("Indicador 11: Porcentaje de mujeres que han recibido seguimiento después de otorgada su orden y/o medida de protección en relación al total."
                   , style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 11:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres que han recibido seguimiento después de otorgada su orden y/o medida de protección en relación al total.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("97.3%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2088,40 +2127,44 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_11_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_11$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_11_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_11$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_11_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_11$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_11", "Descarga (.csv)"))
+  ),
   fluidRow(
     column(5,dataTableOutput("t_11", height = "auto", width = "auto")),
     column(7,plotlyOutput("gr11",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-           ))),
-
-tabPanel(title=h6("Indicador 12: Porcentaje de Carpetas de Investigación iniciadas contra personas agresoras derivados de incumplimiento de órdenes y/o medidas de protección." 
+           ))
+  ),
+#####
+  tabPanel(title=h6("Indicador 12: Porcentaje de Carpetas de Investigación iniciadas contra personas agresoras derivados de incumplimiento de órdenes y/o medidas de protección." 
                   , style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 12:", style="color:black"),
 
          h4(p(align="center", "Porcentaje de Carpetas de Investigación iniciadas contra personas agresoras derivados de incumplimiento de órdenes y/o medidas de protección.")),
 
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("7.8%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2131,7 +2174,7 @@ box(
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_12_año",
              label = "Seleccione el año",
@@ -2139,20 +2182,22 @@ box(
              multiple = T
            )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_12_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_12$Mes)),
       multiple = TRUE
     )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_12_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_12$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_12", "Descarga (.csv)"))),
   
   fluidRow(
     # div(class="display dataTable no-footer",
@@ -2162,14 +2207,15 @@ box(
   ),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-))),
-
-tabPanel(title=h6("Indicador 13: Porcentaje de casos en los que la orden y/o medida de protección resultó ser adecuada y efectiva para la víctima en relación al total", 
+  ))
+  ),
+#####
+  tabPanel(title=h6("Indicador 13: Porcentaje de casos en los que la orden y/o medida de protección resultó ser adecuada y efectiva para la víctima en relación al total", 
                   style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 13:", style="color:black"),
          
          h4(p(align="center", "Porcentaje de casos en los que la orden y/o medida de protección resultó ser adecuada y efectiva para la víctima en relación al total.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("99.9%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2178,43 +2224,50 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_13_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_13$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_13_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_13$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_13_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_13$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_13", "Descarga (.csv)"))
+    ),
   fluidRow(
     dataTableOutput("t_13", height = "auto", width = "auto")),
   fluidRow(plotlyOutput("gr13",  height = "600px", width = "auto")),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-  ))),
+  ))
+  ),
+#####
     tabPanel(title=h6("PENDIENTE: Indicador 14: Porcentaje de mujeres víctimas de violencia con órdenes de protección que perciben que han recuperado su sensación de seguridad frente a las personas agresoras", style="break-spaces: pre-line", class="p-2")),
-    
+#####    
     tabPanel(title=h6("PENDIENTE: Indicador 15: Porcentaje de mujeres víctimas de violencia con medida de protección que perciben que han recuperado su sensación de seguridad frente a las personas agresoras", style="break-spaces: pre-line", class="p-2")
-)),
+    )
+  ),
 # ILE IVE ----------------------------------------------------------------------
 
-navbarMenu(title = p("ILE / IVE", style ="font-weight:bold; color: #ffffff;"),
-tabPanel(title = h6("Indicador 16: Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total", style="break-spaces: pre-line", class="p-2"),
+  navbarMenu(title = p("ILE / IVE", style ="font-weight:bold; color: #ffffff;"),
+  #####
+             tabPanel(title = h6("Indicador 16: Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 16:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("37.9%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2223,7 +2276,7 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6,
+    column(4,
            selectInput(
              inputId = "ind_16_año",
              label = "Seleccione el año",
@@ -2236,12 +2289,15 @@ box(
     #   choices = unique(sort(indicador_16$Mes)),
     #   multiple = TRUE
     # )),
-    column(6,selectInput(
+    column(4,selectInput(
       inputId = "ind_16_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_16$`Rango de edad`)),
       multiple = TRUE
-    ))),
+    )),
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_16", "Descarga (.csv)"))
+  ),
   fluidRow(
     # splitLayout(cellWidths = c("40%", "60%"),
     #             dataTableOutput("t_1"),
@@ -2255,12 +2311,13 @@ box(
   #     plotlyOutput("gr16",  height = "auto", width = "auto"))),
   fluidRow(column(6, offset = 1,
                   h6("Fuente: Datos proporcionados por IJCF.")), br()
-))),
-
-tabPanel(title=h6("Indicador 17: Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total", style="break-spaces: pre-line", class="p-2"),
+  ))
+  ),
+#####
+  tabPanel(title=h6("Indicador 17: Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 17:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("46.4%", "Indicador 2023", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
@@ -2270,7 +2327,7 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6,
+    column(4,
            selectInput(
              inputId = "ind_17_año",
              label = "Seleccione el año",
@@ -2283,12 +2340,15 @@ box(
     #   choices = unique(sort(indicador_17$Mes)),
     #   multiple = TRUE
     # )),
-    column(6,selectInput(
+    column(4,selectInput(
       inputId = "ind_17_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_17$`Rango`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_17", "Descarga (.csv)"))
+    ),
   fluidRow(
     # splitLayout(cellWidths = c("40%", "60%"),
     #             dataTableOutput("t_1"),
@@ -2301,12 +2361,14 @@ box(
   #   fluidRow(
   #     plotlyOutput("gr17",  height = "450px", width = "auto"))),
   fluidRow(column(10, offset = 1,
-                  h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()))),
-
-tabPanel(title = h6("Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento", style="break-spaces: pre-line", class="p-2"),
+                  h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
+           ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 18:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("46.4%", "Atenciones por violación en 2023", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
@@ -2317,7 +2379,7 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6,
+    column(4,
            selectInput(
              inputId = "ind_18_año",
              label = "Seleccione el año",
@@ -2330,22 +2392,27 @@ box(
     #   choices = unique(sort(indicador_18$Mes)),
     #   multiple = TRUE
     # )),
-    column(6,selectInput(
+    column(4,selectInput(
       inputId = "ind_18_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_18$Rango)),
       multiple = TRUE
-    ))),
+    )), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_18", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(6,dataTableOutput("t_18", height = "auto", width = "auto")),
     column(6,plotlyOutput("gr18",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-           ))),
-tabPanel(title = h6("Indicador 19: Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco", style="break-spaces: pre-line", class="p-2"),
+           ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 19: Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 19:", style="color:black"),
          h4(p(align="center", "Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco.")),
-box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("99.1%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 6), # actualizar
@@ -2355,7 +2422,7 @@ box(
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_19_año",
              label = "Seleccione el año",
@@ -2363,27 +2430,31 @@ box(
              multiple = T
            )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_19_causal",
       label = "Selecciona la causal",
       choices = unique(sort(indicador_19$`Causal: (salud/riesgo)`)),
       multiple = TRUE
     )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_19_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_19$Rango)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_19", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(6,dataTableOutput("t_19", height = "auto", width = "auto")),
     column(6,plotlyOutput("gr19",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por IJCF.")), br()
-           ))),
-
-tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Salud por violencia familiar y/o sexual que se notifican al Ministerio Público de Fiscalía",
+           ))
+  ),
+#####
+  tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Salud por violencia familiar y/o sexual que se notifican al Ministerio Público de Fiscalía",
                    style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 20:", style="color:black"),
          h4(p(align="center", "Porcentaje de casos atendidos en el Sector Salud por violencia familiar y/o sexual que se notifican al Ministerio Público de Fiscalía.")),
@@ -2397,7 +2468,7 @@ tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Sal
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6,
+    column(4,
            selectInput(
              inputId = "ind_20_año",
              label = "Seleccione el año",
@@ -2410,12 +2481,15 @@ tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Sal
     #   choices = unique(sort(indicador_20$`Causal: (salud/riesgo)`)),
     #   multiple = TRUE)
     # ),
-    column(6,selectInput(
+    column(4,selectInput(
       inputId = "ind_20_tipo",
       label = "Selecciona el tipo de violencia",
       choices = unique(sort(indicador_20$`Tipo de violencia: (violencia familiar / sexual)`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_20", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     fluidRow(column(12,dataTableOutput("t_20", height = "auto", width = "auto"))),
@@ -2423,9 +2497,11 @@ tabPanel(title =h6("Indicador 20: Porcentaje de casos atendidos en el Sector Sal
       plotlyOutput("gr20",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-           ))),
+           ))
+  ),
+#####
 
-tabPanel(title = h6("Indicador 21: Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE",
+  tabPanel(title = h6("Indicador 21: Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE",
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 21:", style="color:black"),
          h4(p(align="center", "Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE.")),
@@ -2439,26 +2515,29 @@ tabPanel(title = h6("Indicador 21: Porcentaje de establecimientos estatales prov
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6, offset = 2, 
+    column(4, offset = 0, 
            selectInput(
              inputId = "ind_21_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_21$Año)),
              multiple = T
            )),
-    column(6,offset = 2,selectInput(
+    column(4,offset = 0,selectInput(
       inputId = "ind_21_establecimiento",
       label = "Seleccione el hospital",
       choices = unique(sort(indicador_21$Establecimiento)),
       multiple = TRUE
-    ))),
+    )), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_21", "Descarga (.csv)"))),
   fluidRow(
     column(12,dataTableOutput("t_21", height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-           ))),
-
-tabPanel(title = h6("Indicador 22: Porcentaje del personal de salud relacionado al procedimiento ILE/IVE, capacitado en el Programa ILE y NOM 046", 
+           ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 22: Porcentaje del personal de salud relacionado al procedimiento ILE/IVE, capacitado en el Programa ILE y NOM 046", 
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 22:", style="color:black"),
          h4(p(align="center", "Porcentaje del personal de salud relacionado al procedimiento ILE/IVE, capacitado en el Programa ILE y NOM 046.")),
@@ -2469,18 +2548,20 @@ tabPanel(title = h6("Indicador 22: Porcentaje del personal de salud relacionado 
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(6, offset = 2,
+    column(4, offset = 0,
            selectInput(
              inputId = "ind_22_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_22$Año)),
              multiple = T)
     ),
-    column(6, offset = 2, selectInput(
+    column(4, offset = 0, selectInput(
       inputId = "ind_22_formación",
       label = "Seleccione la formación del personal",
       choices = unique(sort(indicador_22$Formación)),
-      multiple = TRUE))),
+      multiple = TRUE)), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_22", "Descarga (.csv)"))),
   fluidRow(
     fluidRow(column(12,dataTableOutput("t_22", height = "auto", width = "auto")))
     # fluidRow(
@@ -2488,9 +2569,10 @@ tabPanel(title = h6("Indicador 22: Porcentaje del personal de salud relacionado 
     ),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-           ))),
-
-tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente capacitado en el procedimiento ILE/IVE",
+           ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente capacitado en el procedimiento ILE/IVE",
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 23:", style="color:black"),
          h4(p(align="center",
@@ -2503,37 +2585,42 @@ tabPanel(title = h6("Indicador 23: Porcentaje de personal médico debidamente ca
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_22_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_22$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_23_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_23$Mes)),
       multiple = TRUE)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_23_formación",
       label = "Selecciona la formación del personal medicx",
       choices = unique(sort(indicador_23$Función)),
       multiple = TRUE)
-    )),
+    ), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_23", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(4,dataTableOutput("t_23", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr23",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-  )))
-),
+  ))
+  )
+  ),
 
 # Baedavim ---------------------------------------------------------------------
 
-navbarMenu(title = p("BAEDAVIM", style ="font-weight:bold; color: #ffffff;"),
-tabPanel(h6("Indicador 24: Porcentaje de municipios que actualizan la información sobre atención a mujeres víctimas de violencia con respecto al total", 
+  navbarMenu(title = p("BAEDAVIM", style ="font-weight:bold; color: #ffffff;"),
+    #####
+             tabPanel(h6("Indicador 24: Porcentaje de municipios que actualizan la información sobre atención a mujeres víctimas de violencia con respecto al total", 
             style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 24:", style="color:black"),
          h4(p(align="center",
@@ -2547,35 +2634,40 @@ tabPanel(h6("Indicador 24: Porcentaje de municipios que actualizan la informaci�
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_24_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_24$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_24_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_24$Mes)),
       multiple = TRUE)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_24_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_24$Municipio)),
       multiple = FALSE,
       selected = "Estado de Jalisco"
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_24", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_24", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr24",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Secretaría de Salud y OPD Servicios de Salud Jalisco.")), br()
-))
-),
-tabPanel(h6("Indicador 25: Porcentaje del personal responsable de la actualización del banco de datos adecuadamente capacitado con relación al total", 
+           ))
+  ),
+  #####
+
+  tabPanel(h6("Indicador 25: Porcentaje del personal responsable de la actualización del banco de datos adecuadamente capacitado con relación al total", 
             style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 25:", style="color:black"),
          h4(p(align="center", "Porcentaje del personal responsable de la actualización del banco de datos adecuadamente capacitado con relación al total.")),
@@ -2588,26 +2680,29 @@ tabPanel(h6("Indicador 25: Porcentaje del personal responsable de la actualizaci
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_25_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_25$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_25_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_25$Mes)),
       multiple = TRUE
     )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_25_nivel",
       label = "Selecciona el nivel",
       choices = unique(sort(indicador_25$Nivel)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_25", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_25", height = "auto", width = "auto")),
@@ -2616,9 +2711,10 @@ tabPanel(h6("Indicador 25: Porcentaje del personal responsable de la actualizaci
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
 
-           ))),
-
-tabPanel(h6("Indicador 26: Porcentaje de instancias estatales responsables de alimentar banco de datos que actualizan en tiempo y forma en relación al total de instancias obligadas", style="break-spaces: pre-line", class="p-2"),
+           ))
+  ),
+#####
+  tabPanel(h6("Indicador 26: Porcentaje de instancias estatales responsables de alimentar banco de datos que actualizan en tiempo y forma en relación al total de instancias obligadas", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 26:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de instancias estatales responsables de alimentar banco de datos que actualizan en tiempo y forma en relación al total de instancias obligadas.")),
@@ -2643,19 +2739,25 @@ tabPanel(h6("Indicador 26: Porcentaje de instancias estatales responsables de al
       label = "Seleccione el mes",
       choices = unique(sort(indicador_26$Mes)),
       multiple = TRUE
-    ))),
+    )), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_26", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_26", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr26",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-           )))),
+           ))
+  )
+  ),
   
 # Delitos por razón de género---------------------------------------------------
 
-navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; color: #ffffff;"),
-           tabPanel(h6("Indicador 27: Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio y desaparición de niñas, adolescentes y mujeres",style="break-spaces: pre-line", class="p-2"),
+  navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; color: #ffffff;"),
+           #####
+             tabPanel(h6("Indicador 27: Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio y desaparición de niñas, adolescentes y mujeres",style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 27:", style="color:black"),
          h4(p(align="center",
               "Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio y desaparición de niñas, adolescentes y mujeres.")),
@@ -2667,7 +2769,7 @@ navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; 
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4, offset = 2, 
+    column(4, offset = 0, 
            selectInput(
              inputId = "ind_27_año",
              label = "Seleccione el año",
@@ -2675,12 +2777,15 @@ navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; 
              multiple = T
            )
     ),
-    column(4,offset = 2, selectInput(
+    column(4,offset = 0, selectInput(
       inputId = "ind_27_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_27$Mes)),
       multiple = TRUE)
-    )),
+    ), 
+    column(3, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_27", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_27", height = "auto", width = "auto")),
@@ -2689,12 +2794,16 @@ navbarMenu(title = p("Delitos por razón de género", style ="font-weight:bold; 
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
   ))
-),
-tabPanel(h6("Indicador 28: Porcentaje de mujeres víctimas de violación y violencia familiar que son atendidas y proceden a realizar una denuncia en los Centros de Justicia para las Mujeres, en relación al total de mujeres atendidas en los Centros de Justicia para las Mujeres", style="break-spaces: pre-line", class="p-2"),
+
+  ),
+  #####
+
+  tabPanel(h6("Indicador 28: Porcentaje de mujeres víctimas de violación y violencia familiar que son atendidas y proceden a realizar una denuncia en los Centros de Justicia para las Mujeres, en relación al total de mujeres atendidas en los Centros de Justicia para las Mujeres", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 28:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de mujeres víctimas de violación y violencia familiar que son atendidas y proceden a realizar una denuncia en los Centros de Justicia para las Mujeres, en relación al total de mujeres atendidas en los Centros de Justicia para las Mujeres.")),
-box(
+
+         box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("83.0%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2704,7 +2813,7 @@ box(
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_28_año",
              label = "Seleccione el año",
@@ -2712,31 +2821,38 @@ box(
              multiple = T
            )
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_28_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_28$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_28_municipio",
       label = "Selecciona el municipio",
       choices = unique(sort(indicador_28$Municipio)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_28", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_28", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr28",  height = "600px", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-))),
-tabPanel(h6("Indicador 29: Porcentaje de casos de violencia contra las mujeres por razones de género judicializados", 
+  ))
+  ),
+  #####
+
+  tabPanel(h6("Indicador 29: Porcentaje de casos de violencia contra las mujeres por razones de género judicializados", 
             style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 29:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de casos de violencia contra las mujeres por razones de género judicializados.")),
-box(
+
+         box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("20.2%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2745,14 +2861,14 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(3,
+    column(2,
      selectInput(
        inputId = "ind_29_año",
        label = "Seleccione el año",
        choices = unique(sort(indicador_29$Año)),
        multiple = T
      )),
-    column(3,selectInput(
+    column(2,selectInput(
       inputId = "ind_29_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_29$Mes)),
@@ -2764,25 +2880,30 @@ box(
       choices = unique(sort(indicador_29$Municipio)),
       multiple = TRUE
     )),
-    column(3,selectInput(
+    column(2,selectInput(
       inputId = "ind_29_delito",
       label = "Selecciona el delito",
       choices = unique(sort(indicador_29$Delito)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_29", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(4,dataTableOutput("t_29", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr29",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-))),
 
-tabPanel(h6("Indicador 30: Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso", 
+           ))
+  ),
+#####
+  tabPanel(h6("Indicador 30: Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso", 
             style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 30:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso.")),
-box(
+    box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("29.4%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2792,36 +2913,44 @@ box(
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,  
+    column(3,  
            selectInput(
              inputId = "ind_30_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_30$Año)),
              multiple = T
            )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_30_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_30$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_30_condena",
       label = "Selecciona el tipo de condena",
       choices = unique(sort(indicador_30$`Tipo de sentencia (absolutoria, condenatoria y en proceso)`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_30", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(4,dataTableOutput("t_30", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr30",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-)))),
+           ))
+    )
+  ),
 
 # Protocolo alba----------------------------------------------------------------
-navbarMenu(title = p("Protocolo Alba", style ="font-weight:bold; color: #ffffff;"),
-tabPanel(title=h6("PENDIENTE: Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas", style="break-spaces: pre-line", class="p-2")),
-tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas", style="break-spaces: pre-line", class="p-2"),
+
+  navbarMenu(title = p("Protocolo Alba", style ="font-weight:bold; color: #ffffff;"),
+   #####
+              tabPanel(title=h6("PENDIENTE: Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas", style="break-spaces: pre-line", class="p-2")),
+   ##### 
+   tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas", style="break-spaces: pre-line", class="p-2"),
          tabItem(tabName = "Ind32",
                  fluidRow(width=10,
                           h3(align="center","Indicador 32:", style="color:black"),
@@ -2836,7 +2965,7 @@ tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes 
                     br(),
                    fluidRow(column(12, offset = 5,"Seleccione algunas características")),
                    fluidRow(
-                     column(4,
+                     column(3,
                             selectInput(
                               inputId = "ind_32_año",
                               label = "Seleccione el año",
@@ -2844,20 +2973,23 @@ tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes 
                               multiple = T
                             )
                      ),
-                     column(4,selectInput(
+                     column(3,selectInput(
                        inputId = "ind_32_mes",
                        label = "Seleccione el mes",
                        choices = unique(sort(indicador_32$Mes)),
                        multiple = TRUE
                      )
                      ),
-                     column(4,selectInput(
+                     column(3,selectInput(
                        inputId = "ind_32_municipio",
                        label = "Selecciona el municipio",
                        choices = unique(sort(indicador_32$Municipio)),
                        multiple = FALSE,
                        selected = "Estado de Jalisco"
-                     ))),
+                     )), 
+                     column(2, offset = 1, align="bottom", 
+                            downloadButton("downloadData_ind_32", "Descarga (.csv)"))
+                     ),
                    
                    fluidRow(
                      dataTableOutput("t_32", height = "auto", width = "auto")),
@@ -2865,9 +2997,11 @@ tabPanel(title = h6("Indicador 32: Número de denuncias de niñas, adolescentes 
                               plotlyOutput("gr32",  height = "600px", width = "auto")),
                    fluidRow(column(8, offset = 1,
                                    h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-                            ))))),
-
-tabPanel(title = h6("Indicador 33: Porcentaje de cédulas únicas de difusión que son remitidas al Comité Técnico de Colaboración", 
+                            )))
+                 )
+         ),
+#####
+  tabPanel(title = h6("Indicador 33: Porcentaje de cédulas únicas de difusión que son remitidas al Comité Técnico de Colaboración", 
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 33:", style="color:black"),
          h4(p(align="center",
@@ -2880,32 +3014,37 @@ tabPanel(title = h6("Indicador 33: Porcentaje de cédulas únicas de difusión q
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_33_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_33$Año)),
              multiple = T
            )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_33_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_33$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_33_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_33$Edad)),
-      multiple = TRUE))),
+      multiple = TRUE)), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_33", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_33", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr33",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
-                  h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()))),
-
-tabPanel(title = h6("Indicador 34: Porcentaje de casos de búsqueda y localización realizados de forma inmediata y diferenciada en relación al total de casos", 
+                  h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br())
+  )
+  ),
+#####
+  tabPanel(title = h6("Indicador 34: Porcentaje de casos de búsqueda y localización realizados de forma inmediata y diferenciada en relación al total de casos", 
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 34:", style="color:black"),
          h4(p(align="center",
@@ -2919,39 +3058,43 @@ tabPanel(title = h6("Indicador 34: Porcentaje de casos de búsqueda y localizaci
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
      selectInput(
        inputId = "ind_34_año",
        label = "Seleccione el año",
        choices = unique(sort(indicador_34$Año)),
        multiple = T
      )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_34_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_34$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_34_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_34$`Rango de edad`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_34", "Descarga (.csv)"))),
   fluidRow(
     dataTableOutput("t_34", height = "400px", width = "auto")),
   fluidRow(
            plotlyOutput("gr34",  height = "700px", width = "auto")),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-           ))),
-
-tabPanel(title = h6("Indicador 35: Porcentaje de Cédulas de Difusión activas en relación al total de Cédulas de Difusión emitidas", 
+           ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 35: Porcentaje de Cédulas de Difusión activas en relación al total de Cédulas de Difusión emitidas", 
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 35:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de Cédulas de Difusión activas en relación al total de Cédulas de Difusión emitidas.")),
-box(
+    
+         box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("31.6%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 3), # actualizar
@@ -2963,33 +3106,38 @@ box(
   # sidebarLayout(
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4, offset = 2,
+    column(3, offset = 2,
            selectInput(
              inputId = "ind_35_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_35$Año)),
              multiple = T
            )),
-    column(4,offset = 2,selectInput(
+    column(3,offset = 2,selectInput(
       inputId = "ind_35_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_35$Mes)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_35", "Descarga (.csv)"))
+    ),
   
   fluidRow(
     column(4,dataTableOutput("t_35", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr35",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-  ))
-),
-tabPanel(title = h6("Indicador 36: Porcentaje de casos de investigación de desaparición de niñas y adolescentes en los que se activa reporte Amber", 
+      ))
+  ),
+#####
+    
+  tabPanel(title = h6("Indicador 36: Porcentaje de casos de investigación de desaparición de niñas y adolescentes en los que se activa reporte Amber", 
                     style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 36:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de casos de investigación de desaparición de niñas y adolescentes en los que se activa reporte Amber.")),
- box(
+  box(
   width=12,
   div(class="row d-flex", #Replicar
       valueBox("100%", "Indicador 2022", icon=icon("equals"),color="fuchsia", width = 4), # actualizar
@@ -2999,34 +3147,37 @@ tabPanel(title = h6("Indicador 36: Porcentaje de casos de investigación de desa
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4, 
+    column(3, 
            selectInput(
              inputId = "ind_36_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_36$Año)),
              multiple = T
            )),
-    column(4, selectInput(
+    column(3, selectInput(
       inputId = "ind_36_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_36$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_36_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_36$`Rango de edad`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_36", "Descarga (.csv)"))),
 
   fluidRow(
     column(4,dataTableOutput("t_36", height = "auto", width = "auto")),
     column(8,plotlyOutput("gr36",  height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-))
-),
-tabPanel(title = h6("Indicador 37: Porcentaje de personal capacitado en el Protocolo Alba", style="break-spaces: pre-line", class="p-2"),
+    ))
+  ),
+#####
+  tabPanel(title = h6("Indicador 37: Porcentaje de personal capacitado en el Protocolo Alba", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 37:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de personal capacitado en el Protocolo Alba.")),
@@ -3039,30 +3190,34 @@ tabPanel(title = h6("Indicador 37: Porcentaje de personal capacitado en el Proto
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_37_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_37$Año)),
              multiple = T
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_37_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_37$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_37_personal",
       label = "Seleccione la función del personal",
       choices = unique(sort(indicador_37$Personal)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_37", "Descarga (.csv)"))
+    ),
   fluidRow(column(10,dataTableOutput("t_37", height = "auto", width = "auto"))),
   fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
            ))),
+#####
 
-tabPanel(title = h6("Indicador 38: Porcentaje de casos resueltos en etapa de investigación", style="break-spaces: pre-line", class="p-2"),
+  tabPanel(title = h6("Indicador 38: Porcentaje de casos resueltos en etapa de investigación", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 38:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de casos resueltos en etapa de investigación.")),
@@ -3074,33 +3229,38 @@ tabPanel(title = h6("Indicador 38: Porcentaje de casos resueltos en etapa de inv
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-  column(4,
+  column(3,
    selectInput(
    inputId = "ind_38_año",
    label = "Seleccione el año",
    choices = unique(sort(indicador_38$Año)),
    multiple = T
    )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_38_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_38$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_38_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_38$`Rango de edad`)),
-      multiple = TRUE))),
+      multiple = TRUE)), 
+  column(2, offset = 1, align="bottom", 
+         downloadButton("downloadData_ind_38", "Descarga (.csv)"))
+  ),
   fluidRow(
     column(4,dataTableOutput("t_38", height = "800px", width = "auto")),
     column(8,plotlyOutput("gr38",  height = "600px", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-))),
 
+           ))
+  ),
+#####
 
-tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reciben seguimiento", style="break-spaces: pre-line", class="p-2"),
+    tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reciben seguimiento", style="break-spaces: pre-line", class="p-2"),
          h3(align="center","Indicador 39:", style="color:black"),
          h4(p(align="center",
               "Porcentaje de casos de desaparición que reciben seguimiento.")),
@@ -3112,34 +3272,41 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
    br(),
   fluidRow(column(12, offset = 5,"Seleccione algunas características")),
   fluidRow(
-    column(4,
+    column(3,
            selectInput(
              inputId = "ind_39_año",
              label = "Seleccione el año",
              choices = unique(sort(indicador_39$Año)),
              multiple = T)
     ),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_39_mes",
       label = "Seleccione el mes",
       choices = unique(sort(indicador_39$Mes)),
       multiple = TRUE
     )),
-    column(4,selectInput(
+    column(3,selectInput(
       inputId = "ind_39_edad",
       label = "Selecciona el rango de edad",
       choices = unique(sort(indicador_39$`Rango de edad`)),
       multiple = TRUE
-    ))),
+    )), 
+    column(2, offset = 1, align="bottom", 
+           downloadButton("downloadData_ind_39", "Descarga (.csv)"))
+    ),
   fluidRow(
     column(4,dataTableOutput("t_39", height = "800px", width = "auto")),
     column(8,plotlyOutput("gr39",  height = "600px", width = "auto"))),
   fluidRow(column(8, offset = 1,
                   h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br()
-  )))),
+        )
+      )
+    )
+  ),
 
 # Generales---------------------------------------------------------------------
   navbarMenu(title = p("Generales", style ="font-weight:bold; color: #ffffff;"),
+             #####
              tabPanel(title = h6("Indicador 40: Porcentaje de muertes violentas de mujeres registradas, en relación al año anterior",
                                  style="break-spaces: pre-line", class="p-2"),
                       h3(align="center","Indicador 40:", style="color:black"),
@@ -3150,27 +3317,37 @@ tabPanel(title = h6("Indicador 39: Porcentaje de casos de desaparición que reci
                                         valueBox("-10.7%", "Indicador 2020", icon=icon("wave-square"),color="maroon", width = 4)), # actualizar
                            br(),
                           fluidRow(column(12, offset = 5,"Seleccione algunas características")),
-                          fluidRow(column(4, offset = 2,
+                          fluidRow(column(3, offset = 0,
                                           selectInput(
                                             inputId = "ind_40_año",
                                             label = "Seleccione el año",
                                             choices = unique(sort(indicador_39$Año)),
                                             multiple = T)),
-                                   column(4, offset = 2,selectInput(
+                                   column(3, offset = 0,selectInput(
                                      inputId = "ind_40_mes",
                                      label = "Seleccione el mes",
                                      choices = unique(sort(indicador_39$Mes)),
                                      multiple = TRUE
-                                     ))),
+                                     )), 
+                                   column(3, offset = 1, align="bottom", 
+                                          downloadButton("downloadData_ind_40", "Descarga (.csv)"))
+                                   ),
                           fluidRow(dataTableOutput("t_40", height = "350px", width = "auto")),
                           fluidRow(plotlyOutput("gr40",  height = "800px", width = "auto")),
                           fluidRow(column(8, offset = 1, h6("Fuente: Datos proporcionados por Fiscalía del Estado de Jalisco.")), br())
              )),
+             #####
              tabPanel(title = h6("PENDIENTE: Indicador 41: Porcentaje de casos judicializados como feminicidios juzgados con perspectiva de género"),
                       style="break-spaces: pre-line", class="p-2"),
-             tabPanel(title=h6("PENDIENTE:Indicador 42: Tasa de variación de recursos estatales destinados a la alerta de violencia de género contra las mujeres, en relación al año anterior", style="break-spaces: pre-line", class="p-2"))
-)
-))))#jati
+             #####
+             tabPanel(title=h6("PENDIENTE:Indicador 42: Tasa de variación de recursos estatales destinados a la alerta de violencia de género contra las mujeres, en relación al año anterior", style="break-spaces: pre-line", class="p-2")
+                      )
+
+             )
+            )
+          )
+        )
+)#jati
 
 
 # Server - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -7171,6 +7348,287 @@ server <- function(input, output, session) {
   #   
   #   
   # })  
+  
+  output$downloadData_ind_1 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_1.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_1, file, row.names = F)
+    })
+  
+  output$downloadData_ind_2 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_2.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_2, file, row.names = F)
+    })
+
+  output$downloadData_ind_3 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_3.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_3, file, row.names = F)
+    })
+
+  output$downloadData_ind_4 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_4.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_4, file, row.names = F)
+    })
+
+  output$downloadData_ind_6 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_6.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_6, file, row.names = F)
+    })
+
+  output$downloadData_ind_7 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_7.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_7, file, row.names = F)
+    })
+
+  output$downloadData_ind_9 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_9.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_9, file, row.names = F)
+    })
+
+  output$downloadData_ind_10 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_10.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_10, file, row.names = F)
+    })
+
+  output$downloadData_ind_11 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_11.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_11, file, row.names = F)
+    })
+
+  output$downloadData_ind_12 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_12.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_12, file, row.names = F)
+    })
+
+  output$downloadData_ind_13 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_13.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_13, file, row.names = F)
+    })
+
+  output$downloadData_ind_16 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_16.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_16, file, row.names = F)
+    })
+
+  output$downloadData_ind_17 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_17.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_17, file, row.names = F)
+    })
+
+  output$downloadData_ind_18 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_18.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_18, file, row.names = F)
+    })
+
+  output$downloadData_ind_19 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_19.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_19, file, row.names = F)
+    })
+
+  output$downloadData_ind_20 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_20.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_20, file, row.names = F)
+    })
+
+  output$downloadData_ind_21 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_21.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_21, file, row.names = F)
+    })
+
+  output$downloadData_ind_22 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_22.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_22, file, row.names = F)
+    })
+
+  output$downloadData_ind_23 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_23.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_23, file, row.names = F)
+    })
+
+  output$downloadData_ind_24 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_24.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_24, file, row.names = F)
+    })
+
+  output$downloadData_ind_25 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_25.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_25, file, row.names = F)
+    })
+
+  output$downloadData_ind_26 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_26.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_26, file, row.names = F)
+    })
+
+  output$downloadData_ind_27 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_27.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_27, file, row.names = F)
+    })
+
+  output$downloadData_ind_28 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_28.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_28, file, row.names = F)
+    })
+
+  output$downloadData_ind_29 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_29.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_29, file, row.names = F)
+    })
+
+  output$downloadData_ind_30 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_30.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_30, file, row.names = F)
+    })
+
+  output$downloadData_ind_32 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_32.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_32, file, row.names = F)
+    })
+
+  output$downloadData_ind_33 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_33.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_33, file, row.names = F)
+    })
+
+  output$downloadData_ind_34 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_34.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_34, file, row.names = F)
+    })
+
+  output$downloadData_ind_35 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_35.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_35, file, row.names = F)
+    })
+
+  output$downloadData_ind_36 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_36.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_36, file, row.names = F)
+    })
+
+  output$downloadData_ind_37 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_37.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_37, file, row.names = F)
+    })
+
+  output$downloadData_ind_38 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_38.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_38, file, row.names = F)
+    })
+
+  output$downloadData_ind_39 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_39.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_39, file, row.names = F)
+    })
+
+  output$downloadData_ind_40 <- downloadHandler(
+    filename = function() {
+      paste(input$dataset, "indicador_40.xlsx", sep = "")
+    },
+    content = function(file) {
+      openxlsx::write.xlsx(indicador_40, file, row.names = F)
+    })
+  
   
 }
 
