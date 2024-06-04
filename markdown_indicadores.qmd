@@ -1,0 +1,340 @@
+---
+title: "Indicadores de Alerta de Violencia de Género contra las mujeres (fase de pruebas)"
+format: html
+editor: visual
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: librerias
+
+library(tidyverse)
+#library(DT)
+library(janitor)
+library(scales)
+library(kableExtra)
+
+#metemos la base de datos
+
+bases <- read_rds("bases_avgm.rds") 
+nombres_bases <- names(bases)
+for (i in nombres_bases) {
+  assign(i, bases[[i]] %>% clean_names()) 
+}
+```
+
+```{r}
+#| label: tablas contextuales
+tabla_ijcf <- readxl::read_excel("indicadores_ijcf.xlsx", 
+                                 sheet = 2, skip = 1) %>%
+  clean_names()
+
+tipo_muertes <- tabla_ijcf %>% 
+  tabyl(clasificacion_de_causa_de_muerte_violenta_o_natural, ano) %>% 
+  rename(Clasificación=clasificacion_de_causa_de_muerte_violenta_o_natural) %>% 
+   # Añadir totales por columna
+  adorn_percentages("all") %>%  # Añadir porcentajes por fila y columna
+  adorn_pct_formatting(digits = 1) %>%  # Formatear porcentajes con 1 decimal
+  adorn_ns(position = "front") %>% 
+  mutate(Clasificación=factor(Clasificación, 
+                              levels=c("Violenta", "Natural", "No Aplica"))) %>% arrange(desc(Clasificación))
+
+tabla_13 <- tipo_muertes %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Clasificación de muertes de mujeres en Jalisco" = length(names(tipo_muertes))))
+  
+tabla_13
+```
+
+```{r}
+#| label: tabla 14
+
+tipo_mujeres <- tabla_ijcf %>% 
+  mutate("Expresión de género"=case_when(
+    genero_de_la_victima=="Mujer" ~ "Mujeres", 
+    genero_de_la_victima=="Hombre Trans" ~ "Hombres trans", 
+    genero_de_la_victima=="Mujer Trans" ~ "Mujeres trans", 
+    T ~ genero_de_la_victima
+  )) %>% 
+  tabyl(`Expresión de género`,clasificacion_de_causa_de_muerte_violenta_o_natural) %>% 
+  adorn_totals("col") %>% adorn_totals() %>% 
+  mutate("Expresión de género"=factor(`Expresión de género`, 
+                                      levels=c("Mujeres", 
+                                               "Mujeres trans", 
+                                               "Hombres trans", "CIS", 
+                                               "Total"))) %>% 
+  arrange(`Expresión de género`) %>% 
+  mutate_at(vars(contains(c("Na", "No", "Vio", "Total"))), ~comma(., 1))
+
+tabla_14 <- tipo_mujeres %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Clasificación de muertes de mujeres por expresión
+de género" = length(names(tipo_mujeres)))) %>% 
+  row_spec(nrow(tipo_mujeres), bold = T, color = "white", background = "#666") %>% 
+  column_spec(length(tipo_mujeres), bold = T)
+  
+tabla_14
+
+```
+
+```{r}
+#| label: tabla 15
+
+causa_muertes <- tabla_ijcf %>% 
+  filter(clasificacion_de_causa_de_muerte_violenta_o_natural=="Violenta") %>% mutate(posible_causa_de_muerte_y_o_mecanismo_de_muerte=str_to_sentence(posible_causa_de_muerte_y_o_mecanismo_de_muerte)) %>% 
+  tabyl(posible_causa_de_muerte_y_o_mecanismo_de_muerte, ano) %>% 
+  adorn_totals("col") %>% adorn_totals() %>% 
+  rename("Clasificación"=posible_causa_de_muerte_y_o_mecanismo_de_muerte) %>% 
+  mutate_at(vars(contains(c("20", "To"))), ~comma(., 1))
+
+tabla_15 <- causa_muertes %>% kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Clasificación de muertes violentas por causa/objeto" = length(names(causa_muertes)))) %>% 
+  row_spec(nrow(causa_muertes), bold = T, color = "white", background = "#666") %>% 
+  column_spec(length(causa_muertes), bold = T)
+
+tabla_15
+
+```
+
+```{r}
+#| label: tabla 16
+
+municipios_muertes <- tabla_ijcf %>% 
+    filter(clasificacion_de_causa_de_muerte_violenta_o_natural=="Violenta") %>% group_by(municipio_de_suceso, ano) %>% 
+  summarise(Total=n()) %>% group_by(ano) %>% 
+  top_n(10) %>% group_split(ano) 
+nueva_base <- list()
+years <- sort(unique(tabla_ijcf$ano))
+for (i in seq_along(municipios_muertes)) {
+  df <- municipios_muertes[[i]]
+  # Renombrar las columnas añadiendo el año correspondiente, excepto para 'municipio_de_suceso'
+  # colnames(df)[-1] <- paste0(colnames(df)[-1], "_", years[i])
+  # Asignar el dataframe renombrado de vuelta a la lista
+  nueva_base[[i]] <- df %>% select(contains(c("muni", "Total"))) %>% 
+    rename("Municipio"=municipio_de_suceso) %>% arrange(desc(Total)) %>% 
+    mutate_all(~as.character(.))
+}
+
+
+combine_dataframes <- function(df_list) {
+  # Encontrar el número máximo de filas
+  max_rows <- max(sapply(df_list, nrow))
+  
+  # Rellenar los dataframes con NA para igualar el número de filas
+  df_list <- lapply(df_list, function(df) {
+    if (nrow(df) < max_rows) {
+      # Crear un dataframe con NA para rellenar
+      fill <- as.data.frame(matrix(NA, nrow = max_rows - nrow(df), ncol = ncol(df)))
+      colnames(fill) <- colnames(df)
+      # Rellenar el dataframe con NA
+      df <- rbind(df, fill)
+    }
+    return(df)
+  })
+  
+  # Combinar los dataframes usando cbind
+  combined_df <- do.call(cbind, df_list)
+  return(combined_df)
+}
+
+# Usar la función para combinar los dataframes
+tabla_mun_combi <- combine_dataframes(nueva_base)
+tabla_mun_combi[is.na(tabla_mun_combi)] <- ""
+
+tabla_16 <- tabla_mun_combi %>%
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("2020" = 2, "2021" = 2, "2022"=2, 
+                     "2023"=2, "2024"=2)) %>% #cada años se debe modificar esta parte
+  add_header_above(c("Municipios con más de 10 muertes violentas por año" = length(names(tabla_mun_combi)))) 
+  
+  tabla_16
+```
+
+```{r}
+#| label: tabla 17
+
+estado_cuerpo <- tabla_ijcf %>% 
+    filter(clasificacion_de_causa_de_muerte_violenta_o_natural=="Violenta") %>% rename("Estado del cuerpo"=estado_del_cuerpo) %>% 
+  mutate("Estado del cuerpo"=gsub("\\ / ", "/", `Estado del cuerpo`), 
+         "Estado del cuerpo"=str_to_title(`Estado del cuerpo`), 
+         `Estado del cuerpo`=ifelse(is.na(`Estado del cuerpo`), "Sin Registro", `Estado del cuerpo`)) %>% 
+  tabyl(`Estado del cuerpo`, ano) %>% adorn_totals("col") %>% 
+  adorn_totals() %>% 
+  mutate_at(vars(contains(c("20", "Tot"))), ~comma(.,1))
+  
+
+```
+
+#### **Indicador 1. Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género**
+
+```{r}
+#| label: indicador 1
+
+muertes_violentas <- indicador_1 %>%
+  filter(!duplicated(folio)) %>%
+  group_by(ano) %>% summarise(Total=n()) %>% 
+  spread(ano, Total, fill=0) 
+  
+
+peritajes <- indicador_1 %>% 
+  group_by(ano, servicios_forenses) %>% 
+  summarise(servicios=sum(aplicado, na.rm = T)) %>% 
+  spread(ano, servicios, fill=0) %>% 
+  adorn_totals(where = "col") %>% 
+  filter(Total>0) %>% select(-Total)
+
+porcentajes <- peritajes %>% ungroup() %>% 
+  select(-servicios_forenses) %>%
+  sweep(2, as.numeric(muertes_violentas),FUN="/") %>% 
+  mutate_at(vars(everything()), ~ percent(., 1)) %>% 
+  rename_with(~paste0("por_", .), everything())
+
+peritajes_nuevo <- peritajes %>% bind_cols(porcentajes) %>% 
+  mutate(across(starts_with("202"), ~paste0(.," (", get(paste0("por_", cur_column())), ")"))) %>% 
+  select(servicios_forenses:`2024`)
+
+muertes_violentas_chr <- muertes_violentas %>% 
+  mutate_at(vars(everything()), ~ as.character(.))
+
+tabla_ind_1 <- bind_rows(muertes_violentas_chr, peritajes_nuevo) %>% 
+  replace_na(list(servicios_forenses="Muertes violentas")) %>%
+  mutate(servicios_forenses=factor(
+    servicios_forenses,
+    levels=c("Muertes violentas", 
+      "Servicio realizado dentro de la 1era hora", 
+             "Oportuna recolección de pruebas", 
+             "Oportuna preservación de pruebas", 
+             "Oportuna identificación y entrevista a testigos (dictamen femi.)", "Recopilación de evidencia a través de videos"), 
+    labels=c("Muertes violentas",
+             "Servicio realizado dentro de la 1era hora", 
+             "Oportuna recolección de pruebas", 
+             "Oportuna preservación de pruebas", 
+             "Oportuna identificación y entrevista a testigos", "Recopilación de evidencia a través de videos"))
+  ) %>% arrange(servicios_forenses) %>% 
+  relocate(servicios_forenses) %>% 
+  rename("Servicios forenses"=servicios_forenses) %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  pack_rows("Caracteristicas del servicio forense", 2, nrow(peritajes_nuevo)+1, label_row_css = "background-color: #666; color: #fff;") %>% 
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Servicios forenses realizados conforme a los estándares de debida diligencia y PEG " = length(names(peritajes_nuevo))))
+
+tabla_ind_1
+```
+
+#### **Indicador 2. Porcentaje de dictámenes psicosociales en que familiares, víctimas indirectas y/o personas conocidas proveen información para el desarrollo del dictamen.**
+
+```{r}
+#| label: indicador 2
+
+dictamenes <- indicador_2 %>% 
+  filter(dictamen_psicosocial_servicio==1) %>% 
+  group_by(ano) %>% 
+  summarise(Total=n()) %>% spread(ano, Total, fill=0) %>% 
+  mutate_at(vars(everything()), ~as.character(.))
+
+porcentajes_dic <- dictamenes %>% 
+              mutate_at(vars(everything()), ~as.character(.)) %>% 
+  bind_rows( percent(as.numeric(dictamenes)/as.numeric(muertes_violentas),1) %>% as.tibble() %>% 
+  mutate(ano=c(min(indicador_2$ano, na.rm = T):max(indicador_2$ano, na.rm = T))) %>% 
+  spread(ano, value, fill=0) 
+              )
+
+
+
+tabla_ind_2 <- bind_rows(muertes_violentas_chr, porcentajes_dic) %>%
+  mutate(Año=c("Muertes violentas", "Dictámenes psicosociales
+", "Porcentaje")) %>% relocate(Año) %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  pack_rows("Dictamen forense", 2, nrow(porcentajes_dic)+1, label_row_css = "background-color: #666; color: #fff; text-align: center;") %>% 
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Dictámenes psicosociales elaborados en muertes violentas de mujeres" = length(names(porcentajes_dic))+1))
+
+tabla_ind_2
+```
+
+#### **Indicador 4. Porcentaje de dictámenes de muertes violentas de mujeres en los que se presenta acreditación técnica-científica con razones de género conforme al Protocolo de Actuación con PEG para la Investigación del Delito de Feminicidio**
+
+```{r}
+#| label: indicador 4
+
+dictamenes_forenses <- indicador_3 %>% 
+  select(ano, procesamiento_del_lugar_de_los_hechos_levantamiento_de_cadaver_indicios_y_fotografia:genetica_minimo_18_muestras) %>% 
+  gather(dictamen, Total, procesamiento_del_lugar_de_los_hechos_levantamiento_de_cadaver_indicios_y_fotografia:genetica_minimo_18_muestras) %>% 
+  group_by(ano, dictamen) %>% 
+  summarise(Total=sum(Total, na.rm = T)) %>% 
+  spread(ano, Total, fill=0) %>% 
+  filter(dictamen %in% c("necropsia", "dictamen_psicosocial_servicio", 
+                         "toma_de_huellas_decadactilares", 
+                         "balistica","p30_id_de_semen", 
+                         "marcha_toxicologica_imda_y_alcoholemia", 
+                         "venenos", "informatica", 
+                         "siniestros_y_explosivos", "valuadores", 
+                         "ingenieria_civil", "identificacion_de_vehiculos", "medicina_legal", "delitos_sexuales", 
+                         "hechos_de_transito", "grafoscopia_y_documentos_copia", "busqueda_de_pelos_y_fibras"
+                         ))
+
+
+porcentajes_dic_for <- dictamenes_forenses %>% ungroup() %>% 
+  select(-dictamen) %>%
+  sweep(2, as.numeric(muertes_violentas),FUN="/") %>% 
+  mutate_at(vars(everything()), ~ percent(., 1)) %>% 
+  rename_with(~paste0("por_", .), everything())
+
+dictamenes_nuevo <- dictamenes_forenses %>% bind_cols(porcentajes_dic_for) %>% 
+  mutate(across(starts_with("202"), ~paste0(.," (", get(paste0("por_", cur_column())), ")"))) %>% 
+  select(dictamen:`2024`) %>% 
+  mutate(dictamen=gsub(x=dictamen, pattern="_", replacement=" "), 
+         dictamen=str_to_sentence(dictamen))
+
+
+tabla_ind_4 <- bind_rows(muertes_violentas_chr, dictamenes_nuevo) %>%
+  relocate(dictamen) %>% replace_na(list(dictamen="Muertes violentas")) %>% rename("Dictamen"="dictamen") %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  pack_rows("Dictamen forense", 2, nrow(dictamenes_nuevo)+1, label_row_css = "background-color: #666; color: #fff; text-align: center;") %>% 
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Dictámenes forenses con acreditación técnica-científica que se realizaron a muertes violentas de mujeres " = length(names(dictamenes_nuevo)))
+  )
+
+tabla_ind_4
+
+```
+
+#### **Indicador 5. Porcentaje del personal de la Unidad Multidisciplinaria adecuadamente capacitado sobre el Protocolo de Actuación con Perspectiva de Género para la Investigación del Delito de Feminicidio.**
+
+```{r}
+#| label: indicador 5
+indicador_5 <- tibble(Capacitaciones=c(
+  "1 capacitación", "2 capacitaciones", 
+  "3 capacitaciones", "En 4 o más", 
+  "No participaron"
+), Total=c(
+  172, 77, 23, 19, 70
+)) %>% 
+  mutate(Porcentaje=Total/sum(Total)) %>% 
+  adorn_totals() %>% adorn_pct_formatting(,,,Porcentaje) 
+
+
+tabla_ind_5 <-  indicador_5 %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Dictámenes forenses con acreditación técnica-científica que se realizaron a muertes violentas de mujeres " = length(names(indicador_5)))
+  ) %>% 
+  row_spec(nrow(indicador_5), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_5
+```
