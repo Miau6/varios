@@ -1,6 +1,10 @@
 ---
 title: "Indicadores de Alerta de Violencia de Género contra las mujeres (fase de pruebas)"
-format: html
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-title: Tema
 editor: visual
 execute:
   echo: false
@@ -26,9 +30,11 @@ for (i in nombres_bases) {
 }
 ```
 
+## Introducción
+
 ```{r}
 #| label: tablas contextuales
-tabla_ijcf <- readxl::read_excel("indicadores_ijcf.xlsx", 
+tabla_ijcf <- readxl::read_excel("indicadores_ijcf_24.xlsx", 
                                  sheet = 2, skip = 1) %>%
   clean_names()
 
@@ -42,11 +48,22 @@ tipo_muertes <- tabla_ijcf %>%
   mutate(Clasificación=factor(Clasificación, 
                               levels=c("Violenta", "Natural", "No Aplica"))) %>% arrange(desc(Clasificación))
 
-tabla_13 <- tipo_muertes %>% 
+tipo_muertes_tot <- tabla_ijcf %>% 
+  tabyl(ano) %>% 
+  # rename(Clasificación=clasificacion_de_causa_de_muerte_violenta_o_natural) %>% 
+  select(-percent) %>% mutate(Clasificación="Total") %>% 
+  spread(ano, n) %>% 
+   # Añadir totales por columna
+  adorn_percentages("col") %>%  # Añadir porcentajes por fila y columna
+  adorn_pct_formatting(digits = 0) %>%  # Formatear porcentajes con 1 decimal
+  adorn_ns(position = "front") 
+
+tabla_13 <- tipo_muertes %>% bind_rows(tipo_muertes_tot) %>% 
    kbl(align = "c") %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
   row_spec(0, bold = T, color = "white", background = "#666") %>% 
-  add_header_above(c("Clasificación de muertes de mujeres en Jalisco" = length(names(tipo_muertes))))
+  add_header_above(c("Clasificación de muertes de mujeres en Jalisco" = length(names(tipo_muertes)))) %>% 
+  row_spec(nrow(tipo_muertes)+1, bold = T, color = "white", background = "#666")
   
 tabla_13
 ```
@@ -173,8 +190,18 @@ estado_cuerpo <- tabla_ijcf %>%
   adorn_totals() %>% 
   mutate_at(vars(contains(c("20", "Tot"))), ~comma(.,1))
   
+tabla_17 <- estado_cuerpo %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Clasificación de muertes violentas por causa/objeto" = length(names(estado_cuerpo)))) %>% 
+  row_spec(nrow(estado_cuerpo), bold = T, color = "white", background = "#666") %>% 
+  column_spec(length(estado_cuerpo), bold = T)
 
+tabla_17
 ```
+
+## Servicios forenses
 
 #### **Indicador 1. Porcentaje de servicios forenses en casos de muertes violentas de mujeres, provistos conforme a la debida diligencia y perspectiva de género**
 
@@ -297,7 +324,20 @@ dictamenes_nuevo <- dictamenes_forenses %>% bind_cols(porcentajes_dic_for) %>%
   mutate(across(starts_with("202"), ~paste0(.," (", get(paste0("por_", cur_column())), ")"))) %>% 
   select(dictamen:`2024`) %>% 
   mutate(dictamen=gsub(x=dictamen, pattern="_", replacement=" "), 
-         dictamen=str_to_sentence(dictamen))
+         dictamen=str_to_sentence(dictamen)) %>% 
+  mutate(dictamen=case_when(
+    dictamen=="Balistica" ~ "Balística", 
+    dictamen=="Busqueda de pelos y fibras" ~ "Búsqueda de pelos y fibras",
+    dictamen=="Dictamen psicosocial servicio" ~ "Dictámen psicosocial servicio",
+    dictamen=="Grafoscopia y documentos copia" ~ "Grafoscopía y documentos copia",
+    dictamen=="Hechos de transito" ~ "Hechos de tránsito",
+    dictamen=="Identificacion de vehiculos" ~ "Identificación de vehículos", 
+    dictamen=="Informatica" ~ "Informática", 
+    dictamen=="Ingenieria civil" ~ "Ingeniería civil", 
+    dictamen=="Marcha toxicologica imda y alcoholemia" ~ "Marcha toxicologica IMDA y alcoholemia", T ~ dictamen
+    
+    
+  ))
 
 
 tabla_ind_4 <- bind_rows(muertes_violentas_chr, dictamenes_nuevo) %>%
@@ -338,3 +378,236 @@ tabla_ind_5 <-  indicador_5 %>%
   
   tabla_ind_5
 ```
+
+## Ordenes y Medidas
+
+#### **Indicador 6. Porcentaje de mujeres víctimas de violencia por razones de género atendidas y canalizadas para otorgamiento de orden de protección y/o medidas de protección.**
+
+```{r}
+#| label: indicador 6_a
+
+medidas <- indicador_6 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains(c("mujeres", "medidas"))), ~sum(., na.rm = T)) %>% 
+  mutate(mujeres_canalizada=medidas_de_proteccion_aceptadas+medidas_de_proteccion_rechazadas) %>% relocate(mujeres_canalizada, .after = mujeres_victimas_de_violencia_de_genero) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_canalizadas=mujeres_canalizada/mujeres_victimas_de_violencia_de_genero, 
+         porcentaje_aceptadas=medidas_de_proteccion_aceptadas/mujeres_canalizada, 
+         porcentaje_rechazada=medidas_de_proteccion_rechazadas/mujeres_canalizada) %>% 
+  relocate(porcentaje_canalizadas, .after = mujeres_canalizada) %>% 
+  relocate(porcentaje_aceptadas, .after=medidas_de_proteccion_aceptadas) %>% 
+  mutate_at(vars(contains(c("mujeres", "medidas"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(medidas) <- c("Año", "Mujeres víctimas atendidas", "Total", "Porcentaje", 
+                    "Total", "Porcentaje", "Total", "Porcentaje")
+
+tabla_ind_6_a <- medidas %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "", 
+                     "Mujeres canalizadas para otorgamiento de Medida de Protección"=2, "Medida de protección aceptada"=2, 
+                     "Medida de protección rechazada"=2)
+  ) %>% 
+  add_header_above(c("Mujeres atendidas por FE y canalizadas para otorgamiento de medida de protección" = length(names(medidas)))
+  ) %>% 
+  row_spec(nrow(medidas), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_6_a
+
+```
+
+```{r}
+ordenes <- indicador_6 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains(c("mujeres", "ordenes"))), ~sum(., na.rm = T)) %>% 
+  mutate(mujeres_canalizada=ordenes_de_proteccion_aceptadas+ordenes_de_proteccion_rechazadas) %>% relocate(mujeres_canalizada, .after = mujeres_victimas_de_violencia_de_genero) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_canalizadas=mujeres_canalizada/mujeres_victimas_de_violencia_de_genero, 
+         porcentaje_aceptadas=ordenes_de_proteccion_aceptadas/mujeres_canalizada, 
+         porcentaje_rechazada=ordenes_de_proteccion_rechazadas/mujeres_canalizada) %>% 
+  relocate(porcentaje_canalizadas, .after = mujeres_canalizada) %>% 
+  relocate(porcentaje_aceptadas, .after=ordenes_de_proteccion_aceptadas) %>% 
+  mutate_at(vars(contains(c("mujeres", "ordenes"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(ordenes) <- c("Año", "Mujeres víctimas atendidas", "Total", "Porcentaje", 
+                    "Total", "Porcentaje", "Total", "Porcentaje")
+
+tabla_ind_6_b <- ordenes %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "", 
+                     "Mujeres canalizadas para otorgamiento de Orden de Protección"=2, "Orden de protección aceptada"=2, 
+                     "Orden de protección rechazada"=2)
+  ) %>% 
+  add_header_above(c("Mujeres atendidas por FE y canalizadas para otorgamiento de orden de protección" = length(names(ordenes)))
+  ) %>% 
+  row_spec(nrow(ordenes), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_6_b
+```
+
+#### **Indicador 7: Porcentaje de mujeres víctimas de violencia por razones de género que solicitaron y obtuvieron orden y/o medida de protección.**
+
+
+
+```{r}
+mujeres_canalizacion <- indicador_7 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains(c("total"))), ~sum(., na.rm = T)) %>% 
+  mutate(porcentaje_medida=total_de_mujeres_victimas_de_violencia_de_genero_que_solicitaron_una_medida_de_proteccion_sin_tener_una_canalizacion_formal/total_de_mujeres_victimas_de_violencia_de_genero_atendidas, 
+         porcentaje_orden=total_de_mujeres_victimas_de_violencia_de_genero_que_solicitaron_una_orden_de_proteccion_sin_tener_una_canalizacion_formal/total_de_mujeres_victimas_de_violencia_de_genero_atendidas) %>% 
+  relocate(porcentaje_medida, .after = total_de_mujeres_victimas_de_violencia_de_genero_que_solicitaron_una_medida_de_proteccion_sin_tener_una_canalizacion_formal) %>% 
+  mutate_at(vars(contains(c("total"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(mujeres_canalizacion) <- c("Año", "Mujeres víctimas atendidas", "Total", "Porcentaje", 
+                    "Total", "Porcentaje")
+
+tabla_ind_7 <- mujeres_canalizacion %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "", 
+                     "Mujeres víctimas que solicitaron MP sin tener una canalización formal"=2, "Mujeres víctimas que solicitaron OP sin tener una canalización formal"=2)
+  ) %>% 
+  add_header_above(c("Mujeres víctimas atendidas por FE que solicitaron Medida u Orden de Protección sin tener una canalización formal de otra dependencia" = length(names(mujeres_canalizacion)))
+  ) %>% 
+  row_spec(nrow(mujeres_canalizacion), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_7
+```
+
+
+
+#### **Indicador 8. Porcentaje de personal capacitado en la adecuada aplicación del Modelo de Atención, Otorgamiento y Seguimiento de Órdenes de Protección**
+
+```{r}
+ind_8 <- tibble(ano=c(2019:2023), 
+                Total=c(56,65,70,101, 119)) %>% 
+  mutate(Porcentaje=percent(Total/125, 1))
+
+tabla_ind_8 <- ind_8 %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Porcentaje de municipios capacitados en el funcionamiento
+de las medidas y órdenes de proteccióna" = length(names(ind_8)))
+  ) 
+
+tabla_ind_8
+```
+
+
+
+#### **Indicador 9. Porcentaje de medidas de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.**
+
+```{r}
+medidas_emitidas <- indicador_9 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("medidas")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_emitidas=medidas_de_proteccion_emitidas_por_violencia_por_razon_de_genero_vigentes_que_fueron_trabajadas/total_de_medidas_de_proteccion_emitidas_por_violencia_por_razon_de_genero_vigentes, 
+         porcentaje_notificadas=medidas_de_proteccion_emitidas_por_violencia_por_razon_de_genero_que_fueron_notificadas_efectiva_y_personalmente_a_la_persona_agresora/medidas_de_proteccion_emitidas_por_violencia_por_razon_de_genero_vigentes_que_fueron_trabajadas) %>% 
+  relocate(porcentaje_emitidas, .after = "medidas_de_proteccion_emitidas_por_violencia_por_razon_de_genero_vigentes_que_fueron_trabajadas") %>% 
+  mutate_at(vars(contains(c("medidas"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+names(medidas_emitidas) <- c("Año", "MP emitidas vigentes", "Total", "Porcentaje", "Total", "Porcentaje")
+
+tabla_ind_9 <- medidas_emitidas %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "", 
+                     "MP emitidas vigentes que fueron trabajadas"=2, "MP emitidas y notificadas a la presunta persona agresora"=2)
+  ) %>% 
+  add_header_above(c("Medidas de protección emitidas, trabajadas y notificadas a la persona agresora" = length(names(medidas_emitidas)))
+  ) %>% 
+  row_spec(nrow(medidas_emitidas), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_9
+```
+
+
+
+
+#### **Indicador 10. Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.**
+
+
+```{r}
+#| label: indicador 10
+
+ordenes_emitidas <- indicador_10 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("ordenes")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_emitidas=ordenes_de_proteccion_emitidas_por_violencia_por_razon_de_genero_que_fueron_trabajadas/total_de_ordenes_de_proteccion_emitidas_por_violencia_por_razon_de_genero, 
+         porcentaje_notificadas=ordenes_de_proteccion_emitidas_por_violencia_por_razon_de_genero_que_fueron_notificadas_efectiva_y_personalmente_a_la_persona_agresora/ordenes_de_proteccion_emitidas_por_violencia_por_razon_de_genero_que_fueron_trabajadas) %>% 
+  relocate(porcentaje_emitidas, .after = "ordenes_de_proteccion_emitidas_por_violencia_por_razon_de_genero_que_fueron_trabajadas") %>% 
+  mutate_at(vars(contains(c("ordenes"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+names(ordenes_emitidas) <- c("Año", "OP emitidas vigentes", "Total", "Porcentaje", "Total", "Porcentaje")
+
+tabla_ind_10 <- ordenes_emitidas %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "", 
+                     "OP emitidas vigentes que fueron trabajadas"=2, "OP emitidas y notificadas a la presunta persona agresora"=2)
+  ) %>% 
+  add_header_above(c("Ordenes de protección emitidas, trabajadas y notificadas a la persona agresora" = length(names(ordenes_emitidas)))
+  ) %>% 
+  row_spec(nrow(ordenes_emitidas), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_10
+
+```
+
+
+
+
+
+#### **Indicador 11: Porcentaje de mujeres que han recibido seguimiento después de otorgada su orden y/o medida de protección en relación al total.**
+
+```{r}
+mujeres_seguimiento <- indicador_11 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("mujeres")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_medida=mujeres_con_medidas_de_proteccion_vigentes_que_han_recibido_seguimiento/total_de_mujeres_con_medidas_de_proteccion_vigentes, 
+         porcentaje_ordenes=mujeres_con_ordenes_de_proteccion_vigentes_que_han_recibido_seguimiento/total_de_mujeres_con_ordenes_de_proteccion_vigentes) %>% 
+  relocate(total_de_mujeres_con_medidas_de_proteccion_vigentes, .after = "ano") %>% relocate(porcentaje_medida, .after = "mujeres_con_medidas_de_proteccion_vigentes_que_han_recibido_seguimiento") %>%
+  relocate(total_de_mujeres_con_ordenes_de_proteccion_vigentes, .after = "porcentaje_medida") %>% 
+  mutate_at(vars(contains(c("mujeres"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(mujeres_seguimiento) <- c("Año", "Mujeres con medidas de protección vigentes", "Mujeres con MP vigentes que han recibido seguimiento", "Porcentaje", 
+                                "Mujeres con OP vigentes", 
+                                "Mujeres con OP vigentes que han recibido seguimiento", "Porcentaje")
+
+tabla_ind_11 <- mujeres_seguimiento %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Mujeres con medidas y órdenes de protección vigentes que han recibido seguimiento" = length(names(mujeres_seguimiento)))
+  ) %>% 
+  row_spec(nrow(mujeres_seguimiento), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_11
+```
+
