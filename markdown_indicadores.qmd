@@ -611,3 +611,199 @@ tabla_ind_11 <- mujeres_seguimiento %>%
   tabla_ind_11
 ```
 
+
+
+
+#### **Indicador 12. Porcentaje de Carpetas de Investigación iniciadas contra personas agresoras derivados de incumplimiento de órdenes y/o medidas de protección.**
+
+
+```{r}
+#| label: indicador 12
+
+carpetas <- indicador_12 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("proteccion")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_medida=total_de_carpetas_de_investigacion_iniciadas_contra_personas_agresoras_derivados_del_incumplimiento_de_medidas_de_proteccion/total_de_medidas_de_proteccion_emitidas_vigentes, 
+         porcentaje_ordenes=total_de_carpetas_de_investigacion_iniciadas_contra_personas_agresoras_derivados_del_incumplimiento_de_ordenes_de_proteccion/total_de_ordenes_de_proteccion_emitidas_vigentes) %>% 
+  relocate(porcentaje_medida, .after = total_de_carpetas_de_investigacion_iniciadas_contra_personas_agresoras_derivados_del_incumplimiento_de_medidas_de_proteccion) %>% 
+  mutate_at(vars(contains(c("proteccion"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(carpetas) <- c("Año", "Mujeres con medidas de protección vigentes", "Carpetas de investigación iniciadas contra personas agresoras MP", "Porcentaje", 
+                                "Mujeres con OP vigentes", 
+                                "Carpetas de investigación iniciadas contra personas agresoras OP", "Porcentaje")
+
+tabla_ind_12 <- carpetas %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c(" Mujeres con medidas y órdenes de protección vigentes y en las que debido a su incumplimiento se ha iniciado carpetas de investigación a personas agresoras" = length(names(carpetas)))
+  ) %>% 
+  row_spec(nrow(carpetas), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_12
+```
+
+
+
+
+#### **Indicador 13: Porcentaje de casos en los que la orden y/o medida de protección resultó ser adecuada y efectiva para la víctima en relación al total.**
+
+
+```{r}
+#| label: indicador 13
+
+
+efectividad <- indicador_13 %>% 
+  filter(municipio=="Estado de Jalisco") %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("proteccion")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_medida=casos_en_los_que_la_medida_de_proteccion_no_resulto_ser_adecuada_y_efectiva_para_la_victima_casos_de_reincidencia/total_medidas_de_proteccion_emitidas_vigentes, 
+         porcentaje_ordenes=casos_en_los_que_la_orden_de_proteccion_no_resulto_ser_adecuada_y_efectiva_para_la_victima_casos_de_reincidencia/total_de_ordenes_de_proteccion_emitidas_vigentes) %>% 
+  relocate(porcentaje_medida, .after = casos_en_los_que_la_medida_de_proteccion_no_resulto_ser_adecuada_y_efectiva_para_la_victima_casos_de_reincidencia) %>% 
+  mutate_at(vars(contains(c("proteccion"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(efectividad) <- c("Año", "Mujeres con medidas de protección vigentes", "Casos en los que la MP no resultó ser adecuada y efectiva
+ para la víctima (casos de reincidencia)", "Porcentaje", 
+                                "Mujeres con OP vigentes", 
+                                "Casos en los que la OP no resultó ser adecuada y efectiva para la víctima (casos de reincidencia)", "Porcentaje")
+
+tabla_ind_13 <- efectividad %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Mujeres con medidas y órdenes de protección en la que resultó efectiva y adecuada" = length(names(efectividad)))
+  ) %>% 
+  row_spec(nrow(efectividad), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_13
+```
+
+
+
+
+## SALUD
+
+
+
+
+#### **Indicador 16: Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total.**
+
+```{r}
+#| label: indicador 16
+
+canalizadas <- indicador_16 %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("mujeres")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(porcentaje_asi=total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_abuso_sexual_infantil/total_de_mujeres_que_denuncian_abuso_sexual_infantil, 
+         porcentaje_viol=total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_violacion/total_de_mujeres_que_denuncian_violacion) %>% 
+  relocate(porcentaje_asi, .after = total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_abuso_sexual_infantil) %>% 
+  mutate_at(vars(contains(c("mujeres"))), ~comma(.,1)) %>% 
+  mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+
+
+names(canalizadas) <- c("Año", "NA víctimas ASI", "NA canalizadas a Salud para atención integral por ASI", "Porcentaje", 
+                                "Mujeres víctimas de violación", 
+                                "Mujeres canalizadas a Salud para atención integral por violación", "Porcentaje")
+
+tabla_ind_16 <- canalizadas %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Niñas, adolescentes y mujeres víctimas de violación derivadas por Fiscalía Estatal a Salud" = length(names(canalizadas)))
+  ) %>% 
+  row_spec(nrow(canalizadas), bold = T, color = "white", background = "#666")
+  
+  tabla_ind_16
+
+```
+
+
+
+
+#### **Indicador 17: Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total**
+
+```{r}
+#| label: indicador 17
+
+#metemos la base de ILE 
+
+
+
+# referidas <- indicador_17 %>% 
+#   group_by(ano) %>% 
+#   summarise_at(vars(contains("mujeres")), ~sum(., na.rm = T)) %>% 
+#   adorn_totals() %>% 
+#   mutate(porcentaje_asi=total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_abuso_sexual_infantil/total_de_mujeres_que_denuncian_abuso_sexual_infantil, 
+#          porcentaje_viol=total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_violacion/total_de_mujeres_que_denuncian_violacion) %>% 
+#   relocate(porcentaje_asi, .after = total_de_mujeres_canalizadas_para_atencion_integral_de_la_salud_nom_46_por_abuso_sexual_infantil) %>% 
+#   mutate_at(vars(contains(c("mujeres"))), ~comma(.,1)) %>% 
+#   mutate_at(vars(starts_with("porcentaje")), ~ percent(., .01))
+# 
+# 
+# names(canalizadas) <- c("Año", "NA víctimas ASI", "NA canalizadas a Salud para atención integral por ASI", "Porcentaje", 
+#                                 "Mujeres víctimas de violación", 
+#                                 "Mujeres canalizadas a Salud para atención integral por violación", "Porcentaje")
+# 
+# tabla_ind_16 <- canalizadas %>% 
+#    kbl(align = "c") %>% 
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+#   row_spec(0, bold = T, color = "white", background = "#666") %>% 
+#   add_header_above(c("Niñas, adolescentes y mujeres víctimas de violación derivadas por Fiscalía Estatal a Salud" = length(names(canalizadas)))
+#   ) %>% 
+#   row_spec(nrow(canalizadas), bold = T, color = "white", background = "#666")
+#   
+#   tabla_ind_16
+
+list.files("../codigo_violeta")
+```
+
+
+
+
+#### **Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento. **
+
+
+```{r}
+
+tabla_ILE <- readxl::read_excel("../codigo_violeta/AbortoLimpio_0424.xlsx") %>% 
+  clean_names()
+
+abortos_edad_ant <- tibble(Año=c(2016:2021), 
+                           "Menores de edad"=c(3,4,3,2,4,5), 
+                           "Mayores de edad"=c(1,8,6,8,9,5)) %>% 
+  gather(rango_edad, Total, `Menores de edad`:`Mayores de edad`) %>% 
+  spread(Año, Total, fill=0)
+abortos_edad <- tabla_ILE %>% 
+  filter(causal=="Violación") %>% 
+  mutate(rango_edad=case_when(
+    edad<18 ~ "Menores de edad", 
+    T ~ "Mayores de edad"
+  )) %>% tabyl(rango_edad, ano) %>% 
+  select(-rango_edad)
+
+total_abortos_edad <- bind_cols(abortos_edad_ant, abortos_edad)
+
+tabla_ind_18 <- total_abortos_edad %>% 
+  adorn_totals() %>% adorn_totals("col") %>% 
+  rename(Rango=rango_edad) %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Abortos seguros por causal violación, por rango de edad" = length(names(total_abortos_edad))+1)
+  ) %>% 
+  row_spec(nrow(total_abortos_edad)+1, bold = T, color = "white", background = "#666")
+  
+  tabla_ind_18
+
+```
+
+
+#### **Indicador 19 Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco. **
