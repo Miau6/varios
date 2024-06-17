@@ -1142,3 +1142,371 @@ tabla_ind_28
 
 
 #### **Indicador 29. Porcentaje de casos de violencia contra las mujeres por razones de género judicializados.**
+
+
+```{r}
+#| label: indicador 29
+
+evolucion <- indicador_29 %>% 
+  group_by(ano, carpeta, delito) %>% 
+  summarise(Total=sum(registro, na.rm = T)) %>% 
+  spread(carpeta, Total, fill=0) %>% 
+  # mutate(porcentaje=Judicializada/Iniciada) %>%
+  ungroup() %>% 
+  # select(-ano) %>% 
+  group_split(ano) 
+
+evolucion[[1]] <- evolucion[[1]] %>% 
+  bind_rows(tibble(
+    ano=c(2020, 2020, 2020, 2020, 2020), 
+    delito=c("Desobediencia o resistencia de particulares", 
+             "Disparo con arma", "Por el delito que resulte", 
+             "Prostitución infantil", "Violación equiparada"), 
+    Iniciada=c(0,0,0,0,0), 
+    Judicializada=c(0,0,0,0,0)#, 
+    # porcentaje=c(0,0,0,0,0)
+  )) %>% arrange(delito)
+
+nueva <- list()
+for (i in 1:length(evolucion)) {
+  nueva[[i]] <- evolucion[[i]] %>% 
+    select(-ano) %>% adorn_totals()
+}
+
+total_evolucion <- nueva[[1]] %>% 
+  left_join(nueva[[2]], by="delito") %>% 
+  left_join(nueva[[3]], by="delito") %>% 
+  left_join(nueva[[4]], by="delito") %>% 
+  left_join(nueva[[5]], by="delito") %>% 
+  mutate(porcentaje_20=Judicializada.x/Iniciada.x,
+         porcentaje_21=Judicializada.y/Iniciada.y,
+         porcentaje_22=Judicializada.x.x/Iniciada.x.x,
+         porcentaje_23=Judicializada.y.y/Iniciada.y.y,
+         porcentaje_24=Judicializada/Iniciada) %>% 
+  mutate_at(vars(contains(c("Judi", "Ini"))), ~comma(., 1)) %>% 
+  mutate_at(vars(contains("porcen")), ~percent(., .01)) %>% 
+  relocate(porcentaje_20, .after=Judicializada.x) %>% 
+  relocate(porcentaje_21, .after=Judicializada.y) %>% 
+  relocate(porcentaje_22, .after=Judicializada.x.x) %>% 
+  relocate(porcentaje_23, .after=Judicializada.y.y) 
+
+names(total_evolucion) <- c("Delito", "Iniciada", "Judicializada", "Porcentaje","Iniciada", "Judicializada", "Porcentaje", 
+                            "Iniciada", "Judicializada", "Porcentaje", 
+                            "Iniciada", "Judicializada", "Porcentaje", 
+                            "Iniciada", "Judicializada", "Porcentaje")
+
+tabla_ind_29 <- total_evolucion %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "2020"=3, "2021"=3, "2022"=3, "2023"=3, "2024"=3)) %>% 
+  add_header_above(c("Carpetas de investigación iniciadas y judicializadas por delitos diversos contra mujeres que involucran razones de género, 2020-2023" = length(names(total_evolucion)))
+  ) %>% 
+  row_spec(nrow(total_evolucion), bold = T, color = "white", background = "#666")
+
+tabla_ind_29
+
+```
+
+
+
+
+#### **Indicador 30. Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso. **
+
+```{r}
+#| label: indicador 30
+
+sentencias <- indicador_30 %>% rename(ano_ini=ano_de_origen_de_la_carpeta_de_investigacion) %>% 
+  mutate(ano_ini=ifelse(
+    nchar(ano_ini)>6, 
+    substr(ano_ini, 
+           nchar(ano_ini)-3,nchar(ano_ini)), ano_ini
+  ),
+    vinculacion=ifelse(is.na(fecha_de_vinculacion_a_proceso), 1, 0)) %>% 
+  group_by("ano"=as.integer(ano_ini)) %>% 
+  summarise(Sentencias=sum(ano_de_sentencia),
+            Vinculaciones=sum(vinculacion, na.rm = T),
+            Carpetas=n()
+            ) %>% adorn_totals() %>% 
+  rename(Año=ano)
+
+tabla_ind_30 <- sentencias %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Sentencias y vinculaciones a proceso obtenidas
+durante 2020-2023 por año de origen de la CI" = length(names(sentencias)))
+  ) %>% 
+  row_spec(nrow(sentencias), bold = T, color = "white", background = "#666")
+
+tabla_ind_30
+```
+
+
+
+
+
+#### **Indicador 40. Porcentaje de muertes violentas de mujeres registradas, en relación al año anterior.**
+
+```{r}
+#| label: indicador 40
+
+muertes <- indicador_40 %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains(c("hom", "acc", "dio", "el"))),
+               ~sum(., na.rm = T)) %>% 
+  gather(Tipo, Total, homicidio_culposo:el_que_resulte) %>% 
+  spread(ano, Total, fill=0) %>% 
+  mutate(Tipo=str_to_sentence(Tipo), 
+         Tipo=str_replace(Tipo, "_", " "), 
+         Tipo=str_replace(Tipo, "_", " ")) %>% 
+  adorn_totals("col") %>% arrange(desc(Total)) %>% 
+  adorn_totals() %>% 
+  mutate_at(vars(contains(c("20", "Total"))), ~comma(., na.rm=T))
+
+
+tabla_ind_40 <- muertes %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Carpetas de investigación de muertes violentas de mujeres iniciadas por diversos delitos" = length(names(muertes)))
+  ) %>% 
+  row_spec(nrow(muertes), bold = T, color = "white", background = "#666")
+
+tabla_ind_40
+```
+
+
+
+## Protocolo ALBA
+
+#### **Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas.**
+
+
+```{r}
+#| label: indicador 31
+
+#se actualiza manualmente
+desaparecidas <- tibble(
+  Año=c(2020:2023, "Total"),
+  Desaparecidas=c(1065, 942, 721, 484, 3213), 
+  Localizadas=c(959, 753, 665, 525, 2902), 
+  Porcentaje=c("90%", "80%", "92%", "108%", "90%"),
+  "Con vida"=c("906 (94%)", "722 (96%)", "630 (95%)", "456 (87%)", "2,714 (94%)"), 
+  "Sin vida"=c("53 (6%)", "31 (4%)", "35 (5%)", "69 (13%)", "188 (6%)" )
+)
+
+tabla_ind_31 <- desaparecidas %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Niñas, adolescentes y mujeres con denuncia por desaparición que han sido localizadas" = length(names(desaparecidas)))
+  ) %>% 
+  row_spec(nrow(desaparecidas), bold = T, color = "white", background = "#666") 
+
+  tabla_ind_31
+```
+
+
+
+#### **Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas.**
+
+
+```{r}
+#| label: indicador 32
+
+denuncias <- indicador_32 %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("numero")), ~sum(., na.rm = T)) %>% 
+  mutate(numero_cedulas=numero_de_cedulas_de_alerta_amber_emitidas+numero_de_cedulas_de_protocolo_alba_emitidas 
+         ) %>% adorn_totals() %>% 
+  mutate(por_cedula=numero_cedulas/total_de_numero_de_denuncias_de_ninas_adolescentes_y_mujeres_desaparecidas, 
+         por_informe=numero_de_informes_de_factor_de_riesgo_elaborados/total_de_numero_de_denuncias_de_ninas_adolescentes_y_mujeres_desaparecidas) %>% 
+  mutate_at(vars(contains("por")),~percent(., .01)) %>% 
+  mutate_at(vars(contains(c("numero"))),~comma(., 1)) %>% 
+  relocate(numero_cedulas, .after = total_de_numero_de_denuncias_de_ninas_adolescentes_y_mujeres_desaparecidas ) %>% 
+  relocate(por_cedula, .after = numero_cedulas ) %>% 
+  select(-c(numero_de_cedulas_de_protocolo_alba_emitidas, 
+            numero_de_cedulas_de_alerta_amber_emitidas)) 
+
+names(denuncias) <- c("Año", "Denuncias NAM desaparecidas", "Cédulas", "Porcentaje", "Informes de factor de riesgo", "Porcentaje")
+
+
+tabla_ind_32 <- denuncias %>% 
+  
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Denuncias por desaparición de NAM, por cédulas e
+informes de factor de riesgo" = length(names(denuncias)))
+  ) %>% 
+  row_spec(nrow(denuncias), bold = T, color = "white", background = "#666") 
+
+tabla_ind_32
+```
+
+
+
+
+#### **Indicador 33: Porcentaje de cédulas únicas de difusión que son remitidas al Comité Técnico de Colaboración.**
+
+```{r}
+#| label: indicador 33
+
+cedulas_edad <- indicador_33 %>% 
+  mutate(edad=case_when(
+    edad=="60 en adelante" ~ "60 años en adelante", T ~ edad
+  )) %>% 
+  group_by(edad, ano) %>% 
+  summarise_at(vars(contains("unicas")), ~sum(., na.rm = T)) %>% 
+  gather(tipo, Total, total_de_cedulas_unicas_de_difusion_emitidas, cedulas_unicas_de_difusion_emitidas_que_son_remitidas_al_comite_tecnico_de_colaboracion ) %>% 
+  mutate(tipo=case_when(
+    tipo=="total_de_cedulas_unicas_de_difusion_emitidas" ~ "Emitidas", 
+    T ~ "Difundidas"
+  )) %>% 
+  pivot_wider(names_from =  c(ano, tipo),# names_glue = "{ano}_{.value}",
+              values_from = c(Total), 
+              names_sep = "_", values_fill = 0
+              ) %>% ungroup() %>% adorn_totals() %>% 
+  mutate(
+    Total_emitidas = rowSums(select(., contains("Emitidas")), na.rm = TRUE),
+    Total_difundidas = rowSums(select(., contains("Difundidas")), na.rm = TRUE)
+  ) %>% 
+  relocate(`2020_Difundidas`, .after=`2020_Emitidas`) %>% 
+  relocate(`2021_Difundidas`, .after=`2021_Emitidas`) %>% 
+  relocate(`2022_Difundidas`, .after=`2022_Emitidas`) %>% 
+  relocate(`2023_Difundidas`, .after=`2023_Emitidas`)
+
+names(cedulas_edad) <- c("Edad", "Emitidas", "Difundidas", "Emitidas", "Difundidas", "Emitidas", "Difundidas", "Emitidas", "Difundidas", 
+                         "Emitidas", "Difundidas", 
+                         "Emitidas", "Difundidas")
+
+tabla_ind_33 <- cedulas_edad %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "2020"=2, "2021"=2, "2022"=2, "2023"=2, "2024"=2, 
+                     "Total"=2
+  )) %>% 
+  add_header_above(c("Cédulas emitidas y cédulas difundidas" = length(names(cedulas_edad)))
+  ) %>% 
+  row_spec(nrow(cedulas_edad), bold = T, color = "white", background = "#666") 
+tabla_ind_33
+
+```
+
+
+
+
+#### **Indicador 34: Porcentaje de casos de búsqueda y localización realizados de forma inmediata y diferenciada en relación al total de casos.**
+
+
+```{r}
+#| label: indicador 34
+
+denuncias_des <- indicador_34 %>% group_by(ano) %>% 
+  summarise_at(vars(contains("num")), ~ sum(., na.rm = T)) %>% 
+  select(-numero_de_casos_de_localizacion) %>% adorn_totals() %>% 
+  mutate(porcentaje=percent(numero_de_casos_de_aplicacion_a_cabalidad_del_protocolo_alba/numero_de_casos_de_busqueda, 1)) %>% 
+  mutate_at(vars(contains("num")), ~comma(., 1))
+
+names(denuncias_des) <- c("Año", "Denuncias NAM", "Casos donde se aplica PA", 
+                          "Porcentaje")
+
+tabla_ind_34 <- denuncias_des %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Cédulas emitidas y cédulas difundidas" = length(names(denuncias_des)))
+  ) %>% 
+  row_spec(nrow(denuncias_des), bold = T, color = "white", background = "#666") 
+
+tabla_ind_34
+```
+
+
+
+
+#### **Indicador 35: Porcentaje de Cédulas de Difusión activas en relación al total de Cédulas de Difusión emitidas**
+
+```{r}
+#| label: indicador 35
+
+difusion <- indicador_35 %>% 
+  group_by(ano) %>% 
+  summarise_at(vars(contains("cedulas")), ~sum(., na.rm = T)) %>% 
+  adorn_totals() %>% 
+  mutate(Porcentaje=percent(cedulas_de_difusion_activas/total_de_cedulas_de_difusion_emitidas, .01 ))
+
+names(difusion) <- c("Año", "Denuncias NAM", "Casos donde se aplica PA", 
+                          "Porcentaje")
+
+tabla_ind_35 <- difusion %>% 
+  kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("Porcentaje de cédulas de difusión activas con respecto de las emitidas" = length(names(difusion)))
+  ) %>% 
+  row_spec(nrow(difusion), bold = T, color = "white", background = "#666") 
+
+tabla_ind_35
+```
+
+
+
+
+#### **Indicador 36: Porcentaje de casos de investigación de desaparición de niñas y adolescentes en los que se activa reporte Ámber**
+
+
+```{r}
+#| label: indicador 36
+
+
+denuncias_tipo_edad <- indicador_36 %>% 
+  mutate(rango_de_edad=case_when(
+    is.na(rango_de_edad)~ "Sin datos",
+    T~rango_de_edad), 
+    rango_de_edad=factor(rango_de_edad, 
+                         levels=c("0 a 2 años","3 a 5 años", 
+                                  "13 a 17 años", "Sin datos"))) %>% 
+  group_by(rango_de_edad, ano) %>% 
+  summarise_at(vars(contains("casos")), ~ sum(., na.rm = T)) %>% 
+  gather(tipo, Total, total_de_casos_de_desaparicion_de_ninas_y_adolescentes,
+         numero_de_casos_en_los_que_se_activa_de_conformidad_con_la_normatividad_y_en_el_tiempo_establecido_el_protocolo_de_la_alerta_amber) %>% 
+  mutate(tipo=case_when(
+    tipo=="total_de_casos_de_desaparicion_de_ninas_y_adolescentes" ~ "Denuncias NA", T ~ "Alerta Ámber"
+  )) %>% 
+  pivot_wider(names_from =  c(ano, tipo),# names_glue = "{ano}_{.value}",
+              values_from = c(Total), 
+              names_sep = "_", values_fill = 0
+              ) %>% ungroup() %>% adorn_totals() %>% 
+  mutate(
+    Total_emitidas = rowSums(select(., contains("Denuncias")), na.rm = TRUE),
+    Total_difundidas = rowSums(select(., contains("Alerta")), na.rm = TRUE)
+  ) %>% 
+  relocate(`2020_Alerta Ámber`, .after=`2020_Denuncias NA`) %>% 
+  relocate(`2021_Alerta Ámber`, .after=`2021_Denuncias NA`) %>% 
+  relocate(`2022_Alerta Ámber`, .after=`2022_Denuncias NA`) %>% 
+  relocate(`2023_Alerta Ámber`, .after=`2023_Denuncias NA`) 
+
+
+
+names(denuncias_tipo_edad) <- c("Edad", "Denuncias NA", "Alerta Ámber", "Denuncias NA", "Alerta Ámber", "Denuncias NA", "Alerta Ámber",
+                                "Denuncias NA", "Alerta Ámber",
+                                "Denuncias NA", "Alerta Ámber",
+                                "Denuncias NA", "Alerta Ámber")
+
+tabla_ind_36 <- denuncias_tipo_edad %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "2020"=2, "2021"=2, "2022"=2, "2023"=2, "2024"=2, 
+                     "Total"=2
+  )) %>% 
+  add_header_above(c(" Denuncias por desaparición de niñas y adolescentes en donde se activa Alerta Ámber " = length(names(denuncias_tipo_edad)))
+  ) %>% 
+  row_spec(nrow(denuncias_tipo_edad), bold = T, color = "white", background = "#666") 
+
+tabla_ind_36
+```
+
