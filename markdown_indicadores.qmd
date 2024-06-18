@@ -1510,3 +1510,154 @@ tabla_ind_36 <- denuncias_tipo_edad %>%
 tabla_ind_36
 ```
 
+
+
+
+#### **Indicador 37: Porcentaje de personal capacitado en el Protocolo Alba**
+
+```{r}
+#| label: indicador 37
+
+personal <- indicador_37 %>% 
+  mutate(personal=case_when(
+    grepl("Especializada", personal) ~ "Abogada Especializada", 
+    T ~ personal
+  )) %>% 
+  group_by(personal, ano) %>% 
+  summarise_at(vars(contains("fiscalia")), ~sum(., na.rm = T)) %>% 
+  gather(tipo, Total, total_personal_de_la_fiscalia,
+         personal_de_la_fiscalia_debidamente_formado_en_el_funcionamiento_del_protocolo_alba) %>% 
+  mutate(tipo=case_when(
+    tipo=="total_personal_de_la_fiscalia" ~ "FEPD",
+    T ~ "Personal formado en PA"
+  )) %>% 
+  pivot_wider(names_from =  c(ano, tipo),# names_glue = "{ano}_{.value}",
+              values_from = c(Total), 
+              names_sep = "_", values_fill = 0
+              ) %>% ungroup() %>% adorn_totals() %>% 
+  mutate(
+    Total_FEPD = rowSums(select(., contains("FEPD")), na.rm = TRUE),
+    Total_PA = rowSums(select(., contains("PA")), na.rm = TRUE)
+  ) %>% 
+  relocate(`2020_Personal formado en PA`, .after=`2020_FEPD`) %>% 
+  relocate(`2021_Personal formado en PA`, .after=`2021_FEPD`) %>% 
+  relocate(`2022_Personal formado en PA`, .after=`2022_FEPD`) %>% 
+  relocate(`2023_Personal formado en PA`, .after=`2023_FEPD`) 
+
+
+
+names(personal) <- c("Edad", "FEPD", "Personal formado en PA", "FEPD", "Personal formado en PA", "FEPD", "Personal formado en PA",
+                                "FEPD", "Personal formado en PA",
+                                "FEPD", "Personal formado en PA",
+                                "FEPD", "Personal formado en PA")
+
+tabla_ind_37 <- personal %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "2020"=2, "2021"=2, "2022"=2, "2023"=2, "2024"=2, 
+                     "Total"=2
+  )) %>% 
+  add_header_above(c("Personal de la FEPD formado en el Protocolo Alba, por perfil" = length(names(personal)))
+  ) %>% 
+  row_spec(nrow(personal), bold = T, color = "white", background = "#666") 
+
+tabla_ind_37
+
+
+```
+
+
+
+#### **Indicador 38: Porcentaje de casos resueltos en etapa de investigación.**
+
+
+
+```{r}
+#| label: indicador 38
+
+#actualizar manualmente
+casos_investigacion <- tibble(
+  Año=c(2020:2023, "Total"), 
+  Denuncias=c(1065, 942, 711, 484, 3202), 
+  con_vida=c(851, 734, 628, 457, 2670),
+  sin_vida=c(14, 25, 35, 68, 142),
+  total=c(865, 759, 663, 525, 2812),
+  casos_resueltos=c("81%", "81%", "93%", "108%", "88%"), 
+  resueltos_vida=c("98%", "97%", "95%", "87%", "95%"), 
+  resueltos_sin_vida=c("2%", "3%", "5%", "13%", "5%"), 
+  
+  
+)
+
+names(casos_investigacion) <- c("Año", "Denuncias NAM", "Con vida", "Sin vida", "Total", "Casos resueltos", "Con vida", "Sin vida")
+
+tabla_ind_38 <- casos_investigacion %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("","",  "Casos resueltos en etapa de investigación"=3, "", "", "")) %>% 
+  add_header_above(c("","Nominal"=4, 
+                     "Porcentaje"=3)) %>% 
+  add_header_above(c("Personal de la FEPD formado en el Protocolo Alba, por perfil" = length(names(casos_investigacion)))
+  ) %>% 
+  row_spec(nrow(casos_investigacion), bold = T, color = "white", background = "#666") 
+
+tabla_ind_38
+
+```
+
+
+
+
+#### **Indicador 39: Porcentaje de casos de desaparición que reciben seguimiento**
+
+```{r}
+#| label: indicador 39
+
+seguimiento <- indicador_39 %>% 
+  mutate(rango_de_edad=case_when(
+    rango_de_edad=="26 a 35" ~ "26 a 35 años", 
+    is.na(rango_de_edad) ~ "Sin datos", 
+    T ~ rango_de_edad
+  )) %>% 
+  group_by(rango_de_edad, ano) %>% 
+  summarise_at(vars(contains("casos")), ~ sum(., na.rm = T)) %>% 
+   gather(tipo, Total, total_de_casos_de_desaparicion_denunciados,
+         casos_de_desaparicion_que_reciben_seguimiento_por_parte_de_protocolo_alba) %>% 
+  mutate(tipo=case_when(
+    tipo=="total_de_casos_de_desaparicion_denunciados" ~ "Denuncias NAM",
+    T ~ "Seguimiento PA"
+  )) %>% 
+  pivot_wider(names_from =  c(ano, tipo),# names_glue = "{ano}_{.value}",
+              values_from = c(Total), 
+              names_sep = "_", values_fill = 0
+              ) %>% ungroup() %>% adorn_totals() %>% 
+  mutate(
+    Total_denuncias = rowSums(select(., contains("Denuncias")), na.rm = TRUE),
+    Total_PA = rowSums(select(., contains("PA")), na.rm = TRUE)
+  ) %>% 
+  relocate(`2020_Seguimiento PA`, .after=`2020_Denuncias NAM`) %>% 
+  relocate(`2021_Seguimiento PA`, .after=`2021_Denuncias NAM`) %>% 
+  relocate(`2022_Seguimiento PA`, .after=`2022_Denuncias NAM`) %>% 
+  relocate(`2023_Seguimiento PA`, .after=`2023_Denuncias NAM`) 
+
+
+
+names(seguimiento) <- c("Edad", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA", "Denuncias NAM", "Seguimiento PA")
+
+tabla_ind_39 <- seguimiento %>% 
+   kbl(align = "c") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
+  row_spec(0, bold = T, color = "white", background = "#666") %>% 
+  add_header_above(c("", "2020"=2, "2021"=2, "2022"=2, "2023"=2, "2024"=2, 
+                     "Total"=2
+  )) %>% 
+  add_header_above(c("Casos de desaparición de NAM que reciben seguimiento de Protocolo Alba" = length(names(seguimiento)))
+  ) %>% 
+  row_spec(nrow(seguimiento), bold = T, color = "white", background = "#666") 
+
+tabla_ind_39
+
+```
+
