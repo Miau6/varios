@@ -1,5 +1,5 @@
 ---
-title: "Indicadores de Alerta de Violencia de Género contra las mujeres (fase de pruebas)"
+title: "Indicadores de Alerta de Violencia de Género contra las mujeres"
 format:
   html:
     toc: true
@@ -10,6 +10,7 @@ execute:
   echo: false
   warning: false
   message: false
+css: style.css
 ---
 
 ```{r}
@@ -31,6 +32,16 @@ for (i in nombres_bases) {
 ```
 
 ## Introducción
+
+```{css}
+#| echo: false
+p {
+      text-align: justify
+    }
+```
+
+
+La Alerta de Violencia de Género contra las Mujeres (AVGM) en Jalisco se sustenta en indicadores proporcionados por diversas fuentes especializadas. El Instituto Jalisciense de Ciencias Forenses aporta datos trimestrales cruciales para el análisis forense, mientras que la Fiscalía del Estado de Jalisco entrega información mensual y semestral sobre denuncias e investigaciones. La Secretaría de Igualdad Sustantiva entre Mujeres y Hombres contribuye semestralmente con datos sobre políticas públicas y programas de igualdad de género. La Secretaría de Salud proporciona indicadores trimestrales sobre el impacto de la violencia en la salud de las víctimas, complementados por los datos semestrales del OPD Servicios de Salud Jalisco. Estas fuentes permiten una evaluación integral y precisa de la violencia de género, facilitando respuestas efectivas para su erradicación.
 
 ```{r}
 #| label: tablas contextuales
@@ -63,7 +74,7 @@ tabla_13 <- tipo_muertes %>% bind_rows(tipo_muertes_tot) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T) %>%
   row_spec(0, bold = T, color = "white", background = "#666") %>% 
   add_header_above(c("Clasificación de muertes de mujeres en Jalisco" = length(names(tipo_muertes)))) %>% 
-  row_spec(nrow(tipo_muertes)+1, bold = T, color = "white", background = "#666")
+  row_spec(nrow(tipo_muertes)+1, bold = T, color = "white", background = "#666") 
   
 tabla_13
 ```
@@ -460,8 +471,6 @@ tabla_ind_6_b <- ordenes %>%
 
 #### **Indicador 7: Porcentaje de mujeres víctimas de violencia por razones de género que solicitaron y obtuvieron orden y/o medida de protección.**
 
-
-
 ```{r}
 mujeres_canalizacion <- indicador_7 %>% 
   filter(municipio=="Estado de Jalisco") %>% 
@@ -491,8 +500,6 @@ tabla_ind_7 <- mujeres_canalizacion %>%
   tabla_ind_7
 ```
 
-
-
 #### **Indicador 8. Porcentaje de personal capacitado en la adecuada aplicación del Modelo de Atención, Otorgamiento y Seguimiento de Órdenes de Protección**
 
 ```{r}
@@ -511,8 +518,6 @@ de las medidas y órdenes de proteccióna" = length(names(ind_8)))
 
 tabla_ind_8
 ```
-
-
 
 #### **Indicador 9. Porcentaje de medidas de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.**
 
@@ -544,11 +549,7 @@ tabla_ind_9 <- medidas_emitidas %>%
   tabla_ind_9
 ```
 
-
-
-
 #### **Indicador 10. Porcentaje de órdenes de protección otorgadas que fueron trabajadas y/o notificadas efectiva y personalmente a la persona agresora en relación al total.**
-
 
 ```{r}
 #| label: indicador 10
@@ -581,10 +582,6 @@ tabla_ind_10 <- ordenes_emitidas %>%
 
 ```
 
-
-
-
-
 #### **Indicador 11: Porcentaje de mujeres que han recibido seguimiento después de otorgada su orden y/o medida de protección en relación al total.**
 
 ```{r}
@@ -616,11 +613,7 @@ tabla_ind_11 <- mujeres_seguimiento %>%
   tabla_ind_11
 ```
 
-
-
-
 #### **Indicador 12. Porcentaje de Carpetas de Investigación iniciadas contra personas agresoras derivados de incumplimiento de órdenes y/o medidas de protección.**
-
 
 ```{r}
 #| label: indicador 12
@@ -652,11 +645,7 @@ tabla_ind_12 <- carpetas %>%
   tabla_ind_12
 ```
 
-
-
-
 #### **Indicador 13: Porcentaje de casos en los que la orden y/o medida de protección resultó ser adecuada y efectiva para la víctima en relación al total.**
-
 
 ```{r}
 #| label: indicador 13
@@ -690,13 +679,7 @@ tabla_ind_13 <- efectividad %>%
   tabla_ind_13
 ```
 
-
-
-
 ## Salud
-
-
-
 
 #### **Indicador 16: Porcentaje de mujeres denunciantes de violación o abuso sexual infantil que son remitidas para atención integral de la salud conforme a la NOM 046 en relación al total.**
 
@@ -729,9 +712,6 @@ tabla_ind_16 <- canalizadas %>%
   tabla_ind_16
 
 ```
-
-
-
 
 #### **Indicador 17: Porcentaje de mujeres atendidas por violación y abuso sexual infantil en el Sector Salud referidas por la Fiscalía del Estado en relación al total**
 
@@ -783,12 +763,8 @@ tabla_ind_17 <- total_violencia_sexual %>%
 
 
 ```
-cifras en revisión
 
-
-
-#### **Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento. **
-
+#### **Indicador 18: Porcentaje de mujeres solicitantes de IVE por violación que reciben el procedimiento.**
 
 ```{r}
 #| label: indicador 18
@@ -824,18 +800,15 @@ tabla_ind_18 <- total_abortos_edad %>%
 
 ```
 
-
-#### **Indicador 19 Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco.**
-
-
+<!-- Indicador 19 Porcentaje de mujeres que reciben el procedimiento de interrupción legal del embarazo conforme al Programa Estatal para la Interrupción Legal del Embarazo (Programa ILE) en los Servicios de Salud del Estado de Jalisco. -->
 
 <!-- ```{r} -->
+
 <!-- aborto_rango_edad <- tabla_ILE %>%  -->
+
 <!--   tabyl(causal, ano) -->
+
 <!-- ``` -->
-
-
-
 
 #### **Indicador 20: Porcentaje de casos atendidos en el Sector Salud por violencia familiar y/o sexual que se notifican al Ministerio Público de Fiscalía.**
 
@@ -887,12 +860,7 @@ tabla_ind_20 <- total_notificaciones %>%
 tabla_ind_20
 ```
 
-
-
-
-
-#### **Indicador 21: Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE. **
-
+#### **Indicador 21: Porcentaje de establecimientos estatales proveedores de servicios de salud en condiciones óptimas para realizar un procedimiento ILE/IVE.**
 
 ```{r}
 #| label: indicador 21
@@ -930,12 +898,7 @@ tabla_ind_21
 
 ```
 
-
-
-
-
 #### **Indicador 22: Porcentaje del personal de salud relacionado al procedimiento ILE/IVE, capacitado en el Programa ILE y NOM 046.**
-
 
 ```{r}
 #actualizar manual
@@ -960,8 +923,6 @@ el Programa ILE por profesión" = length(names(capacitaciones)))
 tabla_ind_22
 ```
 
-
-
 #### **Indicador 23: Porcentaje de personal médico debidamente capacitado en el procedimiento ILE/IVE.**
 
 ```{r}
@@ -979,14 +940,9 @@ tabla_ind_23 <- tibble(Año=2023,
 tabla_ind_23
 ```
 
-
-
-
 ## BAEDAVIM
 
-
 #### **Indicador 24. Porcentaje de municipios que actualizan la información sobre atención a mujeres víctimas de violencia con respecto al total.**
-
 
 ```{r}
 # informacion <- indicador_24 %>% drop_na(actualizan) %>% 
@@ -1022,11 +978,7 @@ tabla_ind_24 <- informacion %>%
 tabla_ind_24
 ```
 
-
-
-
 #### **Indicador 26. Porcentaje de instancias estatales responsables de alimentar banco de datos que actualizan en tiempo y forma en relación al total de instancias obligadas.**
-
 
 ```{r}
 #| label: indicador 26
@@ -1049,15 +1001,9 @@ tabla_ind_26 <- obligadas %>%
 tabla_ind_26
 ```
 
-
-
-
 ## Feminicidio
 
-
-
-#### **Indicador 27. Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio38 y desaparición de niñas, adolescentes y mujeres.**
-
+#### **Indicador 27. Número de opiniones técnicas que ha emitido la Dirección de Análisis y Contexto sobre los delitos de feminicidio y desaparición de niñas, adolescentes y mujeres.**
 
 ```{r}
 #| label: indicador 27
@@ -1081,11 +1027,7 @@ tabla_ind_27 <- feminicidio_opiniones %>%
 tabla_ind_27
 ```
 
-
-
-
-#### **Indicador 28. Porcentaje de mujeres víctimas de violación y violencia familiar que son atendidas y proceden a realizar una denuncia en los Centros de Justicia para 42 las Mujeres, en relación al total de mujeres atendidas en los Centros de Justicia para las Mujeres.**
-
+#### **Indicador 28. Porcentaje de mujeres víctimas de violación y violencia familiar que son atendidas y proceden a realizar una denuncia en los Centros de Justicia para las Mujeres, en relación al total de mujeres atendidas en los Centros de Justicia para las Mujeres.**
 
 ```{r}
 
@@ -1139,10 +1081,7 @@ tabla_ind_28
 
 ```
 
-
-
 #### **Indicador 29. Porcentaje de casos de violencia contra las mujeres por razones de género judicializados.**
-
 
 ```{r}
 #| label: indicador 29
@@ -1208,10 +1147,7 @@ tabla_ind_29
 
 ```
 
-
-
-
-#### **Indicador 30. Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso. **
+#### **Indicador 30. Porcentaje de sentencias por el delito de feminicidio en relación a los casos vinculados a proceso.**
 
 ```{r}
 #| label: indicador 30
@@ -1241,10 +1177,6 @@ durante 2020-2023 por año de origen de la CI" = length(names(sentencias)))
 
 tabla_ind_30
 ```
-
-
-
-
 
 #### **Indicador 40. Porcentaje de muertes violentas de mujeres registradas, en relación al año anterior.**
 
@@ -1276,12 +1208,9 @@ tabla_ind_40 <- muertes %>%
 tabla_ind_40
 ```
 
-
-
 ## Protocolo ALBA
 
 #### **Indicador 31: Porcentaje de niñas, adolescentes y mujeres denunciadas como desaparecidas que son localizadas.**
-
 
 ```{r}
 #| label: indicador 31
@@ -1307,10 +1236,7 @@ tabla_ind_31 <- desaparecidas %>%
   tabla_ind_31
 ```
 
-
-
 #### **Indicador 32: Número de denuncias de niñas, adolescentes y mujeres desaparecidas.**
-
 
 ```{r}
 #| label: indicador 32
@@ -1344,9 +1270,6 @@ informes de factor de riesgo" = length(names(denuncias)))
 
 tabla_ind_32
 ```
-
-
-
 
 #### **Indicador 33: Porcentaje de cédulas únicas de difusión que son remitidas al Comité Técnico de Colaboración.**
 
@@ -1395,11 +1318,7 @@ tabla_ind_33
 
 ```
 
-
-
-
 #### **Indicador 34: Porcentaje de casos de búsqueda y localización realizados de forma inmediata y diferenciada en relación al total de casos.**
-
 
 ```{r}
 #| label: indicador 34
@@ -1423,9 +1342,6 @@ tabla_ind_34 <- denuncias_des %>%
 
 tabla_ind_34
 ```
-
-
-
 
 #### **Indicador 35: Porcentaje de Cédulas de Difusión activas en relación al total de Cédulas de Difusión emitidas**
 
@@ -1452,11 +1368,7 @@ tabla_ind_35 <- difusion %>%
 tabla_ind_35
 ```
 
-
-
-
 #### **Indicador 36: Porcentaje de casos de investigación de desaparición de niñas y adolescentes en los que se activa reporte Ámber**
-
 
 ```{r}
 #| label: indicador 36
@@ -1509,9 +1421,6 @@ tabla_ind_36 <- denuncias_tipo_edad %>%
 
 tabla_ind_36
 ```
-
-
-
 
 #### **Indicador 37: Porcentaje de personal capacitado en el Protocolo Alba**
 
@@ -1567,11 +1476,7 @@ tabla_ind_37
 
 ```
 
-
-
 #### **Indicador 38: Porcentaje de casos resueltos en etapa de investigación.**
-
-
 
 ```{r}
 #| label: indicador 38
@@ -1606,9 +1511,6 @@ tabla_ind_38 <- casos_investigacion %>%
 tabla_ind_38
 
 ```
-
-
-
 
 #### **Indicador 39: Porcentaje de casos de desaparición que reciben seguimiento**
 
@@ -1660,4 +1562,3 @@ tabla_ind_39 <- seguimiento %>%
 tabla_ind_39
 
 ```
-
