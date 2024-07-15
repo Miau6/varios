@@ -56,6 +56,67 @@ cebp <- read_excel("datos_ukari.xlsx",
 
 setnames(cebp, tolower(names(cebp)))
 
+banavim <- read_rds("data_banavim_ukari.rds")
+
+base_casos <- banavim$base_casos_clean
+base_agre <- banavim$base_agre_clean
+base_ordenes <- banavim$base_ordenes_clean
+base_servicios <- banavim$base_servicios_clean
+
+base_ordenes <- base_ordenes %>% 
+  select(-fecha_de_recepcion) %>% 
+  rowid_to_column("id") %>% 
+  left_join(base_casos %>% select(euv, fecha_de_recepcion) %>% 
+              separate(euv, sep="-", c("euv", "num")) %>% 
+              filter(!duplicated(euv)))
+
+clean_acentos <- function(palabra){
+  
+  palabra <- palabra %>% 
+    toupper(.) %>% 
+    gsub("Ã¡", "Á", .) %>% 
+    gsub("Ã³", "Ó", .) %>% 
+    gsub("Ã±", "Ñ", .) %>% 
+    gsub("Ãº", "Ú", .) %>% 
+    gsub("Ã©", "É", .) %>% 
+    gsub("Ã", "Í", .)  %>% 
+    str_squish(.) %>% 
+    str_replace_all(., "\\s", " ")
+  
+}
+
+base_casos <- base_casos %>% 
+  mutate(municipio_del_domicilio_clean=clean_acentos(
+    municipio_del_domicilio
+  ))
+
+base_casos <- base_casos %>% 
+  mutate(municipio_hecho=ifelse(
+    is.na(municipio_hecho), municipio_del_domicilio_clean, municipio_hecho_clean
+  ), 
+  municipio_hecho=case_when(
+    municipio_hecho %in% unique(base_casos$municipio_hecho_clean)[-1] ~ municipio_hecho, 
+    T ~ "MUNICIPIOS FUERA DE NAYARIT"
+  ))
+
+base_casos <- base_casos %>% 
+  mutate(descripcion_del_lugar=case_when(
+    grepl("Autob" ,descripcion_del_lugar) ~ "Autobús", 
+    grepl("Jard", descripcion_del_lugar) ~ "Jardín o parque", 
+    T ~ descripcion_del_lugar
+  ), estado_civil=case_when(
+    grepl("Uni", estado_civil) ~ "Unión libre", 
+    T ~ estado_civil
+  ))
+
+base_agre <- base_agre %>% 
+  left_join(base_casos %>% select(euv, "fecha"=fecha_de_recepcion), "euv")
+
+base_agre <- base_agre %>% 
+  mutate(vinculo_con_va_ctima=case_when(
+    is.na(vinculo_con_va_ctima) | vinculo_con_va_ctima=="Seleccione" ~ "Desconocido", 
+    T ~ vinculo_con_va_ctima
+  ))
 
 cebp <- cebp %>%
   mutate(
@@ -421,6 +482,8 @@ lesiones <- lesiones %>%
 
 shp_nay <- read_rds("shp_nay.rds") %>% 
   mutate(id_municipio=as.integer(CVE_MUN))
+
+pob_mun <- read_rds("pob_mun_nayarit.rds" )
 
 ui <- shinyUI(
   tagList(
@@ -1097,8 +1160,335 @@ ui <- shinyUI(
                                      # )
                                    )
                                    )
+                                   ),
+                                   shiny::navbarMenu(title = "BANAVIM", 
+                                                     shiny::tabPanel(
+                                     title = "Casos", 
+                                     
+                                     valueBox(tags$p(paste0(
+                                       base_casos %>% 
+                                         nrow() %>%  comma(), " Casos"
+                                     ), style = "font-size: 200%; font-weight: bold"), 
+                                     paste0("atendidas de 2018 a junio 2022" 
+                                     ),
+                                     icon=icon("chart-area"),color="fuchsia", width = 4
+                                     ),
+                                     
+                                     valueBox(tags$p(paste0(
+                                       base_casos %>% group_by(fecha_de_recepcion) %>% 
+                                         summarise(Total=n()) %>% 
+                                         complete(fecha_de_recepcion=seq.Date(as_date(min(base_casos$fecha_de_recepcion, na.rm = T)), as_date(max(base_casos$fecha_de_recepcion, na.rm = T)), "1 day"), 
+                                                  fill=list(Total=0)) %>% 
+                                         summarise(media=mean(Total)) %>%
+                                         pull(media) %>% 
+                                         comma(.01), 
+                                       " promedio diario"
+                                       
+                                     ),
+                                     
+                                     style = "font-size: 200%; font-weight: bold"), 
+                                     "en el periodo 2018 a 2022", icon=icon("equals"), color="purple", width = 4
+                                     ),
+                                     valueBox(tags$p(paste0(
+                                       base_casos %>% group_by(fecha_de_recepcion) %>% 
+                                         summarise(Total=n()) %>% 
+                                         complete(fecha_de_recepcion=seq.Date(as_date(min(base_casos$fecha_de_recepcion, na.rm = T)), as_date(max(base_casos$fecha_de_recepcion, na.rm = T)), "1 day"), 
+                                                  fill=list(Total=0)) %>% group_by(ao=year(fecha_de_recepcion)) %>% 
+                                         summarise(media=mean(Total)) %>% top_n(1) %>% pull(ao), 
+                                       " mayor promedios"
+                                     ),
+                                     style = "font-size: 200%; font-weight: bold"), 
+                                     paste0(base_casos %>% group_by(fecha_de_recepcion) %>% 
+                                              summarise(Total=n()) %>% 
+                                              complete(fecha_de_recepcion=seq.Date(as_date(min(base_casos$fecha_de_recepcion, na.rm = T)), as_date(max(base_casos$fecha_de_recepcion, na.rm = T)), "1 day"), 
+                                                       fill=list(Total=0)) %>% group_by(ao=year(fecha_de_recepcion)) %>% 
+                                              summarise(media=mean(Total)) %>% top_n(1) %>% pull(media) %>% 
+                                              comma(.01),
+                                            " es su promedio diario"), icon=icon("wave-square"), color="maroon", width = 4
+                                     ),
+                                     
+                                     shiny::sidebarLayout(  
+                                       shiny::sidebarPanel(
+                                         # id="controls", 
+                                         # class = "panel panel-default", fixed = F,
+                                         # draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                         # width = 400, height = "auto",
+                                         h2("Sección de filtros"), 
+                                         dateRangeInput(
+                                           "casos_date", 
+                                           "Rango de fecha", start = floor_date(min(base_casos$fecha_de_recepcion), "month"), 
+                                           min = floor_date(min(base_casos$fecha_de_recepcion), "month"), 
+                                           end =ceiling_date(max(base_casos$fecha_de_recepcion), "month")-1, 
+                                           max = ceiling_date(max(base_casos$fecha_de_recepcion), "month")-1, language = "es", 
+                                           separator = "-"
+                                         ),
+                                         selectInput(
+                                           inputId = "casos_municipios",
+                                           label = "Municipios",
+                                           choices = c(sort(unique(base_casos$municipio_hecho)[-15]), "MUNICIPIOS FUERA DE NAYARIT"),
+                                           selected = unique(base_casos$municipio_hecho)[-15],
+                                           multiple = T
+                                         ),
+                                         selectInput(
+                                           inputId = "casos_lugar",
+                                           label = "Lugar",
+                                           choices = sort(unique(base_casos$descripcion_del_lugar)),
+                                           #selected = "",
+                                           multiple = T
+                                         ), 
+                                         downloadButton("downloadData_base_casos", "\nDescarga (.xlsx)")
+                                       ),
+                                       shiny::mainPanel(
+                                         plotlyOutput("gr_casos_date"), br(), br(),
+                                         
+                                         plotlyOutput("gr_casos_date_trend"), br(), br(),
+                                         plotlyOutput("gr_casos_civil"), br(), br(),
+                                         plotlyOutput("gr_casos_modalidad"), br(), br(),
+                                         plotlyOutput("gr_casos_municipio"), br(),  br(),
+                                         h6("Fuente: BANAVIM."),
+                                         h6("Datos a Junio de 2022")
+                                       )
+                                       
+                                       # absolutePanel(
+                                       #   id="controls", 
+                                       #   class = "panel panel-default", fixed = F,
+                                       #   draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                       #   width = 400, height = "auto",
+                                       #   h2("Sección de filtros"), 
+                                       #   dateRangeInput(
+                                       #     "lesiones_date", 
+                                       #     "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                       #     min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                       #     end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                       #     max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                       #     separator = "-"
+                                       #   ),
+                                       #   selectInput(
+                                       #     inputId = "lesiones_sexo",
+                                       #     label = "Sexo",
+                                       #     choices = sort(unique(lesiones$sexo)),
+                                       #     # selected = "",
+                                       #     multiple = T
+                                       #   ),
+                                       #   selectInput(
+                                       #     inputId = "lesiones_afiliacion",
+                                       #     label = "Afiliación",
+                                       #     choices = sort(unique(lesiones$afiliacion_des)),
+                                       #     # selected = "",
+                                       #     multiple = T
+                                       #   )
+                                       # )
+                                     )
+                                   ), 
+                                   shiny::tabPanel(
+                                     title = "Agresiones", 
+                                     
+                                     valueBox(tags$p(paste0(
+                                       base_agre %>% tabyl(vinculo_con_va_ctima) %>%
+                                         filter(vinculo_con_va_ctima=="Familiar") %>%
+                                         pull(percent) %>%
+                                         percent(), " de las agresiones"
+                                     ), style = "font-size: 200%; font-weight: bold"),
+                                     paste0("tenían un vínculo familiar"
+                                     ),
+                                     icon=icon("chart-area"),color="fuchsia", width = 4
+                                     ),
+                                     
+                                     valueBox(tags$p(paste0(
+                                       base_agre %>% tabyl(clave)  %>% left_join(pob_mun) %>%
+                                         mutate(tasa=n/valor*100000) %>%
+                                         top_n(1) %>% pull(tasa) %>% comma(.01),
+                                       " tasa de agresiones"
+
+                                     ),
+
+                                     style = "font-size: 200%; font-weight: bold"),
+                                     paste0(#"por cada 100 mil personas de ",
+                                            base_agre %>% tabyl(clave)  %>% left_join(pob_mun) %>%
+                                              mutate(tasa=n/valor*100000) %>%
+                                              top_n(1) %>% pull(nom_mun),
+                                            ", municipio con mayor tasa"
+                                            ), icon=icon("equals"), color="purple", width = 4
+                                     ),
+                                     valueBox(tags$p(paste0(
+                                       base_agre %>%
+                                         tabyl(dep_exp) %>% top_n(1) %>% pull(n) %>% comma(),
+                                       " atenciones en CJM"
+                                     ),
+                                     style = "font-size: 200%; font-weight: bold"),
+                                     "es la dependencia con más atenciones de agresiones", icon=icon("wave-square"), color="maroon", width = 4
+                                     ),
+                                     
+                                     shiny::sidebarLayout(  
+                                       shiny::sidebarPanel(
+                                         # id="controls", 
+                                         # class = "panel panel-default", fixed = F,
+                                         # draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                         # width = 400, height = "auto",
+                                         h2("Sección de filtros"), 
+                                         dateRangeInput(
+                                           "agre_date", 
+                                           "Rango de fecha", start = floor_date(min(base_agre$fecha, na.rm = T), "month"), 
+                                           min = floor_date(min(base_agre$fecha, na.rm = T), "month"), 
+                                           end =ceiling_date(max(base_agre$fecha, na.rm = T), "month")-1, 
+                                           max = ceiling_date(max(base_agre$fecha, na.rm = T), "month")-1, language = "es", 
+                                           separator = "-"
+                                         ),
+                                         selectInput(
+                                           inputId = "agre_vinculo",
+                                           label = "Vinculo con la víctima",
+                                           choices = sort(unique(base_agre$vinculo_con_va_ctima)),
+                                           # selected = "",
+                                           multiple = T
+                                         ),
+                                         downloadButton("downloadData_base_agre", "\nDescarga (.xlsx)")
+                                       ),
+                                       shiny::mainPanel(
+                                         plotlyOutput("gr_agresiones_date"), br(), br(),
+                                         plotlyOutput("gr_agresiones_vinculo"), br(), br(),
+                                         h6("Fuente: Banavim."),
+                                         h6("Datos a Junio de 2022")
+                                       )
+                                       
+                                       # absolutePanel(
+                                       #   id="controls", 
+                                       #   class = "panel panel-default", fixed = F,
+                                       #   draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                       #   width = 400, height = "auto",
+                                       #   h2("Sección de filtros"), 
+                                       #   dateRangeInput(
+                                       #     "lesiones_date", 
+                                       #     "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                       #     min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                       #     end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                       #     max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                       #     separator = "-"
+                                       #   ),
+                                       #   selectInput(
+                                       #     inputId = "lesiones_sexo",
+                                       #     label = "Sexo",
+                                       #     choices = sort(unique(lesiones$sexo)),
+                                       #     # selected = "",
+                                       #     multiple = T
+                                       #   ),
+                                       #   selectInput(
+                                       #     inputId = "lesiones_afiliacion",
+                                       #     label = "Afiliación",
+                                       #     choices = sort(unique(lesiones$afiliacion_des)),
+                                       #     # selected = "",
+                                       #     multiple = T
+                                       #   )
+                                       # )
+                                     )
+                                   ), 
+                                   # shiny::tabPanel(
+                                   #   title = "Ordenes", 
+                                   #   
+                                   #   valueBox(tags$p(paste0(
+                                   #     base_ordenes %>% 
+                                   #       nrow() %>%  comma(), " ordenes"
+                                   #   ), style = "font-size: 200%; font-weight: bold"), 
+                                   #   paste0("de casos de 2018 a 2022" 
+                                   #   ),
+                                   #   icon=icon("chart-area"),color="fuchsia", width = 4
+                                   #   ),
+                                   #   
+                                   #   valueBox(tags$p(paste0(
+                                   #     base_ordenes %>% 
+                                   #       tabyl(desc_tipo_orden) %>% 
+                                   #       filter(desc_tipo_orden=="Penal") %>% 
+                                   #       pull(n), 
+                                   #     " ordenes"
+                                   #     
+                                   #   ),
+                                   #   
+                                   #   style = "font-size: 200%; font-weight: bold"), 
+                                   #   "de tipo penal", icon=icon("equals"), color="purple", width = 4
+                                   #   ),
+                                   #   valueBox(tags$p(paste0(
+                                   #     base_ordenes %>% 
+                                   #       tabyl(desc_tipo_orden) %>% 
+                                   #       filter(desc_tipo_orden=="Civil/Familiar") %>% 
+                                   #       pull(n), " ordenes"
+                                   #   ),
+                                   #   style = "font-size: 200%; font-weight: bold"), 
+                                   #   "de tipo civil/familiar", icon=icon("wave-square"), color="maroon", width = 4
+                                   #   ),
+                                   #   
+                                   #   shiny::sidebarLayout(  
+                                   #     shiny::sidebarPanel(
+                                   #       # id="controls", 
+                                   #       # class = "panel panel-default", fixed = F,
+                                   #       # draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                   #       # width = 400, height = "auto",
+                                   #       h2("Sección de filtros"), 
+                                   #       dateRangeInput(
+                                   #         "lesiones_date", 
+                                   #         "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                   #         min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                   #         end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                   #         max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                   #         separator = "-"
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "lesiones_sexo",
+                                   #         label = "Sexo",
+                                   #         choices = sort(unique(lesiones$sexo)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ),
+                                   #       selectInput(
+                                   #         inputId = "lesiones_afiliacion",
+                                   #         label = "Afiliación",
+                                   #         choices = sort(unique(lesiones$afiliacion_des)),
+                                   #         # selected = "",
+                                   #         multiple = T
+                                   #       ), 
+                                   #       downloadButton("downloadData_lesiones", "\nDescarga (.xlsx)")
+                                   #     ),
+                                   #     shiny::mainPanel(
+                                   #       plotlyOutput("gr_lesiones_date"), br(), br(),
+                                   #       plotlyOutput("gr_lesiones_afiliacion"), br(), br(),
+                                   #       plotlyOutput("gr_lesiones_municipio"), br(), br(),
+                                   #       leafletOutput("mapa_municipio"), br(),  br(),
+                                   #       h6("Fuente: Secretaría de Salud."),
+                                   #       h6("Datos a diciembre de 2022")
+                                   #     )
+                                   #     
+                                   #     # absolutePanel(
+                                   #     #   id="controls", 
+                                   #     #   class = "panel panel-default", fixed = F,
+                                   #     #   draggable = TRUE, top = 60, left = 20, right = "auto", bottom = "auto",
+                                   #     #   width = 400, height = "auto",
+                                   #     #   h2("Sección de filtros"), 
+                                   #     #   dateRangeInput(
+                                   #     #     "lesiones_date", 
+                                   #     #     "Rango de fecha", start = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                   #     #     min = floor_date(min(lesiones$fecha_atencion), "month"), 
+                                   #     #     end =ceiling_date(max(lesiones$fecha_atencion), "month")-1, 
+                                   #     #     max = ceiling_date(max(lesiones$fecha_atencion), "month")-1, language = "es", 
+                                   #     #     separator = "-"
+                                   #     #   ),
+                                   #     #   selectInput(
+                                   #     #     inputId = "lesiones_sexo",
+                                   #     #     label = "Sexo",
+                                   #     #     choices = sort(unique(lesiones$sexo)),
+                                   #     #     # selected = "",
+                                   #     #     multiple = T
+                                   #     #   ),
+                                   #     #   selectInput(
+                                   #     #     inputId = "lesiones_afiliacion",
+                                   #     #     label = "Afiliación",
+                                   #     #     choices = sort(unique(lesiones$afiliacion_des)),
+                                   #     #     # selected = "",
+                                   #     #     multiple = T
+                                   #     #   )
+                                   #     # )
+                                   #   )
+                                   # )
                                    
                                    )
+                                   # )
       
     ))))
 
@@ -1190,6 +1580,28 @@ server <- function(input, output) {
              if(!is.null(input$cebp_lugar_1)) `lugar de nacimiento` %in% input$cebp_lugar_1   else `lugar de nacimiento` != "")
 
   })
+  
+  casos_data <- reactive({
+    
+    base_casos %>%
+      filter(if(!is.null(input$casos_municipios))                     municipio_hecho %in% input$casos_municipios     else municipio_hecho != "",
+             if(!is.null(input$casos_lugar)) descripcion_del_lugar %in% input$casos_lugar   else descripcion_del_lugar != "", 
+             fecha_de_recepcion>= min(input$casos_date), fecha_de_recepcion<= max(input$casos_date)
+             )
+    
+  })
+  
+  agre_data <- reactive({
+    
+    base_agre %>%
+      filter(if(!is.null(input$agre_vinculo))                     vinculo_con_va_ctima %in% input$agre_vinculo     else vinculo_con_va_ctima != "",
+             #if(!is.null(input$casos_lugar)) descripcion_del_lugar %in% input$casos_lugar   else descripcion_del_lugar != "", 
+             fecha>= min(input$agre_date), fecha<= max(input$agre_date)
+      )
+    
+  })
+  
+  
 
 
 
@@ -2178,7 +2590,7 @@ fiscalia_data() %>%
       plot <- data_lesiones() %>% 
         group_by(id_municipio) %>% summarise(Total=n()) %>% 
         left_join(shp_nay) %>% ungroup() %>% 
-        group_by(NOM_MUN=str_wrap(str_to_title(NOM_MUN), 15)) %>%
+        group_by(NOM_MUN=str_wrap(str_to_title(NOM_MUN), 12)) %>%
         summarise(Total=sum(Total)) %>%
         mutate(text=paste0("Municipio: ", NOM_MUN, "\n",
                            "Total: ", comma(Total))) %>%
@@ -2256,6 +2668,150 @@ fiscalia_data() %>%
       paste0("prueba", input$municipal_año)
     })
     
+    output$gr_casos_date <- renderPlotly({
+      gr <- casos_data() %>% 
+        group_by(fecha=floor_date(fecha_de_recepcion, "year")) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(fecha, Total)) + 
+        geom_col(fill="#D35F0A") +
+        theme_minimal() +
+        scale_x_date(date_labels = "%Y") +
+        labs(y="Casos atendidos")
+      
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Casos por año")
+        )
+      
+    })
+    
+    output$gr_casos_date_trend <- renderPlotly({
+      gr <- casos_data() %>% 
+        group_by(fecha=floor_date(fecha_de_recepcion, "month")) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(fecha, Total)) + 
+        geom_point(color="#8068AE", alpha=.5) +
+        geom_smooth(se=F, color="#1B9E77") +
+        theme_minimal() +
+        scale_x_date(date_labels = "%Y") +
+        labs(y="Casos atendidos")
+      
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Casos por mes con tendencia")
+        )
+      
+    })
+    
+    output$gr_casos_civil <- renderPlotly({
+      gr <- casos_data() %>% 
+        group_by(estado_civil=str_wrap(estado_civil, 13)) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(reorder(estado_civil, -Total),
+                   Total, fill=estado_civil)) + 
+        geom_col() +
+        theme_minimal() + theme(legend.position = "none") +
+        labs(y="Casos atendidos", x="Estado civil") +
+        scale_fill_manual(values = c("#8C6F39", "#BA5464", "#796A4F",
+                                              "#C36228", "#87A716",
+
+           "#C7910E", "#866D94", "#A4675E", "#6BA022", "#AEA80E"))
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Estado civil")
+        )
+    })
+    
+    
+    output$gr_casos_modalidad <- renderPlotly({
+      gr <- casos_data() %>% 
+        group_by(modalidad_de_la_violencia =str_wrap(str_sub(modalidad_de_la_violencia, 4, 100), 15)) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(reorder(modalidad_de_la_violencia, -Total),
+                   Total, fill=modalidad_de_la_violencia)) + 
+        geom_col() +
+        theme_minimal() + theme(legend.position = "none") +
+        labs(y="Casos atendidos", x="Modalidad") +
+        scale_fill_manual(values = c("#927A43",  "#AEA80E", "#BA5464",
+                                              "#8366AD", "#C8640C",
+          "#548A53", "#87A716", "#8C6F39"))
+          
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Modalidad de la violencia")
+        )
+                                              
+    })
+    
+    output$gr_casos_municipio <- renderPlotly({
+      gr <- casos_data() %>% 
+        group_by(municipio_hecho=str_wrap(municipio_hecho, 22)) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(reorder(municipio_hecho, -Total),
+                   Total, fill=municipio_hecho)) + 
+        geom_col() +
+        theme_minimal() + theme(legend.position = "none", 
+                                axis.text.x = element_text(angle = 90)) +
+        labs(y="Casos atendidos", x="Modalidad") +
+        scale_fill_manual(values = mycolors_miau)
+      
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Municipio")
+        )
+    })
+    
+    output$gr_agresiones_date <- renderPlotly({
+      
+      gr <- agre_data() %>% 
+        group_by(fecha=floor_date(fecha, "year")) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(fecha, Total)) + 
+        geom_col(fill="#D9AA04") +
+        theme_minimal() +
+        scale_x_date(date_labels = "%Y") +
+        labs(y="Agresiones")
+      
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Agresiones por año")
+        )
+    })
+    
+    
+    output$gr_agresiones_vinculo <- renderPlotly({
+      gr <- agre_data() %>% 
+        group_by(vinculo_con_va_ctima =str_wrap(vinculo_con_va_ctima, 15)) %>%
+        summarise(Total=n()) %>% 
+        ggplot(aes(reorder(vinculo_con_va_ctima, -Total),
+                   Total, fill=vinculo_con_va_ctima)) + 
+        geom_col() +
+        theme_minimal() + theme(legend.position = "none") +
+        labs(y="Casos atendidos", x="Vínculo") +
+        scale_fill_manual(values = c("#927A43",  "#AEA80E", "#BA5464",
+                                              "#8366AD", "#C8640C",
+                                              "#548A53", "#87A716", "#8C6F39"))
+                                              
+      ggplotly(gr, tooltip="text"
+      ) %>%
+        layout(showlegend = FALSE,
+               #margin = list(b=0,t=30),
+               title = paste0("Vínculo con la víctima")
+        )
+                                              
+    })
 
 
     # [1] "#1B9E77" "#5D874E" "#A07125" "#D35F0A"
