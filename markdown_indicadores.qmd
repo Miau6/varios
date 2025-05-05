@@ -40,7 +40,6 @@ p {
     }
 ```
 
-
 La Alerta de Violencia de Género contra las Mujeres (AVGM) en Jalisco se sustenta en indicadores proporcionados por diversas fuentes especializadas. El Instituto Jalisciense de Ciencias Forenses aporta datos trimestrales cruciales para el análisis forense, mientras que la Fiscalía del Estado de Jalisco entrega información mensual y semestral sobre denuncias e investigaciones. La Secretaría de Igualdad Sustantiva entre Mujeres y Hombres contribuye semestralmente con datos sobre políticas públicas y programas de igualdad de género. La Secretaría de Salud proporciona indicadores trimestrales sobre el impacto de la violencia en la salud de las víctimas, complementados por los datos semestrales del OPD Servicios de Salud Jalisco. Estas fuentes permiten una evaluación integral y precisa de la violencia de género, facilitando respuestas efectivas para su erradicación.
 
 ```{r}
